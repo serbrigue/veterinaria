@@ -3,17 +3,35 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Veterinario;
+use App\Models\Box;
+use App\Models\Mascota;
+use App\Models\Cliente;
 
 class Cita extends Model
+
 {
     protected $fillable = [
         'titulo',
         'descripcion',
         'fecha_hora',
+        'hora_termino',
+        'estado',
+        'notas',
+        'veterinario_id',
+        'box_id',
         'mascota_id',
-        'cliente_id',
-        'user_id',
     ];
+
+    public function veterinario()
+    {
+        return $this->belongsTo(Veterinario::class, 'veterinario_id');
+    }
+
+    public function box()
+    {
+        return $this->belongsTo(Box::class, 'box_id');
+    }
 
     public function mascota()
     {
@@ -22,11 +40,6 @@ class Cita extends Model
 
     public function cliente()
     {
-        return $this->belongsTo(Cliente::class, 'cliente_id');
-    }
-
-    public function usuario()
-    {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->mascota ? $this->mascota->cliente : null;
     }
 }

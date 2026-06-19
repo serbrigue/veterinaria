@@ -10,7 +10,7 @@ class Raza extends Model
         'nombre',
         'descripcion',
         'especie_id',
-        'user_id',
+        'creado_por',
     ];
 
     public function especie()
@@ -18,9 +18,7 @@ class Raza extends Model
         return $this->belongsTo(Especie::class, 'especie_id');
     }
 
-    public function usuario()
-    {
-        return $this->belongsTo(User::class, 'user_id');
+    public function creado_por(){
+        return $this->belongsTo(User::class, 'creado_por');
     }
-
 }

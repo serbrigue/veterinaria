@@ -16,6 +16,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'rol',
     ];
 
     protected $hidden = [
@@ -28,8 +29,29 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-    public function mascotas()
+
+    public function isAdmin(): bool
     {
-        return $this->hasMany(Mascota::class);
+        return $this->rol === 'admin';
+    }
+
+    public function veterinario()
+    {
+        return $this->hasOne(Veterinario::class);
+    }
+
+    public function cliente()
+    {
+        return $this->hasOne(Cliente::class);
+    }
+
+    public function isVeterinario(): bool
+    {
+        return $this->rol === 'veterinario';
+    }
+
+    public function isCliente(): bool
+    {
+        return $this->rol === 'cliente';
     }
 }

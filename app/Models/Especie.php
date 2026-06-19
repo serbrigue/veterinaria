@@ -9,13 +9,18 @@ class Especie extends Model
     protected $fillable = [
         'nombre',
         'descripcion',
-        'user_id',
+        'imagen_url',
+        'creado_por',
+        
     ];
 
-    public function usuario()
+    public function creado_por()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'creado_por');
     }
 
-    // MÓDULO 3: agregar razas() hasMany(Raza::class, 'especie_id')
+    public function razas()
+    {
+        return $this->hasMany(Raza::class, 'especie_id');
+    }
 }

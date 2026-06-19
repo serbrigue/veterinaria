@@ -10,13 +10,14 @@ class PanelController extends Controller
 {
     public function index()
     {
-        $userId = auth()->id();
+        $userId = auth()->user()->cliente->id;
+
 
         return Inertia::render('App/Panel', [
             'estadisticas' => [
-                'mascotas' => Mascota::where('user_id', $userId)->count(),
+                'mascotas' => Mascota::where('cliente_id', $userId)->count(),
             ],
-            'ultimasMascotas' => Mascota::where('user_id', $userId)
+            'ultimasMascotas' => Mascota::where('cliente_id', $userId)
                 ->latest()
                 ->limit(5)
                 ->get()

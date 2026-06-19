@@ -19,7 +19,8 @@ class Mascota extends Model
         'peso_kg',
         'color',
         'esterilizado',
-        'user_id',
+        'cliente_id',
+        'raza_id',
     ];
 
     protected $casts = [
@@ -28,9 +29,18 @@ class Mascota extends Model
         'esterilizado' => 'boolean',
     ];
 
-    public function usuario()
+    public function cliente()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(Cliente::class, 'cliente_id');
+    }
+
+    public function raza()
+    {
+        return $this->belongsTo(Raza::class, 'raza_id');
+    }
+
+    public function citas(){
+        return $this->hasMany(Cita::class,'mascota_id');
     }
 
     public function getFechaNacimientoFormatoAttribute(): ?string

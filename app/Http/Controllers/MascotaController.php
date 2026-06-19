@@ -17,9 +17,9 @@ class MascotaController extends Controller
      * Úsalo como guía para crear los demás controladores.
      */
 
-    public function listado()
+    public function listado(Request $request)
     {
-        $mascotas = Mascota::where('user_id', auth()->id())->get();
+        $mascotas = Mascota::where('cliente_id', auth()->user()->cliente->id)->get();
 
         return Inertia::render('Mascota/Listado', [
             'mascotas' => $mascotas,
