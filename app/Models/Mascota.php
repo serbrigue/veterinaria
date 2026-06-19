@@ -1,0 +1,53 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
+
+class Mascota extends Model
+{
+    protected $appends = [
+        'fecha_nacimiento_formato',
+        'edad_texto',
+    ];
+    protected $fillable = [
+        'nombre',
+        'descripcion',
+        'sexo',
+        'fecha_nacimiento',
+        'peso_kg',
+        'color',
+        'esterilizado',
+        'user_id',
+    ];
+
+    protected $casts = [
+        'fecha_nacimiento' => 'date',
+        'peso_kg' => 'decimal:2',
+        'esterilizado' => 'boolean',
+    ];
+
+    public function usuario()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function getFechaNacimientoFormatoAttribute(): ?string
+    {
+        if (! $this->fecha_nacimiento) {
+            return null;
+        }
+
+        return Carbon::parse($this->fecha_nacimiento)->format('d/m/Y');
+    }
+
+    public function getEdadTextoAttribute(): ?string
+    {
+        if (! $this->fecha_nacimiento) {
+            return null;
+        }
+
+        return Carbon::parse($this->fecha_nacimiento)->age.' años';
+    }
+}
