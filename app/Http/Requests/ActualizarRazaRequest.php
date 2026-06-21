@@ -13,17 +13,21 @@ class ActualizarRazaRequest extends FormRequest
 
     public function rules(): array
     {
-        // TODO: Agregar reglas de validación (ej. 'nombre' => 'required|string|max:255')
         return [
-            //
+            'nombre' => ['required', 'string', 'max:255'],
+            'descripcion' => ['nullable', 'string'],
+            'especie_id' => ['required', 'integer', 'exists:especies,id'],
+            'imagen_url' => ['nullable', 'string'],
         ];
     }
 
     public function messages(): array
     {
-        // TODO: Agregar mensajes de error personalizados
         return [
-            //
+            'nombre.required' => 'El nombre de la raza es obligatorio.',
+            'nombre.max' => 'El nombre de la raza no puede exceder los 255 caracteres.',
+            'especie_id.required' => 'La especie de la raza es obligatoria.',
+            'especie_id.exists' => 'La especie seleccionada no es válida.',
         ];
     }
 }

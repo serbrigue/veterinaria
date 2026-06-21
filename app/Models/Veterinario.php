@@ -15,6 +15,17 @@ class Veterinario extends Model
         'especialidad_id',
     ];
 
+    protected $appends = ['nombre'];
+
+    /**
+     * Accessor virtual 'nombre'.
+     * Extrae el nombre del usuario asociado para facilitar el renderizado en frontend.
+     */
+    public function getNombreAttribute()
+    {
+        return $this->usuario?->name;
+    }
+
     public function usuario()
     {
         return $this->belongsTo(User::class, 'user_id');

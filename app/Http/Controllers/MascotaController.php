@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Mascota;
+use App\Models\Cliente;
 use App\Http\Requests\GuardarMascotaRequest;
 use App\Http\Requests\ActualizarMascotaRequest;
 use Illuminate\Http\Request;
@@ -19,35 +20,45 @@ class MascotaController extends Controller
 
     public function listado(Request $request)
     {
-        $mascotas = Mascota::where('cliente_id', auth()->user()->cliente->id)->get();
+
+        if (auth()->user()->isAdmin() || auth()->user()->isVeterinario()) {
+            $mascotas = Mascota::with('cliente.usuario', 'raza.especie')->get();
+            $clientes = Cliente::with('usuario')->get();
+        } else {
+            $mascotas = Mascota::with('cliente.usuario', 'raza.especie')
+                ->where('cliente_id', auth()->user()->cliente?->id)
+                ->get();
+            $clientes = Cliente::where('user_id', auth()->id())->with('usuario')->get();
+        }
 
         return Inertia::render('Mascota/Listado', [
             'mascotas' => $mascotas,
+            'clientes' => $clientes,
             'consultadoEn' => Carbon::now()->format('d/m/Y H:i'),
         ]);
     }
 
     public function obtenerTodas()
     {
-        return Mascota::where('user_id', auth()->id())->get();
+        return Mascota::where('cliente_id', auth()->user()->cliente?->id)->get();
     }
 
     public function crear(GuardarMascotaRequest $solicitud)
     {
-        $mascota = Mascota::create([
-            ...$solicitud->validated(),
-            'user_id' => auth()->id(),
-        ]);
+        $data = $solicitud->validated();
+
+        // Si es cliente, forzamos que la mascota se le asocie a él mismo en la base de datos
+        if (auth()->user()->isCliente()) {
+            $data['cliente_id'] = auth()->user()->cliente->id;
+        }
+
+        $mascota = Mascota::create($data);
 
         return response()->json($mascota, 201);
     }
 
     public function actualizar(ActualizarMascotaRequest $solicitud, Mascota $mascota)
     {
-        if ($mascota->user_id !== auth()->id()) {
-            return response()->json(['error' => 'No autorizado'], 403);
-        }
-
         $mascota->update($solicitud->validated());
 
         return response()->json($mascota);
@@ -55,12 +66,16 @@ class MascotaController extends Controller
 
     public function eliminar(Mascota $mascota)
     {
-        if ($mascota->user_id !== auth()->id()) {
-            return response()->json(['error' => 'No autorizado'], 403);
-        }
-
         $mascota->delete();
 
         return response()->json(['mensaje' => 'Mascota eliminada correctamente']);
+    }
+
+    public function detalle (Mascota $mascota){
+        $mascota = Mascota::with('cliente.usuario', 'raza.especie')->find($mascota->id);
+        
+        return Inertia::render('Mascota/Detalle', [
+            'mascota' => $mascota,
+        ]);
     }
 }

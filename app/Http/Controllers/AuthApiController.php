@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Auth\LoginRequest;
 use App\Models\User;
+use App\Models\Rol;
+use App\Models\Cliente;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,10 +24,17 @@ class AuthApiController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
+        $rolCliente = Rol::where('nombre_interno', 'cliente')->first();
+
         $usuario = User::create([
             'name' => $solicitud->name,
             'email' => $solicitud->email,
             'password' => Hash::make($solicitud->password),
+            'rol_id' => $rolCliente?->id,
+        ]);
+
+        Cliente::create([
+            'user_id' => $usuario->id,
         ]);
 
         event(new Registered($usuario));

@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Raza;
+use App\Models\Especie;
 use App\Http\Requests\GuardarRazaRequest;
 use App\Http\Requests\ActualizarRazaRequest;
+use Illuminate\Http\Request;
+
 use Inertia\Inertia;
 
 class RazaController extends Controller
@@ -13,44 +16,69 @@ class RazaController extends Controller
      * MÓDULO 3: Completa este controlador usando MascotaController como referencia.
      */
 
-    public function listado()
+    public function listado(Request $request)
     {
-        // TODO: Obtener razas del usuario autenticado y retornar la vista Inertia
-        // return Inertia::render('Raza/Listado', [
-        //     'razas' => Raza::where('user_id', auth()->id())->get(),
-        // ]);
+    
+        if (request()->wantsJson()) {
+            return response()->json([
+                'razas' => Raza::with('especie')->get(),
+                'especies' => Especie::all(),
+            ]);
+        }
+
+        return Inertia::render('Raza/Listado', [
+            'razas' => Raza::with('especie')->get(),
+            'especies' => Especie::all(),
+        ]);
     }
 
     public function obtenerTodas()
     {
         // TODO: Retornar todas las razas del usuario autenticado
         // return Raza::where('user_id', auth()->id())->get();
+        return Raza::orderBy('nombre')->get();
     }
 
     public function crear(GuardarRazaRequest $solicitud)
     {
-        // TODO: Validar, crear la raza con auth()->id(), retornar JSON 201
-        // $raza = Raza::create([...]);
-        // return response()->json($raza, 201);
+
+        $data = $solicitud->validated();
+        $data['creado_por'] = auth()->id();
+
+        $raza = Raza::create($data);
+        return response()->json($raza, 201);
     }
 
     public function actualizar(ActualizarRazaRequest $solicitud, Raza $raza)
     {
         // TODO: Verificar que $raza->user_id === auth()->id(), actualizar, retornar JSON
-        // if ($raza->user_id !== auth()->id()) {
-        //     return response()->json(['error' => 'No autorizado'], 403);
-        // }
-        // $raza->update($solicitud->validated());
-        // return response()->json($raza);
+        if ($raza->user_id !== auth()->id()) {
+           return response()->json(['error' => 'No autorizado'], 403);
+        }
+        $raza->update($solicitud->validated());
+        return response()->json($raza);
     }
 
     public function eliminar(Raza $raza)
     {
-        // TODO: Verificar ownership, eliminar, retornar JSON
-        // if ($raza->user_id !== auth()->id()) {
-        //     return response()->json(['error' => 'No autorizado'], 403);
-        // }
-        // $raza->delete();
-        // return response()->json(['mensaje' => 'Raza eliminada correctamente']);
+        if ($raza->user_id !== auth()->id()) {
+            return response()->json(['error' => 'No autorizado'], 403);
+        }
+        $raza->delete();
+        return response()->json(['mensaje' => 'Raza eliminada correctamente']);
+    }
+
+    public function detalle(Raza $raza)
+    {
+        /**
+         * Intención de negocio:
+         * Cargar los detalles de una raza específica incluyendo la especie a la que pertenece
+         * para renderizar la vista de detalle en Inertia.
+         */
+        $raza = Raza::with('especie')->find($raza->id);
+
+        return Inertia::render('Raza/Detalle', [
+            'raza' => $raza,
+        ]);
     }
 }

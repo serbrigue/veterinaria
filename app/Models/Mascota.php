@@ -20,6 +20,7 @@ class Mascota extends Model
         'color',
         'esterilizado',
         'cliente_id',
+        'imagen_url',
         'raza_id',
     ];
 

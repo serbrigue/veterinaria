@@ -23,6 +23,8 @@ class Cita extends Model
         'mascota_id',
     ];
 
+    protected $appends = ['cliente'];
+
     public function veterinario()
     {
         return $this->belongsTo(Veterinario::class, 'veterinario_id');
@@ -38,8 +40,21 @@ class Cita extends Model
         return $this->belongsTo(Mascota::class, 'mascota_id');
     }
 
-    public function cliente()
+    /**
+     * Accessor virtual 'cliente'.
+     * Extrae y mapea la información del propietario de la mascota
+     * para que sea devuelta directamente en la serialización JSON de la cita.
+     */
+    public function getClienteAttribute()
     {
-        return $this->mascota ? $this->mascota->cliente : null;
+        $cliente = $this->mascota?->cliente;
+        if (!$cliente) {
+            return null;
+        }
+        return (object)[
+            'id' => $cliente->id,
+            'nombre' => $cliente->usuario?->name,
+            'email' => $cliente->usuario?->email,
+        ];
     }
 }

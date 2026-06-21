@@ -16,7 +16,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'rol',
+        'rol_id',
     ];
 
     protected $hidden = [
@@ -29,10 +29,46 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
+    /**
+     * Relación belongsTo con Role.
+     * Un usuario pertenece a un Rol.
+     */
+    public function rol()
+    {
+        return $this->belongsTo(Rol::class, 'rol_id');
+    }
+
+    /**
+     * Comprueba si el usuario tiene un permiso específico asignado a su rol.
+     * Si el usuario es administrador supremo, tiene acceso total bypass.
+     */
+    public function tienePermiso(string $permisoNombre): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        if (!$this->rol) {
+            return false;
+        }
+
+        // Carga y verifica la existencia del permiso en la tabla pivote a través de la relación del rol
+        return $this->rol->permisos()->where('nombre', $permisoNombre)->exists();
+    }
 
     public function isAdmin(): bool
     {
-        return $this->rol === 'admin';
+        return $this->rol && $this->rol->nombre_interno === 'admin';
+    }
+
+    public function isVeterinario(): bool
+    {
+        return $this->rol && $this->rol->nombre_interno === 'veterinario';
+    }
+
+    public function isCliente(): bool
+    {
+        return $this->rol && $this->rol->nombre_interno === 'cliente';
     }
 
     public function veterinario()
@@ -43,15 +79,5 @@ class User extends Authenticatable
     public function cliente()
     {
         return $this->hasOne(Cliente::class);
-    }
-
-    public function isVeterinario(): bool
-    {
-        return $this->rol === 'veterinario';
-    }
-
-    public function isCliente(): bool
-    {
-        return $this->rol === 'cliente';
     }
 }

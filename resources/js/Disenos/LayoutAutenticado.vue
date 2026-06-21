@@ -8,7 +8,7 @@
                     <button type="button" class="btn btn-link nav-link text-white" @click="$inertia.visit(route('mascotas.listado'))">Mascotas</button>
                     <button type="button" class="btn btn-link nav-link text-white" @click="irSiExiste('especies.listado')">Especies</button>
                     <button type="button" class="btn btn-link nav-link text-white" @click="irSiExiste('razas.listado')">Razas</button>
-                    <button type="button" class="btn btn-link nav-link text-white" @click="irSiExiste('clientes.listado')">Clientes</button>
+                    <button type="button" v-if="esVeterinarioOAdmin()" class="btn btn-link nav-link text-white" @click="irSiExiste('clientes.listado')">Clientes</button>
                     <button type="button" class="btn btn-link nav-link text-white" @click="irSiExiste('citas.listado')">Citas</button>
                     <button type="button" class="btn btn-link nav-link text-white" @click="$inertia.visit(route('perfil.editar'))">Perfil</button>
                     <button type="button" class="btn btn-link nav-link text-white" @click="cerrarSesion">Cerrar sesión</button>
@@ -35,6 +35,10 @@ export default {
                 window.location.href = response.data.redirect || '/'
             })
         },
+        esVeterinarioOAdmin() 
+        {
+            return this.$page.props.auth.user.rol === 'veterinario' || this.$page.props.auth.user.rol === 'admin';
+        }
     },
 }
 </script>

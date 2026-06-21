@@ -12,10 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('mascotas', function (Blueprint $table) {
-            $table->dropColumn('user_id');
-            $table->unsignedBigInteger('cliente_id')->nullable()->index();
-            $table->unsignedBigInteger('raza_id')->nullable()->index();
-            
+            $table->string('imagen_url')->nullable();
         });
     }
 
@@ -25,9 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('mascotas', function (Blueprint $table) {
-            $table->unsignedBigInteger('user_id')->index();
-            $table->dropColumn('cliente_id');
-            $table->dropColumn('raza_id');
+            $table->dropColumn('imagen_url');
         });
     }
 };

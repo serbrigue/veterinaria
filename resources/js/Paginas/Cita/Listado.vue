@@ -3,25 +3,92 @@
     <AuthenticatedLayout>
         <div class="container py-4">
             <div class="card shadow-sm">
-                <!--
-                ============================================
-                MÓDULO 5: CRUD de Citas
-                ============================================
-                Props: citas, mascotas, clientes (desde CitaController).
-                Completa axios y v-for en selects.
-                Referencia: Mascota/Listado.vue
-                ============================================
-                -->
+
 
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h1 class="h5 mb-0">Mis Citas</h1>
+
                     <button type="button" class="btn btn-primary" @click="abrirModalCrear">
                         + Nueva Cita
                     </button>
                 </div>
 
                 <div class="card-body">
-                    <!-- TODO: Estado de carga -->
+                    <!-- Barra de búsqueda y filtros -->
+                    <div class="bg-light p-3 rounded-3 border mb-4 shadow-sm">
+                        <div class="row g-3 align-items-end">
+                            <div>
+                                <label class="form-label small fw-bold text-secondary mb-1" for="filtroTitulo">Buscar por Titulo</label>
+                                <input type="text" class="form-control form-control-sm" placeholder="Buscar por titulo" v-model="filtroTitulo" @keyup.enter="obtenerCitas">
+                            </div>
+                            <!-- Buscar por Mascota -->
+                            <div class="col-12 col-md-4 col-lg-3">
+                                <label class="form-label small fw-bold text-secondary mb-1" for="filtroMascota">Buscar por Mascota</label>
+                                <select 
+                                    class="form-select form-select-sm" 
+                                    id="filtroMascota"
+                                    v-model="filtroMascota"
+                                    @change="obtenerCitas()"
+                                >
+                                    <option value="">Todas las mascotas</option>
+                                    <option 
+                                        v-for="mascota in mascotas" 
+                                        :key="mascota.id" 
+                                        :value="mascota.id"
+                                    >
+                                        {{ mascota.nombre }}
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Buscar por Cliente -->
+                            <div class="col-12 col-md-4 col-lg-3">
+                                <label class="form-label small fw-bold text-secondary mb-1" for="filtroCliente">Buscar por Cliente</label>
+                                <select 
+                                    class="form-select form-select-sm" 
+                                    id="filtroCliente"
+                                    v-model="filtroCliente"
+                                    @change="obtenerCitas()"
+                                >
+                                    <option value="">Todos los clientes</option>
+                                    <option 
+                                        v-for="cliente in clientes" 
+                                        :key="cliente.id" 
+                                        :value="cliente.id"
+                                    >
+                                        {{ cliente.nombre }}
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Buscar por Veterinario -->
+                            <div class="col-12 col-md-4 col-lg-3">
+                                <label class="form-label small fw-bold text-secondary mb-1" for="filtroVeterinario">Buscar por Veterinario</label>
+                                <select 
+                                    class="form-select form-select-sm"
+                                    id="filtroVeterinario"
+                                    v-model="filtroVeterinario"
+                                    @change="obtenerCitas()"
+                                >
+                                    <option value="">Todos los veterinarios</option>
+                                    <option 
+                                        v-for="veterinario in veterinarios" 
+                                        :key="veterinario.id" 
+                                        :value="veterinario.id"
+                                    >
+                                        {{ veterinario.nombre }}
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Limpiar Filtros -->
+                            <div class="col-12 col-lg-3 d-flex gap-2 justify-content-lg-end">
+                                <button class="btn btn-outline-secondary btn-sm" @click="limpiarFiltros()">
+                                    Limpiar Filtros
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                     <div v-if="cargando" class="text-center py-4">
                         <div class="spinner-border text-primary" role="status">
                             <span class="visually-hidden">Cargando...</span>
@@ -29,7 +96,6 @@
                         <p class="mt-2 text-muted">Cargando citas...</p>
                     </div>
 
-                    <!-- TODO: Estado vacío cuando no hay citas -->
                     <div v-else-if="citas.length === 0" class="text-center py-5">
                         <p class="text-muted mb-3">No tienes citas registradas aún.</p>
                         <button type="button" class="btn btn-primary" @click="abrirModalCrear">
@@ -37,7 +103,6 @@
                         </button>
                     </div>
 
-                    <!-- TODO: Tabla de citas -->
                     <div v-else class="table-responsive">
                         <table class="table table-bordered table-hover">
                             <thead class="table-light">
@@ -46,15 +111,28 @@
                                     <th>Mascota</th>
                                     <th>Cliente</th>
                                     <th>Fecha y Hora</th>
+                                    <th>Hora de Término (Aprox.)</th>
+                                    <th>Veterinario</th>
                                     <th style="width: 180px">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="cita in citas" :key="cita.id">
-                                    <td>{{ cita.titulo }}</td>
+                                <tr v-for="cita in citasVisibles" :key="cita.id">
+                                    <td>
+                                        <Link :href="route('citas.detalle', cita.id)">
+                                        {{ cita.titulo }}
+                                        </Link>
+                                    </td>
                                     <td>{{ cita.mascota?.nombre }}</td>
                                     <td>{{ cita.cliente?.nombre }}</td>
                                     <td>{{ $formatoFecha(cita.fecha_hora, 'DD/MM/YYYY HH:mm') }}</td>
+                                    <td>
+                                        {{ cita.hora_termino 
+                                            ? $formatoFecha(cita.hora_termino, 'HH:mm') 
+                                            : '—'
+                                        }}
+                                    </td>
+                                    <td>{{ cita.veterinario?.nombre }}</td>
                                     <td>
                                         <div class="btn-group btn-group-sm">
                                             <button
@@ -141,31 +219,7 @@
                                         {{ formulario.errors.fecha_hora }}
                                     </div>
                                 </div>
-
-                                <div class="mb-3">
-                                    <label for="mascota_id" class="form-label">Mascota</label>
-                                    <select
-                                        id="mascota_id"
-                                        v-model="formulario.mascota_id"
-                                        class="form-select"
-                                        :class="{ 'is-invalid': formulario.errors.mascota_id }"
-                                        required
-                                    >
-                                        <option value="" disabled>Selecciona una mascota</option>
-                                        <option
-                                            v-for="mascota in mascotas"
-                                            :key="mascota.id"
-                                            :value="mascota.id"
-                                        >
-                                            {{ mascota.nombre }}{{ mascota.sexo ? ` (${mascota.sexo})` : '' }}
-                                        </option>
-                                    </select>
-                                    <div v-if="formulario.errors.mascota_id" class="invalid-feedback">
-                                        {{ formulario.errors.mascota_id }}
-                                    </div>
-                                </div>
-
-                                <div class="mb-3">
+                                 <div class="mb-3">
                                     <label for="cliente_id" class="form-label">Cliente</label>
                                     <select
                                         id="cliente_id"
@@ -179,6 +233,7 @@
                                             v-for="cliente in clientes"
                                             :key="cliente.id"
                                             :value="cliente.id"
+                                            @click="obtenerMascotasCliente(cliente.id)"
                                         >
                                             {{ cliente.nombre }}{{ cliente.email ? ` — ${cliente.email}` : '' }}
                                         </option>
@@ -187,8 +242,56 @@
                                         {{ formulario.errors.cliente_id }}
                                     </div>
                                 </div>
+                                <div class="mb-3">
+                                    <label for="mascota_id" class="form-label">Mascota</label>
+                                    <select
+                                        id="mascota_id"
+                                        v-model="formulario.mascota_id"
+                                        class="form-select"
+                                        :class="{ 'is-invalid': formulario.errors.mascota_id }"
+                                        required
+                                    >
+                                        <option value="" disabled>Selecciona una mascota</option>
+                                        <option
+                                            v-for="mascota in mascotasUsuario"
+                                            :key="mascota.id"
+                                            :value="mascota.id"
+                                        >
+                                            {{ mascota.nombre }} | {{ mascota.especie?.nombre }} | {{ mascota.sexo ? ` (${mascota.sexo})` : '' }} 
+                                        </option>
+                                    </select>
+                                    <div v-if="formulario.errors.mascota_id" class="invalid-feedback">
+                                        {{ formulario.errors.mascota_id }}
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="veterinario_id" class="form-label">Veterinario</label>
+                                    <select
+                                        id="veterinario_id"
+                                        v-model="formulario.veterinario_id"
+                                        class="form-select"
+                                        :class="{ 'is-invalid': formulario.errors.veterinario_id }"
+                                        required
+                                    >
+                                        <option value="" disabled>Selecciona un veterinario</option>
+                                        <option
+                                            v-for="vet in veterinarios"
+                                            :key="vet.id"
+                                            :value="vet.id"
+                                        >
+                                            {{ vet.nombre }} | {{ vet.especie?.nombre }}
+                                        </option>
+                                    </select>
+                                    <div v-if="formulario.errors.veterinario_id" @change="verificarEspecialidad(formulario.mascota_id,formulario.veterinario_id)" class="invalid-feedback">
+                                        {{ formulario.errors.veterinario_id }}
+                                    </div>
+                                </div>  
+                                <div v-if="VerificacionEspecialidadInvalida" class="alert alert-danger">
+                                    Verifica que el veterinario tenga la especialidad correcta para la mascota
+                                </div>   
                             </div>
-                            <div class="modal-footer">
+                        </div>
+                        <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" @click="cerrarModal">
                                     Cancelar
                                 </button>
@@ -230,21 +333,20 @@
                     </div>
                 </div>
             </div>
+        
             <div v-if="mostrarConfirmacion" class="modal-backdrop fade show"></div>
-
-            <!-- TODO: Mostrar notificaciones de éxito/error -->
-        </div>
     </AuthenticatedLayout>
 </template>
 
 <script>
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
-import { Head } from '@inertiajs/vue3';
+import { Head,Link } from '@inertiajs/vue3';
 
 export default {
     components: {
         AuthenticatedLayout,
         Head,
+        Link
     },
     props: {
         citas: {
@@ -259,6 +361,10 @@ export default {
             type: Array,
             default: () => [],
         },
+        veterinarios: {
+            type: Array,
+            default: () => [],
+        },
     },
     data() {
         return {
@@ -269,116 +375,199 @@ export default {
             mostrarConfirmacion: false,
             citaAEliminar: null,
             eliminando: false,
-            // TODO: Agregar los campos del formulario según el modelo Cita
+            filtroMascota:'',
+            citasVisibles:this.citas,
+            filtroCliente:'',
+            filtroVeterinario: '',
+            filtroTitulo: '',
+            mascotasUsuario:[],
             formulario: {
                 titulo: '',
                 descripcion: '',
                 fecha_hora: '',
                 mascota_id: '',
                 cliente_id: '',
+                veterinario_id: '',
                 errors: {},
                 processing: false,
             },
         }
     },
     methods: {
-        // TODO: Abrir modal para crear una nueva cita
         abrirModalCrear() {
-            this.modoEdicion = false
-            this.citaEditando = null
-            this.formulario.titulo = ''
-            this.formulario.descripcion = ''
-            this.formulario.fecha_hora = ''
-            this.formulario.mascota_id = ''
-            this.formulario.cliente_id = ''
-            this.formulario.errors = {}
-            this.mostrarModal = true
-        },
-        // TODO: Abrir modal para editar una cita existente
-        abrirModalEditar(cita) {
-            this.modoEdicion = true
-            this.citaEditando = cita
-            this.formulario.titulo = cita.titulo
-            this.formulario.descripcion = cita.descripcion
-            this.formulario.fecha_hora = this.$fechaHoraInput(cita.fecha_hora)
-            this.formulario.mascota_id = cita.mascota_id
-            this.formulario.cliente_id = cita.cliente_id
-            this.formulario.errors = {}
-            this.mostrarModal = true
-        },
-        // TODO: Cerrar modal y limpiar estado
-        cerrarModal() {
-            this.mostrarModal = false
-            this.citaEditando = null
-        },
-        // TODO: Guardar cita (crear o actualizar según modoEdicion)
-        guardar() {
-            this.formulario.processing = true
-            this.formulario.errors = {}
+            this.modoEdicion = false;
+            this.citaEditando = null;
+            this.formulario.titulo = '';
+            this.formulario.descripcion = '';
+            this.formulario.fecha_hora = '';
+            this.formulario.mascota_id = '';
+            this.formulario.cliente_id = '';
+            this.formulario.veterinario_id = '';
+            this.formulario.errors = {};
+            this.mostrarModal = true;
 
-            if (this.modoEdicion) {
-                // TODO: Enviar PUT al endpoint /api/citas/{id}
-                axios.put(`/api/citas/${this.citaEditando.id}`, {
-                    titulo: this.formulario.titulo,
-                    descripcion: this.formulario.descripcion,
-                    fecha_hora: this.formulario.fecha_hora,
-                    mascota_id: this.formulario.mascota_id,
-                    cliente_id: this.formulario.cliente_id,
-                })
-                .then(() => {
-                    this.cerrarModal()
-                    window.location.reload()
-                })
-                .catch((error) => {
-                    if (error.response?.status === 422) {
-                        this.formulario.errors = error.response.data.errors
-                    }
-                })
-                .finally(() => {
-                    this.formulario.processing = false
-                })
-            } else {
-                // TODO: Enviar POST al endpoint /api/citas
-                axios.post('/api/citas', {
-                    titulo: this.formulario.titulo,
-                    descripcion: this.formulario.descripcion,
-                    fecha_hora: this.formulario.fecha_hora,
-                    mascota_id: this.formulario.mascota_id,
-                    cliente_id: this.formulario.cliente_id,
-                })
-                .then(() => {
-                    this.cerrarModal()
-                    window.location.reload()
-                })
-                .catch((error) => {
-                    if (error.response?.status === 422) {
-                        this.formulario.errors = error.response.data.errors
-                    }
-                })
-                .finally(() => {
-                    this.formulario.processing = false
-                })
+            // Si hay un solo cliente en la lista, lo seleccionamos automáticamente y cargamos sus mascotas.
+            if (this.clientes && this.clientes.length === 1) {
+                this.formulario.cliente_id = this.clientes[0].id;
+                this.obtenerMascotasCliente(this.clientes[0].id);
             }
         },
-        // TODO: Confirmar eliminación de una cita
-        confirmarEliminar(cita) {
-            this.citaAEliminar = cita
-            this.mostrarConfirmacion = true
+        datosFormulario() {
+            return {
+                titulo: this.formulario.titulo,
+                descripcion: this.formulario.descripcion,
+                fecha_hora: this.formulario.fecha_hora,
+                mascota_id: this.formulario.mascota_id,
+                cliente_id: this.formulario.cliente_id,
+                veterinario_id: this.formulario.veterinario_id,
+            };
         },
-        // TODO: Eliminar cita
-        eliminarCita() {
-            this.eliminando = true
-            // TODO: Enviar DELETE al endpoint /api/citas/{id}
-            axios.delete(`/api/citas/${this.citaAEliminar.id}`)
-                .then(() => {
-                    this.mostrarConfirmacion = false
-                    this.citaAEliminar = null
-                    window.location.reload()
+
+        abrirModalEditar(cita) {
+            this.modoEdicion = true;
+            this.citaEditando = cita;
+            this.formulario.titulo = cita.titulo;
+            this.formulario.descripcion = cita.descripcion;
+            this.formulario.fecha_hora = cita.fecha_hora;
+            this.formulario.mascota_id = cita.mascota_id;
+            // Obtenemos el ID del cliente mapeado en el accessor o mascota
+            this.formulario.cliente_id = cita.cliente?.id || cita.mascota?.cliente_id || '';
+            this.formulario.veterinario_id = cita.veterinario_id;
+            this.formulario.errors = {};
+            this.mostrarModal = true;
+
+            // Cargamos automáticamente la lista de mascotas del cliente asociado al editar
+            if (this.formulario.cliente_id) {
+                this.obtenerMascotasCliente(this.formulario.cliente_id);
+            }
+        },
+        cerrarModal() {
+            this.mostrarModal=false;
+            this.modoEdicion=false;
+            this.citaEditando=null;
+            this.formulario.titulo='';
+            this.formulario.descripcion='';
+            this.formulario.fecha_hora='';
+            this.formulario.mascota_id='';
+            this.formulario.cliente_id='';
+            this.formulario.errors={};
+        },
+
+        obtenerCitas(){
+            this.cargando=true;
+            axios.get('/citas',{params:{mascota_id:this.filtroMascota,cliente_id:this.filtroCliente,veterinario_id:this.filtroVeterinario,titulo:this.filtroTitulo}})
+                .then(response => {
+                    this.citasVisibles=response.data.citas;
+                })
+                .catch(error => {
+                    console.error('Error al obtener las citas:', error);
                 })
                 .finally(() => {
-                    this.eliminando = false
+                    this.cargando=false;
                 })
         },
+        obtenerMascotasCliente(cliente_id){
+            this.cargando=true;
+            axios.get(`/api/clientes/${cliente_id}/mascotas`)
+                .then(response => {
+                    this.mascotasUsuario=response.data;
+                })
+                .catch(error => {
+                    console.error('Error al obtener las mascotas:', error);
+                })
+                .finally(() => {
+                    this.cargando=false;
+                })
+        },
+        verificarEspecialidad(mascota,veterinario){
+          if (mascota.especie_id !== veterinario.especie_id){
+            this.formulario.VerificacionEspecialidad=true;
+            return this.formulario.VerificacionEspecialidad;
+          }else{
+            this.formulario.VerificacionEspecialidad=false;
+            return this.formulario.VerificacionEspecialidad;
+          }
+        },
+        validarEspecieRaza(raza){
+          if (this.formulario.especie_id !== raza.especie_id){
+            this.formulario.especieRaza=true;
+            return this.formulario.especieRaza;
+          }else{
+            this.formulario.especieRaza=false;
+            return this.formulario.especieRaza;
+          }
+        },
+        limpiarFiltros(){
+            this.filtroMascota='';
+            this.filtroCliente='';
+            this.filtroVeterinario='';
+            this.filtroTitulo='';
+            this.obtenerCitas();
+        },
+        guardar() {
+            this.formulario.processing=true;
+            this.formulario.errors={};
+            if(this.modoEdicion){
+                this.actualizarCita();
+            }else{
+                this.crearCita();
+            }
+        },
+        actualizarCita(){
+            axios.put(`/api/citas/${this.citaEditando.id}`, { ...this.datosFormulario() })
+                .then(() => { this.cerrarModal(); this.obtenerCitas(); })
+                .catch((error) => { if (error.response?.status === 422) this.formulario.errors = error.response.data.errors })
+                .finally(() => { this.formulario.processing = false });
+        },
+        crearCita(){
+            axios.post('/api/citas', { ...this.datosFormulario() })
+                .then(() => { this.cerrarModal(); this.obtenerCitas(); })
+                .catch((error) => { if (error.response?.status === 422) this.formulario.errors = error.response.data.errors })
+                .finally(() => { this.formulario.processing = false });
+        },
+        confirmarEliminar(cita) {
+            this.citaAEliminar = cita;
+            this.$confirmar('¿Eliminar cita?', `Se eliminará la cita de ${cita.mascota.nombre} con el cliente ${cita.cliente.nombre}.`)
+                .then((resultado) => {
+                    if (resultado.isConfirmed) return this.eliminarCita();
+                })
+        },
+        eliminarCita() {
+            axios.delete(`/api/citas/${this.citaAEliminar.id}`)
+            .then(() => { this.cerrarModal(); this.obtenerCitas(); })
+            .catch((error) => { if (error.response?.status === 422) this.formulario.errors = error.response.data.errors })
+            .finally(() => { this.formulario.processing = false });
+        },
     },
+    mounted(){
+        this.obtenerCitas();
+    },
+    computed:{
+
+        VerificacionEspecialidadInvalida() {
+            if (!this.formulario.mascota_id || !this.formulario.veterinario_id) {
+                return false;
+            }
+
+            const veterinarioSeleccionado = this.veterinarios.find(
+                (veterinario) => Number(veterinario.id) === Number(this.formulario.veterinario_id)
+            );
+            
+            const mascotaSeleccionada = this.mascotas.find(
+                (mascota) => Number(mascota.id) === Number(this.formulario.mascota_id)
+            );
+
+            if (!veterinarioSeleccionado || !mascotaSeleccionada) {
+                return false;
+            }
+
+            // Si el veterinario no tiene asociada una especie específica, evitamos disparar la alerta.
+            if (!veterinarioSeleccionado.especie_id) {
+                return false;
+            }
+
+            return Number(veterinarioSeleccionado.especie_id) !== Number(mascotaSeleccionada.especie_id);
+        },
+    }
 }
 </script>

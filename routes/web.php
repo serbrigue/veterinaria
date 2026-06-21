@@ -43,16 +43,28 @@ Route::middleware('auth')->group(function () {
     Route::delete('/perfil', [ProfileController::class, 'eliminar'])->name('perfil.eliminar');
 
     // CRUD COMPLETO (referencia): Mascotas
-    Route::get('/mascotas', [MascotaController::class, 'listado'])->name('mascotas.listado');
+    Route::get('/mascotas', [MascotaController::class, 'listado'])
+        ->middleware('can:verTodas,App\Models\Mascota')
+        ->name('mascotas.listado');
+    Route::get('/mascotas/{mascota}', [MascotaController::class, 'detalle'])
+        ->middleware('can:ver,mascota')
+        ->name('mascotas.detalle');
 
     // MÓDULO 2 — Especies (manual): Route::get('/especies', ...)->name('especies.listado');
+    Route::get('/especies', [EspecieController::class,'listado'])->middleware('can:verTodas,App\Models\Especie')->name('especies.listado');
+    Route::get('/especies/{especie}', [EspecieController::class,'detalle'])->middleware('can:ver,especie')->name('especies.detalle');
 
     // MÓDULO 3 — Razas (manual): Route::get('/razas', ...)->name('razas.listado');
+    Route::get('/razas', [RazaController::class, 'listado'])->name('razas.listado')->middleware('can:verTodas,App\Models\Raza');
+    Route::get('/razas/{raza}', [RazaController::class, 'detalle'])->name('razas.detalle')->middleware('can:ver,raza');
 
     // MÓDULO 4 — Clientes (manual): Route::get('/clientes', ...)->name('clientes.listado');
-
+    Route::get('/clientes', [ClienteController::class, 'listado'])->name('clientes.listado')->middleware('can:verTodas,App\Models\Cliente');
+    Route::get('/clientes/{cliente}', [ClienteController::class, 'detalle'])->name('clientes.detalle')->middleware('can:ver,cliente');
+    
     // MÓDULO 5 — Citas (manual): Route::get('/citas', ...)->name('citas.listado');
-
+    Route::get('/citas', [CitaController::class, 'listado'])->name('citas.listado')->middleware('can:verTodas,App\Models\Cita');
+    Route::get('/citas/{cita}', [CitaController::class, 'detalle'])->name('citas.detalle')->middleware('can:ver,cita');
 });
 
 require __DIR__.'/auth.php';

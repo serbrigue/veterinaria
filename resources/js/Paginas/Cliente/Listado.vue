@@ -50,8 +50,8 @@
                             </thead>
                             <tbody>
                                 <tr v-for="cliente in clientes" :key="cliente.id">
-                                    <td>{{ cliente.nombre }}</td>
-                                    <td>{{ cliente.email }}</td>
+                                    <td>{{ cliente.usuario?.name }}</td>
+                                    <td>{{ cliente.usuario?.email }}</td>
                                     <td>{{ cliente.telefono }}</td>
                                     <td>{{ cliente.direccion }}</td>
                                     <td>

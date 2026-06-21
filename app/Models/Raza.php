@@ -11,6 +11,7 @@ class Raza extends Model
         'descripcion',
         'especie_id',
         'creado_por',
+        'imagen_url'
     ];
 
     public function especie()
