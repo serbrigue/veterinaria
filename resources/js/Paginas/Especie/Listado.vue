@@ -64,57 +64,56 @@
                         </button>
                     </div>
 
-                    <!-- Tabla de especies -->
-                    <div v-else class="table-responsive">
-                        <table class="table table-bordered table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Nombre</th>
-                                    <th>Descripción</th>
-                                    <th>Imagen</th>
-                                    <th v-if="esVeterinarioOAdmin" style="width: 180px" class="text-center">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="especie in especiesVisibles" :key="especie.id">
-                                    <td class="fw-bold">
-                                        <Link :href="route('especies.detalle', especie.id)" class="text-decoration-none">
-                                            {{ especie.nombre }}
-                                        </Link>
-                                    </td>
-                                    <td>{{ especie.descripcion || 'Sin descripción' }}</td>
-                                    <td>
+                    <!-- Grid de especies -->
+                    <div v-else class="row g-4">
+                        <div v-for="especie in especiesVisibles" :key="especie.id" class="col-12 col-md-6 col-lg-4 col-xl-3">
+                            <Link :href="`/especies/${especie.id}`">
+                                <div 
+                                    class="card h-100 border-0 shadow-sm hover-elevate transition-all overflow-hidden group-card cursor-pointer"
+                                    
+                                >
+                                    <!-- Imagen Header -->
+                                    <div class="position-relative bg-light" style="height: 160px;">
                                         <img 
                                             v-if="especie.imagen_url" 
                                             :src="especie.imagen_url" 
-                                            alt="Imagen especie" 
-                                            class="img-thumbnail cursor-pointer" 
-                                            style="width: 50px; height: 50px; object-fit: cover; cursor: pointer;" 
-                                            @click="abrirModalImagen(especie)"
+                                            class="w-100 h-100 object-fit-cover hover-zoom" 
+                                            alt="Imagen de especie"
                                         >
-                                        <span v-else class="text-muted small">—</span>
-                                    </td>
-                                    <td v-if="esVeterinarioOAdmin">
-                                        <div class="d-flex gap-2 justify-content-center">
-                                            <button
-                                                type="button"
-                                                class="btn btn-sm btn-outline-primary"
-                                                @click="abrirModalEditar(especie)"
+                                        <div v-else class="w-100 h-100 d-flex align-items-center justify-content-center text-primary bg-primary bg-opacity-10">
+                                            <i class="bi bi-bug-fill fs-1"></i>
+                                        </div>
+                                        <!-- Overlay gradient -->
+                                        <div class="position-absolute bottom-0 start-0 w-100 h-50 bg-gradient-dark"></div>
+                                        <!-- Title badge overlapping -->
+                                        <div class="position-absolute bottom-0 start-0 w-100 p-3 pb-2 text-white">
+                                            <h3 class="h5 mb-0 fw-bold text-shadow text-truncate">{{ especie.nombre }}</h3>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card-body p-3 d-flex flex-column">
+                                        <p class="card-text text-muted small mb-3 flex-grow-1 line-clamp-3">
+                                            {{ especie.descripcion || 'Sin descripción disponible para esta especie.' }}
+                                        </p>
+                                        
+                                        <div v-if="esVeterinarioOAdmin" class="d-flex gap-2 pt-3 border-top mt-auto justify-content-between">
+                                            <button 
+                                                class="btn btn-sm btn-light text-primary border border-primary-subtle flex-grow-1 btn-hover-primary transition-all" 
+                                                @click.stop="abrirModalEditar(especie)"
                                             >
-                                                Editar
+                                                <i class="bi bi-pencil me-1"></i> Editar
                                             </button>
-                                            <button
-                                                type="button"
-                                                class="btn btn-sm btn-outline-danger"
-                                                @click="confirmarEliminar(especie)"
+                                            <button 
+                                                class="btn btn-sm btn-light text-danger border border-danger-subtle flex-grow-1 btn-hover-danger transition-all" 
+                                                @click.stop="confirmarEliminar(especie)"
                                             >
-                                                Eliminar
+                                                <i class="bi bi-trash me-1"></i> Eliminar
                                             </button>
                                         </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                                    </div>
+                                </div>
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -187,30 +186,15 @@
                 </div>
             </div>
 
-            <!-- MODAL: Ampliar Imagen -->
-            <div v-if="mostrarModalImagen" class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" @click.self="cerrarModalImagen">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content shadow border-0">
-                        <div class="modal-header">
-                            <h5 class="modal-title fw-bold">Imagen de {{ especieSeleccionada?.nombre }}</h5>
-                            <button type="button" class="btn-close" @click="cerrarModalImagen"></button>
-                        </div>
-                        <div class="modal-body text-center p-4">
-                            <img :src="especieSeleccionada?.imagen_url" alt="Imagen de la especie" class="img-fluid rounded shadow-sm" style="max-height: 400px; object-fit: contain;">
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Backdrop -->
-            <div v-if="mostrarModal || mostrarModalImagen" class="modal-backdrop fade show"></div>
+            <div v-if="mostrarModal" class="modal-backdrop fade show"></div>
         </div>
     </AuthenticatedLayout>
 </template>
 
 <script>
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link,} from '@inertiajs/vue3';
 
 export default {
     components: {
@@ -230,8 +214,6 @@ export default {
             mostrarModal: false,
             modoEdicion: false,
             especieEditando: null,
-            mostrarModalImagen: false,
-            especieSeleccionada: null,
             filtroTexto: '',
             especieAEliminar: null,
             formulario: {
@@ -271,14 +253,6 @@ export default {
         },
     },
     methods: {
-        abrirModalImagen(especie) {
-            this.especieSeleccionada = especie;
-            this.mostrarModalImagen = true;
-        },
-        cerrarModalImagen() {
-            this.mostrarModalImagen = false;
-            this.especieSeleccionada = null;
-        },
         datosFormulario() {
             return {
                 nombre: this.formulario.nombre,
@@ -400,3 +374,45 @@ export default {
     },
 }
 </script>
+
+<style scoped>
+.hover-elevate:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+}
+.transition-all {
+    transition: all 0.3s ease;
+}
+.hover-zoom {
+    transition: transform 0.5s ease;
+}
+.group-card:hover .hover-zoom {
+    transform: scale(1.08);
+}
+.bg-gradient-dark {
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%);
+}
+.text-shadow {
+    text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+}
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.btn-hover-primary:hover {
+    background-color: var(--bs-primary);
+    color: white !important;
+}
+.btn-hover-danger:hover {
+    background-color: var(--bs-danger);
+    color: white !important;
+}
+.object-fit-cover {
+    object-fit: cover;
+}
+.cursor-pointer {
+    cursor: pointer;
+}
+</style>

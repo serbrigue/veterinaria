@@ -149,7 +149,51 @@ class DatabaseSeeder extends Seeder
             'descripcion' => 'Permite eliminar las citas de su sucursal.',
         ]);
 
+        // Permisos Clientes
+        $permisoVerClientes = Permiso::create([
+            'nombre' => 'ver-clientes',
+            'descripcion' => 'Permite acceder a la vista de clientes.',
+        ]);
+        $permisoEditarClientes = Permiso::create([
+            'nombre' => 'editar-clientes',
+            'descripcion' => 'Permite editar información de clientes.',
+        ]);
 
+        // Permisos Sucursales
+        $permisoVerSucursales = Permiso::create([
+            'nombre' => 'ver-sucursales',
+            'descripcion' => 'Permite acceder a la vista de sucursales.',
+        ]);
+        $permisoCrearSucursales = Permiso::create([
+            'nombre' => 'crear-sucursales',
+            'descripcion' => 'Permite registrar sucursales.',
+        ]);
+        $permisoEditarSucursales = Permiso::create([
+            'nombre' => 'editar-sucursales',
+            'descripcion' => 'Permite editar sucursales.',
+        ]);
+        $permisoEliminarSucursales = Permiso::create([
+            'nombre' => 'eliminar-sucursales',
+            'descripcion' => 'Permite eliminar sucursales.',
+        ]);
+
+        // Permisos Boxes
+        $permisoVerBoxes = Permiso::create([
+            'nombre' => 'ver-boxes',
+            'descripcion' => 'Permite acceder a la vista de boxes.',
+        ]);
+        $permisoCrearBoxes = Permiso::create([
+            'nombre' => 'crear-boxes',
+            'descripcion' => 'Permite registrar boxes.',
+        ]);
+        $permisoEditarBoxes = Permiso::create([
+            'nombre' => 'editar-boxes',
+            'descripcion' => 'Permite editar boxes.',
+        ]);
+        $permisoEliminarBoxes = Permiso::create([
+            'nombre' => 'eliminar-boxes',
+            'descripcion' => 'Permite eliminar boxes.',
+        ]);
 
         // 2. Asociar Permisos a los Roles correspondientes (Tablas pivote)
         // Asociar permisos a Cliente
@@ -179,6 +223,16 @@ class DatabaseSeeder extends Seeder
             $permisoVerCitasSucursal->id,
             $permisoEditarCitasSucursal->id,
             $permisoEliminarCitasSucursal->id,
+            $permisoVerClientes->id,
+            $permisoEditarClientes->id,
+            $permisoVerSucursales->id,
+            $permisoCrearSucursales->id,
+            $permisoEditarSucursales->id,
+            $permisoEliminarSucursales->id,
+            $permisoVerBoxes->id,
+            $permisoCrearBoxes->id,
+            $permisoEditarBoxes->id,
+            $permisoEliminarBoxes->id,
         ]);
 
         // 3. Crear el Administrador Supremo

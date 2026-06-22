@@ -7,6 +7,9 @@ use App\Http\Controllers\MascotaController;
 use App\Http\Controllers\PanelController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RazaController;
+use App\Http\Controllers\SucursalController;
+use App\Http\Controllers\BoxController;
+
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -51,8 +54,8 @@ Route::middleware('auth')->group(function () {
         ->name('mascotas.detalle');
 
     // MÓDULO 2 — Especies (manual): Route::get('/especies', ...)->name('especies.listado');
-    Route::get('/especies', [EspecieController::class,'listado'])->middleware('can:verTodas,App\Models\Especie')->name('especies.listado');
-    Route::get('/especies/{especie}', [EspecieController::class,'detalle'])->middleware('can:ver,especie')->name('especies.detalle');
+    Route::get('/especies', [EspecieController::class, 'listado'])->middleware('can:verTodas,App\Models\Especie')->name('especies.listado');
+    Route::get('/especies/{especie}', [EspecieController::class, 'detalle'])->middleware('can:ver,especie')->name('especies.detalle');
 
     // MÓDULO 3 — Razas (manual): Route::get('/razas', ...)->name('razas.listado');
     Route::get('/razas', [RazaController::class, 'listado'])->name('razas.listado')->middleware('can:verTodas,App\Models\Raza');
@@ -61,10 +64,18 @@ Route::middleware('auth')->group(function () {
     // MÓDULO 4 — Clientes (manual): Route::get('/clientes', ...)->name('clientes.listado');
     Route::get('/clientes', [ClienteController::class, 'listado'])->name('clientes.listado')->middleware('can:verTodas,App\Models\Cliente');
     Route::get('/clientes/{cliente}', [ClienteController::class, 'detalle'])->name('clientes.detalle')->middleware('can:ver,cliente');
-    
+
     // MÓDULO 5 — Citas (manual): Route::get('/citas', ...)->name('citas.listado');
     Route::get('/citas', [CitaController::class, 'listado'])->name('citas.listado')->middleware('can:verTodas,App\Models\Cita');
     Route::get('/citas/{cita}', [CitaController::class, 'detalle'])->name('citas.detalle')->middleware('can:ver,cita');
+
+    //Sucursales
+    Route::get('/sucursales', [SucursalController::class, 'listado'])->name('sucursales.listado')->middleware('can:verTodas,App\Models\Sucursal');
+    Route::get('/sucursales/{sucursal}', [SucursalController::class, 'detalle'])->name('sucursales.detalle')->middleware('can:ver,sucursal');
+
+    //Boxes
+    Route::get('/boxes', [BoxController::class, 'listado'])->name('boxes.listado')->middleware('can:verTodas,App\Models\Box');
+    Route::get('/boxes/{box}', [BoxController::class, 'detalle'])->name('boxes.detalle')->middleware('can:ver,box');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

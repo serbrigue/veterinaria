@@ -31,6 +31,13 @@ class MascotaController extends Controller
             $clientes = Cliente::where('user_id', auth()->id())->with('usuario')->get();
         }
 
+        if ($request->wantsJson()) {
+            return response()->json([
+                'mascotas' => $mascotas,
+                'clientes' => $clientes,
+            ]);
+        }
+
         return Inertia::render('Mascota/Listado', [
             'mascotas' => $mascotas,
             'clientes' => $clientes,
@@ -71,11 +78,15 @@ class MascotaController extends Controller
         return response()->json(['mensaje' => 'Mascota eliminada correctamente']);
     }
 
-    public function detalle (Mascota $mascota){
+    public function detalle(Mascota $mascota)
+    {
         $mascota = Mascota::with('cliente.usuario', 'raza.especie')->find($mascota->id);
-        
+
         return Inertia::render('Mascota/Detalle', [
             'mascota' => $mascota,
+            'cliente' => $mascota->cliente->usuario,
+            'especie' => $mascota->raza->especie,
+            'raza' => $mascota->raza,
         ]);
     }
 }

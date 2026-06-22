@@ -5,63 +5,29 @@ namespace App\Http\Controllers;
 use App\Models\Cita;
 use App\Models\Cliente;
 use App\Models\Mascota;
+use App\Models\Sucursal;
+use App\Models\Box;
+use App\Models\Veterinario;
 use App\Http\Requests\GuardarCitaRequest;
 use App\Http\Requests\ActualizarCitaRequest;
 use Inertia\Inertia;
 
 class CitaController extends Controller
 {
-    /**
-     * MÓDULO 5 — Backend de referencia (no modificar).
-     * Tu trabajo: migración, rutas web/api y Vue (axios + selects).
-     * listado() envía mascotas y clientes para los select del formulario.
-     */
 
     public function listado()
     {
-        // Consultamos y mapeamos los veterinarios con su especialidad para los select del formulario
-        $veterinarios = \App\Models\Veterinario::with(['usuario', 'especialidad'])->get()->map(function($v) {
-            return [
-                'id' => $v->id,
-                'nombre' => $v->usuario?->name,
-                'especie' => [
-                    'nombre' => $v->especialidad?->nombre
-                ]
-            ];
-        });
+        $sucursales = Sucursal::with('boxes', 'veterinarios')->get();
+        $mascotas = Mascota::with('cliente')->get();
+        $citas = Cita::with('mascota.cliente.usuario', 'veterinario.usuario')->get();
 
-        if (auth()->user()->isAdmin() || auth()->user()->isVeterinario()) {
-            $citas = Cita::with(['mascota.cliente.usuario', 'veterinario.usuario'])->get();
-            $mascotas = Mascota::get(['id', 'nombre', 'sexo']);
-            $clientes = Cliente::with('usuario')->get()->map(function($c) {
-                return [
-                    'id' => $c->id,
-                    'nombre' => $c->usuario?->name,
-                    'email' => $c->usuario?->email,
-                ];
-            });
-        } else {
-            $clienteId = auth()->user()->cliente?->id;
-            
-            $citas = Cita::whereHas('mascota', function ($query) use ($clienteId) {
-                $query->where('cliente_id', $clienteId);
-            })->with(['mascota.cliente.usuario', 'veterinario.usuario'])->get();
 
-            $mascotas = Mascota::where('cliente_id', $clienteId)->get(['id', 'nombre', 'sexo']);
-            $clientes = Cliente::where('user_id', auth()->id())->with('usuario')->get()->map(function($c) {
-                return [
-                    'id' => $c->id,
-                    'nombre' => $c->usuario?->name,
-                    'email' => $c->usuario?->email,
-                ];
-            });
-        }
+
 
         return Inertia::render('Cita/Listado', [
             'citas' => $citas,
             'mascotas' => $mascotas,
-            'clientes' => $clientes,
-            'veterinarios' => $veterinarios,
+            'sucursales' => $sucursales,
         ]);
     }
 

@@ -3,8 +3,6 @@
     <AuthenticatedLayout>
         <div class="container py-4">
             <div class="card shadow-sm">
-
-
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h1 class="h5 mb-0">Mis Citas</h1>
 
@@ -219,29 +217,6 @@
                                         {{ formulario.errors.fecha_hora }}
                                     </div>
                                 </div>
-                                 <div class="mb-3">
-                                    <label for="cliente_id" class="form-label">Cliente</label>
-                                    <select
-                                        id="cliente_id"
-                                        v-model="formulario.cliente_id"
-                                        class="form-select"
-                                        :class="{ 'is-invalid': formulario.errors.cliente_id }"
-                                        required
-                                    >
-                                        <option value="" disabled>Selecciona un cliente</option>
-                                        <option
-                                            v-for="cliente in clientes"
-                                            :key="cliente.id"
-                                            :value="cliente.id"
-                                            @click="obtenerMascotasCliente(cliente.id)"
-                                        >
-                                            {{ cliente.nombre }}{{ cliente.email ? ` — ${cliente.email}` : '' }}
-                                        </option>
-                                    </select>
-                                    <div v-if="formulario.errors.cliente_id" class="invalid-feedback">
-                                        {{ formulario.errors.cliente_id }}
-                                    </div>
-                                </div>
                                 <div class="mb-3">
                                     <label for="mascota_id" class="form-label">Mascota</label>
                                     <select
@@ -286,9 +261,50 @@
                                         {{ formulario.errors.veterinario_id }}
                                     </div>
                                 </div>  
-                                <div v-if="VerificacionEspecialidadInvalida" class="alert alert-danger">
-                                    Verifica que el veterinario tenga la especialidad correcta para la mascota
-                                </div>   
+                                <div>
+                                    <label>Sucursal</label>
+                                    <select
+                                        id="sucursal_id"
+                                        v-model="formulario.sucursal_id"
+                                        class="form-select"
+                                        :class="{ 'is-invalid': formulario.errors.sucursal_id }"
+                                        required
+                                    >
+                                        <option value="" disabled>Selecciona una sucursal</option>
+                                        <option
+                                            v-for="sucursal in sucursales"
+                                            :key="sucursal.id"
+                                            :value="sucursal.id"
+                                        >
+                                            {{ sucursal.nombre }}
+                                        </option>
+                                    </select>
+                                    <div v-if="formulario.errors.sucursal_id" class="invalid-feedback">
+                                        {{ formulario.errors.sucursal_id }}
+                                    </div>
+                                </div>  
+                                <div>
+                                    <label v-if="formulario.sucursal_id">Box</label>
+                                    <select
+                                        id="box_id"
+                                        v-model="formulario.box_id"
+                                        class="form-select"
+                                        :class="{ 'is-invalid': formulario.errors.box_id }"
+                                        required
+                                    >
+                                        <option value="" disabled>Selecciona un box</option>
+                                        <option
+                                            v-for="box in boxes"
+                                            :key="box.id"
+                                            :value="box.id"
+                                        >
+                                            {{ box.nombre }}
+                                        </option>
+                                    </select>
+                                    <div v-if="formulario.errors.box_id" class="invalid-feedback">
+                                        {{ formulario.errors.box_id }}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -357,14 +373,14 @@ export default {
             type: Array,
             default: () => [],
         },
-        clientes: {
-            type: Array,
-            default: () => [],
-        },
         veterinarios: {
             type: Array,
             default: () => [],
         },
+        sucursales:{
+            type: Array,
+            default: () => [],
+        }
     },
     data() {
         return {
@@ -386,8 +402,9 @@ export default {
                 descripcion: '',
                 fecha_hora: '',
                 mascota_id: '',
-                cliente_id: '',
                 veterinario_id: '',
+                sucursal_id: '',
+                box_id: '',
                 errors: {},
                 processing: false,
             },

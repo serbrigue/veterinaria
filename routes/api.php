@@ -7,6 +7,8 @@ use App\Http\Controllers\EspecieController;
 use App\Http\Controllers\MascotaController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RazaController;
+use App\Http\Controllers\SucursalController;
+use App\Http\Controllers\BoxController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -76,4 +78,23 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('can:editar,cita');
     Route::delete('/citas/{cita}', [CitaController::class, 'eliminar'])
         ->middleware('can:eliminar,cita');
+
+    //Sucursales
+    Route::get('/sucursales', [SucursalController::class, 'obtenerTodas'])
+        ->middleware('can:verTodas,App\Models\Sucursal');
+    Route::post('/sucursales', [SucursalController::class, 'crear'])
+        ->middleware('can:crear,App\Models\Sucursal');
+    Route::put('/sucursales/{sucursal}', [SucursalController::class, 'actualizar'])
+        ->middleware('can:editar,sucursal');
+    Route::delete('/sucursales/{sucursal}', [SucursalController::class, 'eliminar'])
+        ->middleware('can:eliminar,sucursal');
+    //Boxes
+    Route::get('/boxes', [BoxController::class, 'obtenerTodas'])
+        ->middleware('can:verTodas,App\Models\Box');
+    Route::post('/boxes', [BoxController::class, 'crear'])
+        ->middleware('can:crear,App\Models\Box');
+    Route::put('/boxes/{box}', [BoxController::class, 'actualizar'])
+        ->middleware('can:editar,box');
+    Route::delete('/boxes/{box}', [BoxController::class, 'eliminar'])
+        ->middleware('can:eliminar,box');
 });

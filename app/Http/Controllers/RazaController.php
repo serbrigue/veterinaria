@@ -18,10 +18,18 @@ class RazaController extends Controller
 
     public function listado(Request $request)
     {
-    
+
+        $filtroEspecie = $request->input('especie_id');
+
+
         if (request()->wantsJson()) {
+            $razas = Raza::with('especie');
+            if ($filtroEspecie) {
+                $razas->where('especie_id', $filtroEspecie);
+            }
+
             return response()->json([
-                'razas' => Raza::with('especie')->get(),
+                'razas' => $razas->get(),
                 'especies' => Especie::all(),
             ]);
         }
@@ -53,7 +61,7 @@ class RazaController extends Controller
     {
         // TODO: Verificar que $raza->user_id === auth()->id(), actualizar, retornar JSON
         if ($raza->user_id !== auth()->id()) {
-           return response()->json(['error' => 'No autorizado'], 403);
+            return response()->json(['error' => 'No autorizado'], 403);
         }
         $raza->update($solicitud->validated());
         return response()->json($raza);
@@ -74,11 +82,11 @@ class RazaController extends Controller
          * Intención de negocio:
          * Cargar los detalles de una raza específica incluyendo la especie a la que pertenece
          * para renderizar la vista de detalle en Inertia.
-         */
-        $raza = Raza::with('especie')->find($raza->id);
+         */;
 
         return Inertia::render('Raza/Detalle', [
             'raza' => $raza,
+            'especie' => $raza->especie,
         ]);
     }
 }

@@ -376,10 +376,6 @@ export default {
         Link,
     },
     props: {
-        mascotas: {
-            type: Array,
-            default: () => [],
-        },
         clientes: {
             type: Array,
             default: () => [],
@@ -402,6 +398,7 @@ export default {
                 { value: 'macho', label: 'Macho' },
                 { value: 'hembra', label: 'Hembra' },
             ],
+            mascotas:[],
             formulario: {
                 nombre: '',
                 descripcion: '',
@@ -515,7 +512,7 @@ export default {
                     this.cerrarModal()
                     return this.$alertaExito('Mascota actualizada', 'Los cambios se guardaron correctamente.')
                 })
-                .then(() => window.location.reload())
+                .then(() => this.obtenerMascotas())
                 .catch((error) => {
                     if (error.response?.status === 422) {
                         this.formulario.errors = error.response.data.errors
@@ -533,7 +530,7 @@ export default {
                     this.cerrarModal()
                     return this.$alertaExito('Mascota creada', 'El registro se guardó correctamente.')
                 })
-                .then(() => window.location.reload())
+                .then(() => this.obtenerMascotas())
                 .catch((error) => {
                     if (error.response?.status === 422) {
                         this.formulario.errors = error.response.data.errors
@@ -546,6 +543,13 @@ export default {
                     this.formulario.processing = false
                 })
             }
+        },
+        obtenerMascotas(){
+            axios.get(`/mascotas`).then((response)=>{
+                this.mascotas = response.data.mascotas
+            }).catch((error)=>{
+                this.$alertaError('Error', 'No se pudo obtener las mascotas.')
+            })
         },
         obtenerEspecies() {
             axios.get('/especies')
@@ -569,13 +573,14 @@ export default {
                     if (!resultado.isConfirmed) return
                     axios.delete(`/api/mascotas/${mascota.id}`)
                         .then(() => this.$alertaExito('Eliminada', `${mascota.nombre} fue eliminada.`))
-                        .then(() => window.location.reload())
+                        .then(() => this.obtenerMascotas())
                         .catch(() => this.$alertaError('Error', 'No se pudo eliminar la mascota.'))
                 })
         },
     },
     mounted() {
         this.obtenerEspecies()
+        this.obtenerMascotas()
     },
 }
 </script>

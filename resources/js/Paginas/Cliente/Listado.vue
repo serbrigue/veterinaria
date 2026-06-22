@@ -45,7 +45,6 @@
                                     <th>Email</th>
                                     <th>Teléfono</th>
                                     <th>Dirección</th>
-                                    <th style="width: 180px">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -54,24 +53,6 @@
                                     <td>{{ cliente.usuario?.email }}</td>
                                     <td>{{ cliente.telefono }}</td>
                                     <td>{{ cliente.direccion }}</td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <button
-                                                type="button"
-                                                class="btn btn-primary"
-                                                @click="abrirModalEditar(cliente)"
-                                            >
-                                                Editar
-                                            </button>
-                                            <button
-                                                type="button"
-                                                class="btn btn-danger"
-                                                @click="confirmarEliminar(cliente)"
-                                            >
-                                                Eliminar
-                                            </button>
-                                        </div>
-                                    </td>
                                 </tr>
                             </tbody>
                         </table>

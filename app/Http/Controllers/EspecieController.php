@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Especie;
+use App\Models\Raza;
 use App\Http\Requests\GuardarEspecieRequest;
 use App\Http\Requests\ActualizarEspecieRequest;
 use Illuminate\Http\Request;
@@ -81,9 +82,11 @@ class EspecieController extends Controller
         return response()->json(['mensaje' => 'Especie eliminada correctamente']);
     }
 
-    public function detalle(Especie $especie){
+    public function detalle(Especie $especie)
+    {
         return Inertia::render('Especie/Detalle', [
             'especie' => $especie,
+            'razas' => $especie->razas,
         ]);
     }
 }

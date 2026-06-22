@@ -79,50 +79,57 @@
                         </button>
                     </div>
 
-                    <div v-else class="table-responsive">
-                        <table class="table table-bordered table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Nombre</th>
-                                    <th>Descripción</th>
-                                    <th>Especie</th>
-                                    <th>imagen</th>
-                                    <th v-if="esVeterinarioOAdmin" style="width: 180px">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="raza in razas" :key="raza.id">
-                                    <td><Link :href="route('razas.detalle',raza.id)">{{ raza.nombre }}</Link></td>  
-                                    <td>{{ raza.descripcion }}</td>
-                                    <td>
-                                        <Link :href="route('especies.detalle',raza.especie_id)">
-                                        {{ raza.especie?.nombre }}
-                                        </Link>
-                                    </td>
-                                    <td>
-                                        <img :src="raza.imagen_url" :alt="'Imagen de ' + raza.nombre"  class="img-fluid" style="width: 100px; height: 100px;" @click="abrirModalImagen(raza)">
-                                    </td>
-                                    <td v-if="esVeterinarioOAdmin">
-                                        <div class="btn-group btn-group-sm">
-                                            <button
-                                                type="button"
-                                                class="btn btn-primary"
-                                                @click="abrirModalEditar(raza)"
+                    
+                        <div v-else class="row g-4">
+                        <div v-for="raza in razas" :key="raza.id" class="col-12 col-md-6 col-lg-4 col-xl-3">
+                            <Link :href="`/razas/${raza.id}`">
+                                <div 
+                                    class="card h-100 border-0 shadow-sm hover-elevate transition-all overflow-hidden group-card cursor-pointer"
+                                    
+                                >
+                                    <!-- Imagen Header -->
+                                    <div class="position-relative bg-light" style="height: 160px;">
+                                        <img 
+                                            v-if="raza.imagen_url" 
+                                            :src="raza.imagen_url" 
+                                            class="w-100 h-100 object-fit-cover hover-zoom" 
+                                            alt="Imagen de raza"
+                                        >
+                                        <div v-else class="w-100 h-100 d-flex align-items-center justify-content-center text-primary bg-primary bg-opacity-10">
+                                            <i class="bi bi-bug-fill fs-1"></i>
+                                        </div>
+                                        <!-- Overlay gradient -->
+                                        <div class="position-absolute bottom-0 start-0 w-100 h-50 bg-gradient-dark"></div>
+                                        <!-- Title badge overlapping -->
+                                        <div class="position-absolute bottom-0 start-0 w-100 p-3 pb-2 text-white">
+                                            <h3 class="h5 mb-0 fw-bold text-shadow text-truncate">{{ raza.nombre }}</h3>
+                                            <span class="badge bg-white text-dark mt-1 shadow-sm"><i class="bi bi-tag-fill text-primary me-1"></i>{{ raza.especie?.nombre || 'Sin especie' }}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card-body p-3 d-flex flex-column">
+                                        <p class="card-text text-muted small mb-3 flex-grow-1 line-clamp-3">
+                                            {{ raza.descripcion || 'Sin descripción disponible para esta raza.' }}
+                                        </p>
+                                        
+                                        <div v-if="esVeterinarioOAdmin" class="d-flex gap-2 pt-3 border-top mt-auto justify-content-between">
+                                            <button 
+                                                class="btn btn-sm btn-light text-primary border border-primary-subtle flex-grow-1 btn-hover-primary transition-all" 
+                                                @click.stop="abrirModalEditar(raza)"
                                             >
-                                                Editar
+                                                <i class="bi bi-pencil me-1"></i> Editar
                                             </button>
-                                            <button
-                                                type="button"
-                                                class="btn btn-danger"
-                                                @click="confirmarEliminar(raza)"
+                                            <button 
+                                                class="btn btn-sm btn-light text-danger border border-danger-subtle flex-grow-1 btn-hover-danger transition-all" 
+                                                @click.stop="confirmarEliminar(raza)"
                                             >
-                                                Eliminar
+                                                <i class="bi bi-trash me-1"></i> Eliminar
                                             </button>
                                         </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                                    </div>
+                                </div>
+                            </Link>
+                        </div>
                     </div>
 
                     <!-- TODO: Agregar paginación cuando haya muchas mascotas -->
@@ -219,32 +226,14 @@
                     </div>
                 </div>
             </div>
-            
-            <div v-if="mostrarModalImagen" class="modal fade show d-block" tabindex="-1">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Imagen de la raza: {{ razaSeleccionada.nombre }}</h5>
-                            <button type="button" class="btn-close" @click="cerrarModalImagen"></button>
-                        </div>
-                        <div class="modal-body">
-                            <img :src="razaSeleccionada.imagen_url" alt="Imagen de la raza" class="img-fluid">
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-
-
             <div v-if="mostrarModal" class="modal-backdrop fade show"></div>
-            <div v-if="mostrarModalImagen" class="modal-backdrop fade show"></div>
         </div>
     </AuthenticatedLayout>
 </template>
 
 <script>
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
-import { Head,Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 
 export default {
     components: {
@@ -264,8 +253,6 @@ export default {
     },
     data() {
         return {
-            mostrarModalImagen: false,
-            razaSeleccionada:null,
             cargando: false,
             mostrarModal: false,
             modoEdicion: false,
@@ -311,14 +298,6 @@ export default {
         },
     },
     methods: {
-        abrirModalImagen(raza){
-            this.razaSeleccionada=raza;
-            this.mostrarModalImagen=true;
-        },
-        cerrarModalImagen(){
-            this.mostrarModalImagen=false;
-            this.razaSeleccionada=null;
-        },
         limpiarFiltros(){
             this.filtroTexto='';
             this.filtroEspecie='';
@@ -430,3 +409,45 @@ export default {
     },
 }
 </script>
+
+<style scoped>
+.hover-elevate:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+}
+.transition-all {
+    transition: all 0.3s ease;
+}
+.hover-zoom {
+    transition: transform 0.5s ease;
+}
+.group-card:hover .hover-zoom {
+    transform: scale(1.08);
+}
+.bg-gradient-dark {
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%);
+}
+.text-shadow {
+    text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+}
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.btn-hover-primary:hover {
+    background-color: var(--bs-primary);
+    color: white !important;
+}
+.btn-hover-danger:hover {
+    background-color: var(--bs-danger);
+    color: white !important;
+}
+.object-fit-cover {
+    object-fit: cover;
+}
+.cursor-pointer {
+    cursor: pointer;
+}
+</style>
