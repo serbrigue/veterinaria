@@ -9,7 +9,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RazaController;
 use App\Http\Controllers\SucursalController;
 use App\Http\Controllers\BoxController;
-
+use App\Http\Controllers\VeterinarioController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -76,6 +76,10 @@ Route::middleware('auth')->group(function () {
     //Boxes
     Route::get('/boxes', [BoxController::class, 'listado'])->name('boxes.listado')->middleware('can:verTodas,App\Models\Box');
     Route::get('/boxes/{box}', [BoxController::class, 'detalle'])->name('boxes.detalle')->middleware('can:ver,box');
+
+    //Veterinarios
+    Route::get('/veterinarios', [VeterinarioController::class, 'listado'])->name('veterinarios.listado')->middleware('can:verTodas,App\Models\Veterinario');
+    Route::get('/veterinarios/{veterinario}', [VeterinarioController::class, 'detalle'])->name('veterinarios.detalle')->middleware('can:ver,veterinario');
 });
 
 require __DIR__ . '/auth.php';

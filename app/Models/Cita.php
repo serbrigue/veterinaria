@@ -17,6 +17,7 @@ class Cita extends Model
         'fecha_hora',
         'hora_termino',
         'estado',
+        'tipo',
         'notas',
         'veterinario_id',
         'box_id',

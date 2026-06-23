@@ -243,14 +243,15 @@ export default {
             }
         },
         obtenerSucursales(){
-            axios.get(this.route('sucursales.obtenerTodas'))
+            axios.get(route('sucursales.obtenerTodas'))
                 .then(response => {
-                    this.sucursales = response.data;
+                    this.sucursales = response.data.sucursales || response.data;
                 })
                 .catch(error => {
                     console.error('Error al obtener sucursales:', error);
                 });
         },
+        
         abrirModalCrear() {
             this.modoEdicion = false;
             this.boxEditando = null;

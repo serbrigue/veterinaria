@@ -39,4 +39,3 @@ class Veterinario extends Model
         return $this->belongsTo(Especialidad::class, 'especialidad_id');
     }
 }
-

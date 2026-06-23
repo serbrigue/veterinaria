@@ -41,7 +41,7 @@ class CitaPolicy
     {
         // Si es cliente, solo puede ver la cita si es el propietario (dueño) de la mascota asociada
         if ($user->isCliente()) {
-            return $user->tienePermiso('ver-mis-citas') && $cita->mascota?->cliente_id === $user->cliente?->id;
+            return $user->tienePermiso('ver-mis-citas') && $cita->mascota?->cliente_id == $user->cliente?->id;
         }
 
         // Si es veterinario, de momento requiere el permiso general de sucursal
@@ -57,7 +57,7 @@ class CitaPolicy
      */
     public function crear(User $user): bool
     {
-        return $user->isCliente() && $user->tienePermiso('crear-mis-citas');
+        return $user->isCliente() && $user->tienePermiso('agendar-cita');
     }
 
     /**
@@ -79,13 +79,26 @@ class CitaPolicy
     }
 
     /**
-     * Determina si el usuario puede eliminar una cita específica.
+     * Determina si el usuario puede cancelar una cita específica.
+     * Un cliente solo puede cancelar sus propias citas que aún estén pendientes.
+     * Los veterinarios pueden cancelar citas de su sucursal.
      */
-
-    public function eliminar(User $user, Cita $cita): bool
+    public function cancelar(User $user, Cita $cita): bool
     {
-        return $user->isCliente()
-            && $user->tienePermiso('eliminar-mis-citas')
-            && $cita->mascota?->cliente_id === $user->cliente?->id;
+        // No permitir cancelar citas ya finalizadas o canceladas
+        if (in_array($cita->estado, ['completada', 'cancelada'])) {
+            return false;
+        }
+
+        if ($user->isCliente()) {
+            return $user->tienePermiso('eliminar-mis-citas')
+                && $cita->mascota?->cliente_id === $user->cliente?->id;
+        }
+
+        if ($user->isVeterinario()) {
+            return $user->tienePermiso('editar-citas-sucursal');
+        }
+
+        return false;
     }
 }

@@ -92,34 +92,122 @@
                                 <i class="bi bi-plus-lg"></i> Nueva Cita
                             </button>
                         </div>
-                        <div class="card-body p-4 text-center text-muted">
-                            <div class="py-4">
-                                <i class="bi bi-calendar-x fs-1 text-light mb-3 d-block" style="color: #dee2e6 !important;"></i>
+                        <div class="card-body p-3">
+                            <div v-if="!proximasCitas || proximasCitas.length === 0" class="py-4 text-center text-muted">
+                                <i class="bi bi-calendar-x fs-1 mb-3 d-block" style="color: #dee2e6;"></i>
                                 <p class="mb-0">No hay citas programadas próximamente.</p>
                             </div>
-                            <!-- Placeholder: Aquí irá la lista de citas iterada con v-for -->
+                            <div v-else class="d-flex flex-column gap-3">
+                                <div
+                                    v-for="cita in proximasCitas"
+                                    :key="cita.id"
+                                    class="border rounded-3 p-3 bg-white shadow-sm cita-card"
+                                >
+                                    <!-- Cabecera: Título + Badge de Estado -->
+                                    <Link :href="route('citas.detalle', cita.id)">
+                                        <div class="d-flex align-items-start justify-content-between mb-2">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="bg-primary bg-opacity-10 text-primary p-2 rounded-2">
+                                                    <i class="bi bi-calendar-event fs-6"></i>
+                                                </div>
+                                                <span class="fw-bold text-dark">{{ cita.titulo }}</span>
+                                            </div>
+                                            <span class="badge rounded-pill px-3 py-2" :class="{
+                                                'bg-warning text-dark': cita.estado === 'pendiente',
+                                                'bg-success':           cita.estado === 'completada',
+                                                'bg-danger':            cita.estado === 'cancelada',
+                                                'bg-primary':           cita.estado === 'en_curso',
+                                            }">
+                                                {{ cita.estado ? cita.estado.charAt(0).toUpperCase() + cita.estado.slice(1) : 'Pendiente' }}
+                                            </span>
+                                        </div>
+
+                                        <!-- Detalles en fila -->
+                                        <div class="row g-2 ps-1 mt-1">
+                                            <div class="col-12 col-md-6 d-flex align-items-center gap-2 text-muted small">
+                                                <i class="bi bi-clock text-primary"></i>
+                                                <span>{{ cita.fecha_hora }}</span>
+                                            </div>
+                                            <div class="col-12 col-md-6 d-flex align-items-center gap-2 text-muted small">
+                                                <i class="bi bi-heart-pulse text-danger"></i>
+                                                <span>{{ cita.veterinario?.usuario?.name || 'Sin veterinario' }}</span>
+                                            </div>
+                                            <div class="col-12 col-md-6 d-flex align-items-center gap-2 text-muted small">
+                                                <i class="bi bi-building text-secondary"></i>
+                                                <span>{{ cita.box?.sucursal?.nombre || 'Sin sucursal' }}</span>
+                                            </div>
+                                            <div class="col-12 col-md-6 d-flex align-items-center gap-2 text-muted small">
+                                                <i class="bi bi-door-open text-secondary"></i>
+                                                <span>{{ cita.box?.nombre || 'Sin box' }}</span>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Historial Médico -->
-                    <div class="card border-0 shadow-sm">
+                    <div class="card border-0 shadow-sm mb-4">
                         <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
-                            <h3 class="h6 mb-0 fw-bold text-dark d-flex align-items-center gap-2">
-                                <i class="bi bi-journal-medical text-primary"></i> Historial Médico
-                            </h3>
-                            <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1">
-                                <i class="bi bi-plus-lg"></i> Añadir Registro
-                            </button>
-                        </div>
-                        <div class="card-body p-4 text-center text-muted">
-                            <div class="py-4">
-                                <i class="bi bi-file-earmark-medical fs-1 text-light mb-3 d-block" style="color: #dee2e6 !important;"></i>
-                                <p class="mb-0">El historial médico está vacío.</p>
+                      <div class="card-body p-3">
+                            <div v-if="!historialClinico || historialClinico.length === 0" class="py-4 text-center text-muted">
+                                <i class="bi bi-calendar-x fs-1 mb-3 d-block" style="color: #dee2e6;"></i>
+                                <p class="mb-0">No hay historial clínico.</p>
                             </div>
-                            <!-- Placeholder: Aquí irá la lista del historial iterada con v-for -->
+                            <div v-else class="d-flex flex-column gap-3">
+                                <h3 class="h6 text-uppercase text-muted fw-bold mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Historial Clínico</h3>
+                                <div
+                                    v-for="cita in historialClinico"
+                                    :key="cita.id"
+                                    class="border rounded-3 p-3 bg-white shadow-sm cita-card"
+                                >
+                                    <!-- Cabecera: Título + Badge de Estado -->
+                                    <Link :href="route('citas.detalle', cita.id)">
+                                        <div class="d-flex align-items-start justify-content-between mb-2">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="bg-primary bg-opacity-10 text-primary p-2 rounded-2">
+                                                    <i class="bi bi-calendar-event fs-6"></i>
+                                                </div>
+                                                <span class="fw-bold text-dark">{{ cita.titulo }}</span>
+                                            </div>
+                                            <span class="badge rounded-pill px-3 py-2" :class="{
+                                                'bg-warning text-dark': cita.estado === 'pendiente',
+                                                'bg-success':           cita.estado === 'completada',
+                                                'bg-danger':            cita.estado === 'cancelada',
+                                                'bg-primary':           cita.estado === 'en_curso',
+                                            }">
+                                                {{ cita.estado ? cita.estado.charAt(0).toUpperCase() + cita.estado.slice(1) : 'Pendiente' }}
+                                            </span>
+                                        </div>
+
+                                        <!-- Detalles en fila -->
+                                        <div class="row g-2 ps-1 mt-1">
+                                            <div class="col-12 col-md-6 d-flex align-items-center gap-2 text-muted small">
+                                                <i class="bi bi-clock text-primary"></i>
+                                                <span>{{ cita.fecha_hora }}</span>
+                                            </div>
+                                            <div class="col-12 col-md-6 d-flex align-items-center gap-2 text-muted small">
+                                                <i class="bi bi-heart-pulse text-danger"></i>
+                                                <span>{{ cita.veterinario?.usuario?.name || 'Sin veterinario' }}</span>
+                                            </div>
+                                            <div class="col-12 col-md-6 d-flex align-items-center gap-2 text-muted small">
+                                                <i class="bi bi-building text-secondary"></i>
+                                                <span>{{ cita.box?.sucursal?.nombre || 'Sin sucursal' }}</span>
+                                            </div>
+                                            <div class="col-12 col-md-6 d-flex align-items-center gap-2 text-muted small">
+                                                <i class="bi bi-door-open text-secondary"></i>
+                                                <span>{{ cita.box?.nombre || 'Sin box' }}</span>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                </div>
+                            </div>
+                      </div>
                         </div>
                     </div>
-                </div>            </div>
+                </div>            
+            </div>
         </div>
     </AuthenticatedLayout>
 </template>
@@ -136,6 +224,15 @@ export default {
         Link
     },
     props: {
+        proximasCitas: {
+            type: Array,
+            required: true
+        },
+        historialClinico: {
+            type: Array,
+            required: true
+        },
+
         mascota: {
             type: Object,
             required: true
@@ -189,5 +286,14 @@ export default {
 /* Para la imagen redonda si la mascota tiene foto */
 .object-fit-cover {
     object-fit: cover;
+}
+/* Hover effect para las tarjetas de cita */
+.cita-card {
+    transition: box-shadow 0.2s ease-in-out, transform 0.15s ease-in-out;
+    cursor: default;
+}
+.cita-card:hover {
+    box-shadow: 0 .35rem 1rem rgba(0,0,0,.08) !important;
+    transform: translateY(-1px);
 }
 </style>

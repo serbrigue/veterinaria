@@ -9,6 +9,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RazaController;
 use App\Http\Controllers\SucursalController;
 use App\Http\Controllers\BoxController;
+use App\Http\Controllers\VeterinarioController;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +24,7 @@ Route::middleware('auth:sanctum')->get('/usuario', function (Request $solicitud)
 });
 
 Route::middleware('auth:sanctum')->group(function () {
+
     Route::post('/cerrar-sesion', [AuthApiController::class, 'cerrarSesion']);
     Route::post('/confirmar-contrasena', [AuthApiController::class, 'confirmarContrasena']);
     Route::post('/verificacion/enviar', [AuthApiController::class, 'verificacionEnviar']);
@@ -69,15 +72,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/clientes/{cliente}', [ClienteController::class, 'eliminar'])
         ->middleware('can:eliminar,cliente');
 
-    // MÓDULO 5 — Citas: GET/POST /citas, PUT/DELETE /citas/{cita}
+    // MÓDULO 5 — Citas: GET/POST /citas, PUT/PATCH /citas/{cita}
+    // ⚠️  horarios-disponibles debe ir ANTES de las rutas con {cita}
+    //     para que Laravel no lo trate como un ID de cita
+    Route::get('/citas/horarios-disponibles', [CitaController::class, 'horariosDisponibles'])
+        ->middleware('can:verTodas,App\Models\Cita');
     Route::get('/citas', [CitaController::class, 'obtenerTodas'])
         ->middleware('can:verTodas,App\Models\Cita');
     Route::post('/citas', [CitaController::class, 'crear'])
         ->middleware('can:crear,App\Models\Cita');
     Route::put('/citas/{cita}', [CitaController::class, 'actualizar'])
         ->middleware('can:editar,cita');
-    Route::delete('/citas/{cita}', [CitaController::class, 'eliminar'])
-        ->middleware('can:eliminar,cita');
+    Route::patch('/citas/{cita}/cancelar', [CitaController::class, 'cancelar'])
+        ->middleware('can:cancelar,cita');
+    Route::patch('/citas/{cita}/notas', [CitaController::class, 'actualizarNotas'])
+        ->middleware('can:editar,cita');
+    Route::patch('/citas/{cita}/estado', [CitaController::class, 'actualizarEstado'])
+        ->middleware('can:editar,cita');
 
     //Sucursales
     Route::get('/sucursales', [SucursalController::class, 'obtenerTodas'])
@@ -88,6 +99,7 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('can:editar,sucursal');
     Route::delete('/sucursales/{sucursal}', [SucursalController::class, 'eliminar'])
         ->middleware('can:eliminar,sucursal');
+
     //Boxes
     Route::get('/boxes', [BoxController::class, 'obtenerTodas'])
         ->middleware('can:verTodas,App\Models\Box');
@@ -97,4 +109,14 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('can:editar,box');
     Route::delete('/boxes/{box}', [BoxController::class, 'eliminar'])
         ->middleware('can:eliminar,box');
+
+    //Veterinarios
+    Route::get('/veterinarios', [VeterinarioController::class, 'obtenerTodas'])
+        ->middleware('can:verTodas,App\Models\Veterinario');
+    Route::post('/veterinarios', [VeterinarioController::class, 'crear'])
+        ->middleware('can:crear,App\Models\Veterinario');
+    Route::put('/veterinarios/{veterinario}', [VeterinarioController::class, 'actualizar'])
+        ->middleware('can:editar,veterinario');
+    Route::delete('/veterinarios/{veterinario}', [VeterinarioController::class, 'eliminar'])
+        ->middleware('can:eliminar,veterinario');
 });

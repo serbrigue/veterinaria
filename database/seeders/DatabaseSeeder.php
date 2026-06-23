@@ -57,8 +57,8 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $permisoEliminarMisMascotas = Permiso::create([
-            'nombre'=> 'eliminar-mis-mascotas',
-            'descripcion'=> 'Permite eliminar la ficha de datos de una mascota propia.',
+            'nombre' => 'eliminar-mis-mascotas',
+            'descripcion' => 'Permite eliminar la ficha de datos de una mascota propia.',
         ]);
 
 
@@ -125,12 +125,12 @@ class DatabaseSeeder extends Seeder
 
         $permisoEditarMisCitas = Permiso::create([
             'nombre' => 'editar-mis-citas',
-            'descripcion'=> 'Permite editar las citas propias.',
+            'descripcion' => 'Permite editar las citas propias.',
         ]);
 
         $permisoEliminarMisCitas = Permiso::create([
-            'nombre'=> 'eliminar-mis-citas',
-            'descripcion'=> 'Permite eliminar las citas propias.',
+            'nombre' => 'eliminar-mis-citas',
+            'descripcion' => 'Permite eliminar las citas propias.',
         ]);
 
 
@@ -301,41 +301,69 @@ class DatabaseSeeder extends Seeder
             'descripcion' => 'Raza felina de pelo largo y cara ancha.',
             'especie_id' => $especieFelino->id,
             'creado_por' => $admin->id,
-            'imagen_url' =>'https://i.pinimg.com/736x/f7/4b/92/f74b9222fa0da54389bcc25cdb61ce3f.jpg',
+            'imagen_url' => 'https://i.pinimg.com/736x/f7/4b/92/f74b9222fa0da54389bcc25cdb61ce3f.jpg',
         ]);
 
-        // 7. Crear Veterinario y su Perfil Clínico
-        $userVet = User::create([
+        // 7. Crear Veterinarios y sus Perfiles Clínicos
+        $userVet1 = User::create([
             'name' => 'Dra. Ana López',
             'email' => 'vet@prueba.com',
             'password' => Hash::make('password123'),
-            'rol_id' => $rolVet->id, // Relación de rol normalizado
+            'rol_id' => $rolVet->id,
         ]);
-
-        $veterinarioObj = Veterinario::create([
-            'user_id' => $userVet->id,
+        $veterinario1 = Veterinario::create([
+            'user_id' => $userVet1->id,
             'sucursal_id' => $sucursalVina->id,
             'especialidad_id' => $especialidadCardiologia->id,
             'telefono' => '+56987654321',
             'direccion' => 'Calle Los Arrayanes 456, Viña del Mar',
+            'foto_perfil_url' => 'https://i.pinimg.com/736x/a1/ec/99/a1ec99f8b73d85ec3de20240446b0010.jpg',
         ]);
 
-        // 8. Crear Cliente y su Perfil
-        $userCliente = User::create([
+        $userVet2 = User::create([
+            'name' => 'Dr. Roberto Sánchez',
+            'email' => 'roberto@prueba.com',
+            'password' => Hash::make('password123'),
+            'rol_id' => $rolVet->id,
+        ]);
+        $veterinario2 = Veterinario::create([
+            'user_id' => $userVet2->id,
+            'sucursal_id' => $sucursalVina->id,
+            'especialidad_id' => $especialidadCirugia->id,
+            'telefono' => '+56911223344',
+            'direccion' => 'Av. San Martín 123, Viña del Mar',
+            'foto_perfil_url' => 'https://i.pinimg.com/736x/21/de/81/21de81317ba7d8c6e4fc66a186468f65.jpg',
+        ]);
+
+        // 8. Crear Clientes y sus Perfiles
+        $userCliente1 = User::create([
             'name' => 'Carlos Pérez',
             'email' => 'user@prueba.com',
             'password' => Hash::make('password123'),
-            'rol_id' => $rolCliente->id, // Relación de rol normalizado
+            'rol_id' => $rolCliente->id,
         ]);
-
-        $clienteObj = Cliente::create([
-            'user_id' => $userCliente->id,
+        $cliente1 = Cliente::create([
+            'user_id' => $userCliente1->id,
             'telefono' => '+56911223344',
             'direccion' => 'Calle Limache 789, Viña del Mar',
+            'foto_perfil_url' => 'https://i.pinimg.com/736x/33/74/31/3374315482f8552b98b7e2d86b69cc79.jpg',
         ]);
 
-        // 9. Crear Mascota asociada al Cliente
-        $mascotaPersa = Mascota::create([
+        $userCliente2 = User::create([
+            'name' => 'María González',
+            'email' => 'maria@prueba.com',
+            'password' => Hash::make('password123'),
+            'rol_id' => $rolCliente->id,
+        ]);
+        $cliente2 = Cliente::create([
+            'user_id' => $userCliente2->id,
+            'telefono' => '+56955667788',
+            'direccion' => 'Cerro Alegre 45, Valparaíso',
+            'foto_perfil_url' => 'https://i.pinimg.com/736x/a9/9b/e0/a99be01455e9c86de10ed8a49e58c462.jpg',
+        ]);
+
+        // 9. Crear Mascotas asociadas a los Clientes
+        $mascota1 = Mascota::create([
             'nombre' => 'Garfield',
             'descripcion' => 'Gato gordo y naranja muy dormilón.',
             'sexo' => 'Macho',
@@ -343,23 +371,95 @@ class DatabaseSeeder extends Seeder
             'peso_kg' => 6.20,
             'color' => 'Naranja atigrado',
             'esterilizado' => true,
-            'cliente_id' => $clienteObj->id,
+            'cliente_id' => $cliente1->id,
             'raza_id' => $razaPersa->id,
+            'imagen_url' => 'https://i.pinimg.com/736x/f2/38/0d/f2380dee74e4635c58a49d4aa469a78a.jpg'
         ]);
 
-        // 10. Crear Cita para probar la integración completa
+        $mascota2 = Mascota::create([
+            'nombre' => 'Firulais',
+            'descripcion' => 'Perro muy activo, le gusta morder zapatos.',
+            'sexo' => 'Macho',
+            'fecha_nacimiento' => Carbon::create(2022, 10, 1),
+            'peso_kg' => 8.50,
+            'color' => 'Beige',
+            'esterilizado' => false,
+            'cliente_id' => $cliente2->id,
+            'raza_id' => $razaPug->id,
+            'imagen_url' => 'https://i.pinimg.com/736x/2f/6f/26/2f6f26a6f20616cbe56ed3d522d1ac88.jpg'
+        ]);
+
+        $mascota3 = Mascota::create([
+            'nombre' => 'Luna',
+            'descripcion' => 'Gata arisca, no le gusta que la toquen.',
+            'sexo' => 'Hembra',
+            'fecha_nacimiento' => Carbon::create(2019, 3, 22),
+            'peso_kg' => 4.10,
+            'color' => 'Blanco',
+            'esterilizado' => true,
+            'cliente_id' => $cliente2->id,
+            'raza_id' => $razaPersa->id,
+            'imagen_url' => 'https://i.pinimg.com/736x/77/6a/bf/776abfe995882c4f5fa8e8146830648f.jpg'
+        ]);
+
+        // 10. Crear Citas Múltiples (Pasadas, Canceladas, Urgencias y Futuras)
+
+        // Cita 1: Pasada y completada
+        Cita::create([
+            'titulo' => 'Vacunación Anual',
+            'descripcion' => 'Vacunación óctuple y antirrábica.',
+            'fecha_hora' => Carbon::now()->subDays(10)->setTime(10, 0, 0),
+            'hora_termino' => Carbon::now()->subDays(10)->setTime(10, 30, 0),
+            'estado' => 'completada',
+            'notas' => 'Paciente reaccionó bien. Próxima vacuna en un año.',
+            'mascota_id' => $mascota1->id,
+            'veterinario_id' => $veterinario1->id,
+            'box_id' => $box1->id,
+            'tipo' => 'normal',
+        ]);
+
+        // Cita 2: Cancelada
+        Cita::create([
+            'titulo' => 'Consulta por cojera',
+            'descripcion' => 'El perrito cojea de la pata trasera derecha.',
+            'fecha_hora' => Carbon::now()->subDays(2)->setTime(15, 0, 0),
+            'hora_termino' => Carbon::now()->subDays(2)->setTime(15, 30, 0),
+            'estado' => 'cancelada',
+            'notas' => 'El cliente canceló porque el perrito mejoró solo.',
+            'mascota_id' => $mascota2->id,
+            'veterinario_id' => $veterinario2->id,
+            'box_id' => $box1->id,
+            'tipo' => 'normal',
+        ]);
+
+        // Cita 3: Pendiente en el futuro (Dr. Ana)
         Cita::create([
             'titulo' => 'Chequeo Cardiológico de Control',
             'descripcion' => 'Paciente presenta fatiga leve al correr. Control general por edad.',
             'fecha_hora' => Carbon::now()->addDays(2)->setTime(10, 0, 0),
-            'hora_termino' => Carbon::now()->addDays(2)->setTime(11, 0, 0),
+            'hora_termino' => Carbon::now()->addDays(2)->setTime(10, 30, 0),
             'estado' => 'pendiente',
             'notas' => 'Traer exámenes previos de ecocardiograma.',
-            'mascota_id' => $mascotaPersa->id,
-            'veterinario_id' => $veterinarioObj->id,
+            'mascota_id' => $mascota1->id,
+            'veterinario_id' => $veterinario1->id,
             'box_id' => $box1->id,
+            'tipo' => 'normal',
         ]);
 
-        $this->command->info('¡Base de datos sembrada y relaciones validadas exitosamente con roles y permisos normalizados!');
+        // Cita 4: Urgencia en el futuro (Dr. Roberto - Quirófano)
+        Cita::create([
+            'titulo' => 'Cirugía extracción de cuerpo extraño',
+            'descripcion' => 'Se tragó un juguete de goma. Atención fuera de horario.',
+            'fecha_hora' => Carbon::now()->addDays(1)->setTime(19, 0, 0),
+            'hora_termino' => Carbon::now()->addDays(1)->setTime(19, 30, 0),
+            'estado' => 'pendiente',
+            'notas' => 'Preparar quirófano para cirugía de urgencia.',
+            'mascota_id' => $mascota2->id,
+            'veterinario_id' => $veterinario2->id,
+            'box_id' => $box2->id,
+            'tipo' => 'urgencia',
+        ]);
+
+        $this->command->info('¡Base de datos sembrada y expandida exitosamente con múltiples clientes, veterinarios, mascotas y citas!');
     }
 }

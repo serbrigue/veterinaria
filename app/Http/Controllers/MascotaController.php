@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Mascota;
 use App\Models\Cliente;
+use App\Models\Cita;
 use App\Http\Requests\GuardarMascotaRequest;
 use App\Http\Requests\ActualizarMascotaRequest;
 use Illuminate\Http\Request;
@@ -80,10 +81,18 @@ class MascotaController extends Controller
 
     public function detalle(Mascota $mascota)
     {
+
+        $proximasCitas = Cita::with('veterinario.usuario', 'box.sucursal')->where('mascota_id', $mascota->id)->where('fecha_hora', '>=', Carbon::now())->where('estado', '!=', 'cancelada')->get();
+        $historialClinico = Cita::with('veterinario.usuario', 'box.sucursal')->where('mascota_id', $mascota->id)->where('estado', '=', 'completada')->orderBy('fecha_hora', 'desc')->get();
+
+
+
         $mascota = Mascota::with('cliente.usuario', 'raza.especie')->find($mascota->id);
 
         return Inertia::render('Mascota/Detalle', [
             'mascota' => $mascota,
+            'proximasCitas' => $proximasCitas,
+            'historialClinico' => $historialClinico,
             'cliente' => $mascota->cliente->usuario,
             'especie' => $mascota->raza->especie,
             'raza' => $mascota->raza,

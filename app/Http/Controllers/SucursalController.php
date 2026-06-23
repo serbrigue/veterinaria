@@ -67,6 +67,13 @@ class SucursalController extends Controller
         $veterinarios = $sucursal->veterinarios;
         $boxes = $sucursal->boxes;
 
+        if (request()->wantsJson()) {
+            return response()->json([
+                'sucursal' => $sucursal,
+                'veterinarios' => $veterinarios,
+                'boxes' => $boxes,
+            ]);
+        }
 
         return Inertia::render('Sucursal/Detalle', [
             'sucursal' => $sucursal,

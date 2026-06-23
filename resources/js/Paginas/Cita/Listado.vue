@@ -6,7 +6,7 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h1 class="h5 mb-0">Mis Citas</h1>
 
-                    <button type="button" class="btn btn-primary" @click="abrirModalCrear">
+                    <button v-if="esCliente()" type="button" class="btn btn-primary" @click="abrirModalCrear">
                         + Nueva Cita
                     </button>
                 </div>
@@ -38,27 +38,6 @@
                                     </option>
                                 </select>
                             </div>
-
-                            <!-- Buscar por Cliente -->
-                            <div class="col-12 col-md-4 col-lg-3">
-                                <label class="form-label small fw-bold text-secondary mb-1" for="filtroCliente">Buscar por Cliente</label>
-                                <select 
-                                    class="form-select form-select-sm" 
-                                    id="filtroCliente"
-                                    v-model="filtroCliente"
-                                    @change="obtenerCitas()"
-                                >
-                                    <option value="">Todos los clientes</option>
-                                    <option 
-                                        v-for="cliente in clientes" 
-                                        :key="cliente.id" 
-                                        :value="cliente.id"
-                                    >
-                                        {{ cliente.nombre }}
-                                    </option>
-                                </select>
-                            </div>
-
                             <!-- Buscar por Veterinario -->
                             <div class="col-12 col-md-4 col-lg-3">
                                 <label class="form-label small fw-bold text-secondary mb-1" for="filtroVeterinario">Buscar por Veterinario</label>
@@ -102,50 +81,65 @@
                     </div>
 
                     <div v-else class="table-responsive">
-                        <table class="table table-bordered table-hover">
+                        <table class="table table-hover align-middle border">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Título</th>
-                                    <th>Mascota</th>
-                                    <th>Cliente</th>
-                                    <th>Fecha y Hora</th>
-                                    <th>Hora de Término (Aprox.)</th>
-                                    <th>Veterinario</th>
-                                    <th style="width: 180px">Acciones</th>
+                                    <th class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7 ps-3">Detalle de la Cita</th>
+                                    <th class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7">Paciente y Propietario</th>
+                                    <th class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7">Atención</th>
+                                    <th class="text-center text-uppercase text-secondary text-xs font-weight-bolder opacity-7" style="width: 150px">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="cita in citasVisibles" :key="cita.id">
-                                    <td>
-                                        <Link :href="route('citas.detalle', cita.id)">
-                                        {{ cita.titulo }}
-                                        </Link>
+                                <tr v-for="cita in citas" :key="cita.id">
+                                    <td class="ps-3">
+                                        <div class="d-flex flex-column">
+                                            <Link :href="route('citas.detalle', cita.id)" class="text-dark fw-bold text-decoration-none mb-1">
+                                                {{ cita.titulo }}
+                                            </Link>
+                                            <span class="text-muted small mb-1">
+                                                <i class="bi bi-calendar-event me-1"></i> {{ $formatoFecha(cita.fecha_hora, 'DD/MM/YYYY HH:mm') }}
+                                                <span v-if="cita.hora_termino" class="ms-1">- {{ $formatoFecha(cita.hora_termino, 'HH:mm') }}</span>
+                                            </span>
+                                            <div>
+                                                <span class="badge" :class="{
+                                                    'bg-warning text-dark': cita.estado === 'pendiente',
+                                                    'bg-success': cita.estado === 'completada',
+                                                    'bg-danger': cita.estado === 'cancelada',
+                                                    'bg-primary': cita.estado === 'en_curso'
+                                                }">
+                                                    {{ cita.estado ? cita.estado.charAt(0).toUpperCase() + cita.estado.slice(1) : 'Pendiente' }}
+                                                </span>
+                                            </div>
+                                        </div>
                                     </td>
-                                    <td>{{ cita.mascota?.nombre }}</td>
-                                    <td>{{ cita.cliente?.nombre }}</td>
-                                    <td>{{ $formatoFecha(cita.fecha_hora, 'DD/MM/YYYY HH:mm') }}</td>
                                     <td>
-                                        {{ cita.hora_termino 
-                                            ? $formatoFecha(cita.hora_termino, 'HH:mm') 
-                                            : '—'
-                                        }}
+                                        <div class="d-flex flex-column">
+                                            <span class="fw-bold text-dark">{{ cita.mascota?.nombre || 'Sin Mascota' }} <span class="text-muted fw-normal small" v-if="cita.mascota?.edad_texto">({{ cita.mascota.edad_texto }})</span></span>
+                                            <span class="text-muted small"><i class="bi bi-person me-1"></i> {{ cita.cliente?.nombre || 'Sin Propietario' }}</span>
+                                        </div>
                                     </td>
-                                    <td>{{ cita.veterinario?.nombre }}</td>
                                     <td>
-                                        <div class="btn-group btn-group-sm">
+                                        <div class="d-flex flex-column">
+                                            <span class="fw-medium text-dark"><i class="bi bi-heart-pulse text-danger me-1"></i> {{ cita.veterinario?.nombre || 'Sin Asignar' }}</span>
+                                            <span class="text-muted small"><i class="bi bi-door-open me-1"></i> {{ cita.box?.nombre || 'Sin Box' }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex justify-content-center gap-2">
                                             <button
                                                 type="button"
-                                                class="btn btn-primary"
+                                                class="btn btn-sm btn-outline-primary rounded-pill px-3 transition-all hover-opacity"
                                                 @click="abrirModalEditar(cita)"
                                             >
                                                 Editar
                                             </button>
                                             <button
                                                 type="button"
-                                                class="btn btn-danger"
-                                                @click="confirmarEliminar(cita)"
+                                                class="btn btn-sm btn-outline-warning rounded-pill px-3 transition-all hover-opacity"
+                                                @click="confirmarCancelar(cita)"
                                             >
-                                                Eliminar
+                                                <i class="bi bi-x-circle me-1"></i> Cancelar
                                             </button>
                                         </div>
                                     </td>
@@ -162,7 +156,7 @@
             <!-- MODAL: Crear / Editar Cita                 -->
             <!-- ========================================== -->
             <div v-if="mostrarModal" class="modal fade show d-block" tabindex="-1">
-                <div class="modal-dialog">
+                <div class="modal-dialog modal-lg">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">{{ modoEdicion ? 'Editar Cita' : 'Nueva Cita' }}</h5>
@@ -170,140 +164,162 @@
                         </div>
                         <div>
                             <div class="modal-body">
-                                <!-- TODO: Campo título -->
-                                <div class="mb-3">
-                                    <label for="titulo" class="form-label">Título</label>
-                                    <input
-                                        id="titulo"
-                                        v-model="formulario.titulo"
-                                        type="text"
-                                        class="form-control"
-                                        :class="{ 'is-invalid': formulario.errors.titulo }"
-                                        required
-                                    />
-                                    <div v-if="formulario.errors.titulo" class="invalid-feedback">
-                                        {{ formulario.errors.titulo }}
-                                    </div>
-                                </div>
+                                <div class="row g-0">
 
-                                <!-- TODO: Campo descripción -->
-                                <div class="mb-3">
-                                    <label for="descripcion" class="form-label">Descripción</label>
-                                    <textarea
-                                        id="descripcion"
-                                        v-model="formulario.descripcion"
-                                        class="form-control"
-                                        :class="{ 'is-invalid': formulario.errors.descripcion }"
-                                        rows="3"
-                                        required
-                                    ></textarea>
-                                    <div v-if="formulario.errors.descripcion" class="invalid-feedback">
-                                        {{ formulario.errors.descripcion }}
+                                    <!-- Columna izquierda: datos de la cita -->
+                                    <div class="col-md-5 p-3 border-end">
+                                        <div class="row g-3">
+                                            <div v-if="errorGeneral" class="col-12">
+                                                <div class="alert alert-danger d-flex align-items-center mb-0 border-0 shadow-sm" role="alert">
+                                                    <i class="bi bi-exclamation-triangle-fill flex-shrink-0 me-2"></i>
+                                                    <div>{{ errorGeneral }}</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-12">
+                                                <label for="titulo" class="form-label fw-semibold text-secondary small text-uppercase">Título</label>
+                                                <input id="titulo" v-model="formulario.titulo" type="text" class="form-control bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.titulo }" required placeholder="Ej: Control general" />
+                                                <div v-if="formulario.errors.titulo" class="invalid-feedback">{{ formulario.errors.titulo }}</div>
+                                            </div>
+                                            <div class="col-12">
+                                                <label for="descripcion" class="form-label fw-semibold text-secondary small text-uppercase">Descripción</label>
+                                                <textarea id="descripcion" v-model="formulario.descripcion" class="form-control bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.descripcion }" rows="2" required placeholder="Motivo de la cita..."></textarea>
+                                                <div v-if="formulario.errors.descripcion" class="invalid-feedback">{{ formulario.errors.descripcion }}</div>
+                                            </div>
+                                            <div class="col-12">
+                                                <label for="mascota_id" class="form-label fw-semibold text-secondary small text-uppercase">Mascota</label>
+                                                <select id="mascota_id" v-model="formulario.mascota_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.mascota_id }" required>
+                                                    <option value="" disabled>Selecciona una mascota</option>
+                                                    <option v-for="mascota in mascotas" :key="mascota.id" :value="mascota.id">
+                                                        {{ mascota.nombre }} {{ mascota.sexo ? `(${mascota.sexo})` : '' }}
+                                                    </option>
+                                                </select>
+                                                <div v-if="formulario.errors.mascota_id" class="invalid-feedback">{{ formulario.errors.mascota_id }}</div>
+                                            </div>
+                                            <div v-if="formulario.mascota_id" class="col-12">
+                                                <label class="form-label fw-semibold text-secondary small text-uppercase">Sucursal</label>
+                                                <select id="sucursal_id" v-model="formulario.sucursal_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.sucursal_id }" @change="obtenerDetallesSucursal(formulario.sucursal_id)" required>
+                                                    <option value="" disabled>Selecciona una sucursal</option>
+                                                    <option v-for="sucursal in sucursales" :key="sucursal.id" :value="sucursal.id">
+                                                        {{ sucursal.nombre }}
+                                                    </option>
+                                                </select>
+                                                <div v-if="formulario.errors.sucursal_id" class="invalid-feedback">{{ formulario.errors.sucursal_id }}</div>
+                                            </div>
+                                            <template v-if="formulario.sucursal_id">
+                                                <div class="col-12">
+                                                    <label class="form-label fw-semibold text-secondary small text-uppercase">Veterinario</label>
+                                                    <select id="veterinario_id" v-model="formulario.veterinario_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.veterinario_id }" required :disabled="cargandoDetallesSucursal">
+                                                        <option value="" disabled>{{ cargandoDetallesSucursal ? 'Cargando veterinarios...' : 'Selecciona un veterinario' }}</option>
+                                                        <option v-for="vet in veterinariosSucursal" :key="vet.id" :value="vet.id">
+                                                            {{ vet.usuario.name }}
+                                                        </option>
+                                                    </select>
+                                                    <div v-if="formulario.errors.veterinario_id" class="invalid-feedback">{{ formulario.errors.veterinario_id }}</div>
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label fw-semibold text-secondary small text-uppercase">Box</label>
+                                                    <select id="box_id" v-model="formulario.box_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.box_id }" required :disabled="cargandoDetallesSucursal">
+                                                        <option value="" disabled>{{ cargandoDetallesSucursal ? 'Cargando boxes...' : 'Selecciona un box' }}</option>
+                                                        <option v-for="box in boxesSucursal" :key="box.id" :value="box.id">
+                                                            {{ box.nombre }}
+                                                        </option>
+                                                    </select>
+                                                    <div v-if="formulario.errors.box_id" class="invalid-feedback">{{ formulario.errors.box_id }}</div>
+                                                </div>
+                                            </template>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <!-- TODO: Campo fecha y hora -->
-                                <div class="mb-3">
-                                    <label for="fecha_hora" class="form-label">Fecha y Hora</label>
-                                    <input
-                                        id="fecha_hora"
-                                        v-model="formulario.fecha_hora"
-                                        type="datetime-local"
-                                        class="form-control"
-                                        :class="{ 'is-invalid': formulario.errors.fecha_hora }"
-                                        required
-                                    />
-                                    <div v-if="formulario.errors.fecha_hora" class="invalid-feedback">
-                                        {{ formulario.errors.fecha_hora }}
+                                    <!-- Columna derecha: fecha y horarios -->
+                                    <div class="col-md-7 p-3 bg-light bg-opacity-50">
+                                        <template v-if="formulario.veterinario_id && formulario.box_id">
+                                            <div class="mb-3">
+                                                <label for="fecha_seleccionada" class="form-label fw-semibold text-secondary small text-uppercase">Fecha</label>
+                                                <input
+                                                    id="fecha_seleccionada"
+                                                    type="date"
+                                                    v-model="formulario.fecha_seleccionada"
+                                                    class="form-control bg-white border-0 py-2 shadow-sm"
+                                                    :class="{ 'is-invalid': formulario.errors.fecha_hora }"
+                                                    :min="hoy"
+                                                    @change="cargarHorarios"
+                                                />
+                                                <div v-if="formulario.errors.fecha_hora" class="invalid-feedback">{{ formulario.errors.fecha_hora }}</div>
+                                            </div>
+
+                                            <div v-if="cargandoHorarios" class="text-center py-4">
+                                                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                                <span class="ms-2 text-muted small">Consultando disponibilidad...</span>
+                                            </div>
+
+                                            <template v-else-if="formulario.fecha_seleccionada">
+                                                <!-- Horarios normales -->
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-semibold text-secondary small text-uppercase">Horarios disponibles</label>
+                                                    <div class="d-flex flex-wrap gap-2">
+                                                        <button
+                                                            v-for="slot in horariosNormales"
+                                                            :key="slot.hora"
+                                                            type="button"
+                                                            :disabled="!slot.disponible"
+                                                            :class="[
+                                                                'btn btn-sm rounded-pill px-3',
+                                                                formulario.fecha_hora === slot.fecha_hora
+                                                                    ? 'btn-primary'
+                                                                    : slot.disponible
+                                                                        ? 'btn-outline-primary'
+                                                                        : 'btn-outline-secondary opacity-50'
+                                                            ]"
+                                                            @click="seleccionarHorario(slot)"
+                                                        >
+                                                            {{ slot.hora }}
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Horarios de urgencia -->
+                                                <div>
+                                                    <label class="form-label fw-semibold text-warning small text-uppercase">
+                                                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                                        Urgencia (fuera de horario)
+                                                    </label>
+                                                    <div class="d-flex flex-wrap gap-2">
+                                                        <button
+                                                            v-for="slot in horariosUrgencia"
+                                                            :key="slot.hora"
+                                                            type="button"
+                                                            :disabled="!slot.disponible"
+                                                            :class="[
+                                                                'btn btn-sm rounded-pill px-3',
+                                                                formulario.fecha_hora === slot.fecha_hora
+                                                                    ? 'btn-warning text-dark'
+                                                                    : slot.disponible
+                                                                        ? 'btn-outline-warning'
+                                                                        : 'btn-outline-secondary opacity-50'
+                                                            ]"
+                                                            @click="seleccionarHorario(slot)"
+                                                        >
+                                                            {{ slot.hora }}
+                                                        </button>
+                                                    </div>
+                                                    <small class="text-muted mt-2 d-block">Las atenciones fuera de horario tienen un costo adicional.</small>
+                                                </div>
+                                            </template>
+
+                                            <!-- Placeholder cuando aún no se elige fecha -->
+                                            <div v-else class="text-center text-muted py-5">
+                                                <i class="bi bi-calendar2-week fs-1 d-block mb-2" style="color: #dee2e6;"></i>
+                                                <small>Selecciona una fecha para ver los horarios disponibles</small>
+                                            </div>
+                                        </template>
+
+                                        <!-- Placeholder cuando aún no se elige vet + box -->
+                                        <div v-else class="text-center text-muted py-5">
+                                            <i class="bi bi-clock-history fs-1 d-block mb-2" style="color: #dee2e6;"></i>
+                                            <small>Elige un veterinario y un box para ver la disponibilidad</small>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="mascota_id" class="form-label">Mascota</label>
-                                    <select
-                                        id="mascota_id"
-                                        v-model="formulario.mascota_id"
-                                        class="form-select"
-                                        :class="{ 'is-invalid': formulario.errors.mascota_id }"
-                                        required
-                                    >
-                                        <option value="" disabled>Selecciona una mascota</option>
-                                        <option
-                                            v-for="mascota in mascotasUsuario"
-                                            :key="mascota.id"
-                                            :value="mascota.id"
-                                        >
-                                            {{ mascota.nombre }} | {{ mascota.especie?.nombre }} | {{ mascota.sexo ? ` (${mascota.sexo})` : '' }} 
-                                        </option>
-                                    </select>
-                                    <div v-if="formulario.errors.mascota_id" class="invalid-feedback">
-                                        {{ formulario.errors.mascota_id }}
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="veterinario_id" class="form-label">Veterinario</label>
-                                    <select
-                                        id="veterinario_id"
-                                        v-model="formulario.veterinario_id"
-                                        class="form-select"
-                                        :class="{ 'is-invalid': formulario.errors.veterinario_id }"
-                                        required
-                                    >
-                                        <option value="" disabled>Selecciona un veterinario</option>
-                                        <option
-                                            v-for="vet in veterinarios"
-                                            :key="vet.id"
-                                            :value="vet.id"
-                                        >
-                                            {{ vet.nombre }} | {{ vet.especie?.nombre }}
-                                        </option>
-                                    </select>
-                                    <div v-if="formulario.errors.veterinario_id" @change="verificarEspecialidad(formulario.mascota_id,formulario.veterinario_id)" class="invalid-feedback">
-                                        {{ formulario.errors.veterinario_id }}
-                                    </div>
-                                </div>  
-                                <div>
-                                    <label>Sucursal</label>
-                                    <select
-                                        id="sucursal_id"
-                                        v-model="formulario.sucursal_id"
-                                        class="form-select"
-                                        :class="{ 'is-invalid': formulario.errors.sucursal_id }"
-                                        required
-                                    >
-                                        <option value="" disabled>Selecciona una sucursal</option>
-                                        <option
-                                            v-for="sucursal in sucursales"
-                                            :key="sucursal.id"
-                                            :value="sucursal.id"
-                                        >
-                                            {{ sucursal.nombre }}
-                                        </option>
-                                    </select>
-                                    <div v-if="formulario.errors.sucursal_id" class="invalid-feedback">
-                                        {{ formulario.errors.sucursal_id }}
-                                    </div>
-                                </div>  
-                                <div>
-                                    <label v-if="formulario.sucursal_id">Box</label>
-                                    <select
-                                        id="box_id"
-                                        v-model="formulario.box_id"
-                                        class="form-select"
-                                        :class="{ 'is-invalid': formulario.errors.box_id }"
-                                        required
-                                    >
-                                        <option value="" disabled>Selecciona un box</option>
-                                        <option
-                                            v-for="box in boxes"
-                                            :key="box.id"
-                                            :value="box.id"
-                                        >
-                                            {{ box.nombre }}
-                                        </option>
-                                    </select>
-                                    <div v-if="formulario.errors.box_id" class="invalid-feedback">
-                                        {{ formulario.errors.box_id }}
-                                    </div>
+
                                 </div>
                             </div>
                         </div>
@@ -365,10 +381,6 @@ export default {
         Link
     },
     props: {
-        citas: {
-            type: Array,
-            default: () => [],
-        },
         mascotas: {
             type: Array,
             default: () => [],
@@ -377,10 +389,10 @@ export default {
             type: Array,
             default: () => [],
         },
-        sucursales:{
+        sucursales: {
             type: Array,
             default: () => [],
-        }
+        },
     },
     data() {
         return {
@@ -392,15 +404,23 @@ export default {
             citaAEliminar: null,
             eliminando: false,
             filtroMascota:'',
-            citasVisibles:this.citas,
+            citas:[],
             filtroCliente:'',
             filtroVeterinario: '',
             filtroTitulo: '',
-            mascotasUsuario:[],
+            veterinariosSucursal: [],
+            boxesSucursal: [],
+            cargandoDetallesSucursal: false,
+            errorGeneral: null,
+            horariosNormales: [],
+            horariosUrgencia: [],
+            cargandoHorarios: false,
             formulario: {
                 titulo: '',
                 descripcion: '',
                 fecha_hora: '',
+                fecha_seleccionada: '',
+                tipo: 'normal',
                 mascota_id: '',
                 veterinario_id: '',
                 sucursal_id: '',
@@ -410,46 +430,85 @@ export default {
             },
         }
     },
+    computed: {
+        hoy() {
+            return new Date().toISOString().split('T')[0];
+        },
+    },
+    watch: {
+        'formulario.veterinario_id'() { this.cargarHorarios(); },
+        'formulario.box_id'()         { this.cargarHorarios(); },
+    },
     methods: {
         abrirModalCrear() {
             this.modoEdicion = false;
             this.citaEditando = null;
+            this.errorGeneral = null;
             this.formulario.titulo = '';
             this.formulario.descripcion = '';
             this.formulario.fecha_hora = '';
+            this.formulario.fecha_seleccionada = '';
+            this.formulario.tipo = 'normal';
             this.formulario.mascota_id = '';
-            this.formulario.cliente_id = '';
+            this.formulario.sucursal_id = '';
             this.formulario.veterinario_id = '';
+            this.formulario.box_id = '';
             this.formulario.errors = {};
+            this.horariosNormales = [];
+            this.horariosUrgencia = [];
             this.mostrarModal = true;
-
-            // Si hay un solo cliente en la lista, lo seleccionamos automáticamente y cargamos sus mascotas.
-            if (this.clientes && this.clientes.length === 1) {
-                this.formulario.cliente_id = this.clientes[0].id;
-                this.obtenerMascotasCliente(this.clientes[0].id);
-            }
+        },
+        esCliente(){
+            const user = this.$page.props.auth.user;
+            return user && user.rol && (user.rol.nombre_interno === 'cliente')
         },
         datosFormulario() {
             return {
                 titulo: this.formulario.titulo,
                 descripcion: this.formulario.descripcion,
                 fecha_hora: this.formulario.fecha_hora,
+                tipo: this.formulario.tipo,
                 mascota_id: this.formulario.mascota_id,
-                cliente_id: this.formulario.cliente_id,
                 veterinario_id: this.formulario.veterinario_id,
+                box_id: this.formulario.box_id,
             };
         },
-
+        obtenerDetallesSucursal(sucursal_id, preserveSelection = false) {
+            if (!sucursal_id) {
+                this.veterinariosSucursal = [];
+                this.boxesSucursal = [];
+                return;
+            }
+            
+            // Limpiamos los campos dependientes para forzar una nueva selección, a menos que estemos abriendo el modal para editar
+            if (!preserveSelection) {
+                this.formulario.veterinario_id = '';
+                this.formulario.box_id = '';
+            }
+            
+            // Buscamos la sucursal en los props y extraemos sus datos
+            const sucursalSeleccionada = this.sucursales.find(s => s.id === sucursal_id);
+            if (sucursalSeleccionada) {
+                this.veterinariosSucursal = sucursalSeleccionada.veterinarios || [];
+                this.boxesSucursal = sucursalSeleccionada.boxes || [];
+            } else {
+                this.veterinariosSucursal = [];
+                this.boxesSucursal = [];
+            }
+        },
         abrirModalEditar(cita) {
             this.modoEdicion = true;
             this.citaEditando = cita;
+            this.errorGeneral = null;
             this.formulario.titulo = cita.titulo;
             this.formulario.descripcion = cita.descripcion;
             this.formulario.fecha_hora = cita.fecha_hora;
             this.formulario.mascota_id = cita.mascota_id;
             // Obtenemos el ID del cliente mapeado en el accessor o mascota
             this.formulario.cliente_id = cita.cliente?.id || cita.mascota?.cliente_id || '';
+            this.formulario.sucursal_id = cita.box?.sucursal_id || '';
             this.formulario.veterinario_id = cita.veterinario_id;
+            this.formulario.box_id = cita.box_id;
             this.formulario.errors = {};
             this.mostrarModal = true;
 
@@ -457,24 +516,36 @@ export default {
             if (this.formulario.cliente_id) {
                 this.obtenerMascotasCliente(this.formulario.cliente_id);
             }
+            
+            // Cargamos veterinarios y boxes de la sucursal de la cita editada
+            if (this.formulario.sucursal_id) {
+                this.obtenerDetallesSucursal(this.formulario.sucursal_id, true);
+            }
         },
         cerrarModal() {
             this.mostrarModal=false;
             this.modoEdicion=false;
             this.citaEditando=null;
+            this.errorGeneral=null;
             this.formulario.titulo='';
             this.formulario.descripcion='';
             this.formulario.fecha_hora='';
+            this.formulario.fecha_seleccionada='';
+            this.formulario.tipo='normal';
+            this.formulario.sucursal_id='';
+            this.formulario.veterinario_id='';
+            this.formulario.box_id='';
             this.formulario.mascota_id='';
-            this.formulario.cliente_id='';
             this.formulario.errors={};
+            this.horariosNormales=[];
+            this.horariosUrgencia=[];
         },
 
         obtenerCitas(){
             this.cargando=true;
-            axios.get('/citas',{params:{mascota_id:this.filtroMascota,cliente_id:this.filtroCliente,veterinario_id:this.filtroVeterinario,titulo:this.filtroTitulo}})
+            axios.get('/citas',{params:{mascota_id:this.filtroMascota,veterinario_id:this.filtroVeterinario,titulo:this.filtroTitulo}})
                 .then(response => {
-                    this.citasVisibles=response.data.citas;
+                    this.citas=response.data.citas;
                 })
                 .catch(error => {
                     console.error('Error al obtener las citas:', error);
@@ -482,37 +553,6 @@ export default {
                 .finally(() => {
                     this.cargando=false;
                 })
-        },
-        obtenerMascotasCliente(cliente_id){
-            this.cargando=true;
-            axios.get(`/api/clientes/${cliente_id}/mascotas`)
-                .then(response => {
-                    this.mascotasUsuario=response.data;
-                })
-                .catch(error => {
-                    console.error('Error al obtener las mascotas:', error);
-                })
-                .finally(() => {
-                    this.cargando=false;
-                })
-        },
-        verificarEspecialidad(mascota,veterinario){
-          if (mascota.especie_id !== veterinario.especie_id){
-            this.formulario.VerificacionEspecialidad=true;
-            return this.formulario.VerificacionEspecialidad;
-          }else{
-            this.formulario.VerificacionEspecialidad=false;
-            return this.formulario.VerificacionEspecialidad;
-          }
-        },
-        validarEspecieRaza(raza){
-          if (this.formulario.especie_id !== raza.especie_id){
-            this.formulario.especieRaza=true;
-            return this.formulario.especieRaza;
-          }else{
-            this.formulario.especieRaza=false;
-            return this.formulario.especieRaza;
-          }
         },
         limpiarFiltros(){
             this.filtroMascota='';
@@ -524,6 +564,7 @@ export default {
         guardar() {
             this.formulario.processing=true;
             this.formulario.errors={};
+            this.errorGeneral = null;
             if(this.modoEdicion){
                 this.actualizarCita();
             }else{
@@ -533,58 +574,74 @@ export default {
         actualizarCita(){
             axios.put(`/api/citas/${this.citaEditando.id}`, { ...this.datosFormulario() })
                 .then(() => { this.cerrarModal(); this.obtenerCitas(); })
-                .catch((error) => { if (error.response?.status === 422) this.formulario.errors = error.response.data.errors })
+                .catch((error) => { 
+                    if (error.response?.status === 422) {
+                        this.formulario.errors = error.response.data.errors;
+                    } else if (error.response?.status === 409) {
+                        this.errorGeneral = error.response.data.error;
+                    }
+                })
                 .finally(() => { this.formulario.processing = false });
         },
         crearCita(){
             axios.post('/api/citas', { ...this.datosFormulario() })
                 .then(() => { this.cerrarModal(); this.obtenerCitas(); })
-                .catch((error) => { if (error.response?.status === 422) this.formulario.errors = error.response.data.errors })
+                .catch((error) => { 
+                    if (error.response?.status === 422) {
+                        this.formulario.errors = error.response.data.errors;
+                    } else if (error.response?.status === 409) {
+                        this.errorGeneral = error.response.data.error;
+                    }
+                })
                 .finally(() => { this.formulario.processing = false });
         },
-        confirmarEliminar(cita) {
-            this.citaAEliminar = cita;
-            this.$confirmar('¿Eliminar cita?', `Se eliminará la cita de ${cita.mascota.nombre} con el cliente ${cita.cliente.nombre}.`)
-                .then((resultado) => {
-                    if (resultado.isConfirmed) return this.eliminarCita();
-                })
+        cargarHorarios() {
+            if (!this.formulario.fecha_seleccionada ||
+                !this.formulario.veterinario_id ||
+                !this.formulario.box_id) return;
+
+            this.cargandoHorarios = true;
+            this.formulario.fecha_hora = '';
+            this.formulario.tipo = 'normal';
+
+            axios.get('/api/citas/horarios-disponibles', {
+                params: {
+                    fecha:           this.formulario.fecha_seleccionada,
+                    veterinario_id:  this.formulario.veterinario_id,
+                    box_id:          this.formulario.box_id,
+                }
+            }).then(r => {
+                this.horariosNormales  = r.data.normal;
+                this.horariosUrgencia  = r.data.urgencia;
+            }).catch(error => {
+                console.error('Error al cargar horarios:', error);
+            }).finally(() => {
+                this.cargandoHorarios = false;
+            });
         },
-        eliminarCita() {
-            axios.delete(`/api/citas/${this.citaAEliminar.id}`)
-            .then(() => { this.cerrarModal(); this.obtenerCitas(); })
-            .catch((error) => { if (error.response?.status === 422) this.formulario.errors = error.response.data.errors })
-            .finally(() => { this.formulario.processing = false });
+        seleccionarHorario(slot) {
+            this.formulario.fecha_hora = slot.fecha_hora;
+            this.formulario.tipo       = slot.tipo;
+        },
+        confirmarCancelar(cita) {
+            this.citaAEliminar = cita;
+            this.$confirmar(
+                '¿Cancelar cita?',
+                `Se cancelará la cita "${cita.titulo}" de ${cita.mascota?.nombre || 'la mascota'}. El registro se conservará en el historial con estado Cancelada.`
+            ).then((resultado) => {
+                if (resultado.isConfirmed) return this.cancelarCita();
+            })
+        },
+        cancelarCita() {
+            axios.patch(`/api/citas/${this.citaAEliminar.id}/cancelar`)
+            .then(() => { this.obtenerCitas(); })
+            .catch((error) => { console.error('Error al cancelar la cita:', error); })
+            .finally(() => { this.formulario.processing = false; });
         },
     },
     mounted(){
         this.obtenerCitas();
     },
-    computed:{
 
-        VerificacionEspecialidadInvalida() {
-            if (!this.formulario.mascota_id || !this.formulario.veterinario_id) {
-                return false;
-            }
-
-            const veterinarioSeleccionado = this.veterinarios.find(
-                (veterinario) => Number(veterinario.id) === Number(this.formulario.veterinario_id)
-            );
-            
-            const mascotaSeleccionada = this.mascotas.find(
-                (mascota) => Number(mascota.id) === Number(this.formulario.mascota_id)
-            );
-
-            if (!veterinarioSeleccionado || !mascotaSeleccionada) {
-                return false;
-            }
-
-            // Si el veterinario no tiene asociada una especie específica, evitamos disparar la alerta.
-            if (!veterinarioSeleccionado.especie_id) {
-                return false;
-            }
-
-            return Number(veterinarioSeleccionado.especie_id) !== Number(mascotaSeleccionada.especie_id);
-        },
-    }
 }
 </script>

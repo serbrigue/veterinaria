@@ -18,7 +18,8 @@ class GuardarCitaRequest extends FormRequest
             'descripcion' => 'required|string|max:1000',
             'fecha_hora' => 'required|date',
             'mascota_id' => 'required|integer|exists:mascotas,id',
-            'cliente_id' => 'required|integer|exists:clientes,id',
+            'veterinario_id' => 'required|integer|exists:veterinarios,id',
+            'box_id' => 'required|integer|exists:boxes,id',
         ];
     }
 
@@ -33,8 +34,10 @@ class GuardarCitaRequest extends FormRequest
             'fecha_hora.date' => 'La fecha y hora no tienen un formato válido.',
             'mascota_id.required' => 'La mascota es obligatoria.',
             'mascota_id.exists' => 'La mascota seleccionada no existe.',
-            'cliente_id.required' => 'El cliente es obligatorio.',
-            'cliente_id.exists' => 'El cliente seleccionado no existe.',
+            'veterinario_id.required' => 'El veterinario es obligatorio.',
+            'veterinario_id.exists' => 'El veterinario seleccionado no existe.',
+            'box_id.required' => 'El box es obligatorio.',
+            'box_id.exists' => 'El box seleccionado no existe.',
         ];
     }
 }
