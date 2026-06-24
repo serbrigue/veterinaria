@@ -13,21 +13,34 @@
                 <div class="card-body p-4">
                     <!-- Barra de búsqueda -->
                     <div class="bg-light p-3 rounded-4 border border-light mb-4 shadow-sm">
-                        <div class="row g-3 align-items-center">
-                            <div class="col-12 col-md-8 col-lg-6">
-                                <div class="input-group">
-                                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
-                                    <input 
-                                        type="text" 
-                                        v-model="filtroTexto" 
-                                        class="form-control border-start-0 ps-0" 
-                                        placeholder="Buscar por nombre o especialidad..."
-                                    >
-                                </div>
+                        <div class="row g-3 align-items-end">
+                            <div class="col-12 col-md-4 col-lg-4">
+                                <label class="form-label small fw-bold text-secondary mb-1">Buscar por Nombre</label>
+                                <input 
+                                    type="text" 
+                                    v-model="filtros.nombre" 
+                                    class="form-control form-control-sm" 
+                                    placeholder="Nombre del veterinario..."
+                                    @keyup.enter="obtenerVeterinarios"
+                                >
                             </div>
-                            <div class="col-12 col-md-4 col-lg-6 d-flex justify-content-md-end">
-                                <button class="btn btn-outline-secondary rounded-pill px-4" @click="limpiarFiltros()" :disabled="!filtroTexto">
-                                    Limpiar Filtro
+                            <div class="col-12 col-md-4 col-lg-3">
+                                <label class="form-label small fw-bold text-secondary mb-1">Especialidad</label>
+                                <select class="form-select form-select-sm" v-model="filtros.especialidad_id" @change="obtenerVeterinarios()">
+                                    <option value="">Todas</option>
+                                    <option v-for="esp in especialidades" :key="esp.id" :value="esp.id">{{ esp.nombre }}</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-4 col-lg-3">
+                                <label class="form-label small fw-bold text-secondary mb-1">Sucursal</label>
+                                <select class="form-select form-select-sm" v-model="filtros.sucursal_id" @change="obtenerVeterinarios()">
+                                    <option value="">Todas</option>
+                                    <option v-for="suc in sucursales" :key="suc.id" :value="suc.id">{{ suc.nombre }}</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-lg-2 d-flex gap-2 justify-content-lg-end">
+                                <button class="btn btn-outline-secondary btn-sm w-100 rounded-pill" @click="limpiarFiltros()">
+                                    Limpiar
                                 </button>
                             </div>
                         </div>
@@ -80,7 +93,14 @@
                                     
                                     <div class="card-body p-4 pt-1 d-flex flex-column bg-white text-center">
                                         <h3 class="h5 mb-0 fw-bold text-dark">{{ vet.usuario?.name || 'Sin Nombre' }}</h3>
-                                        <span class="badge bg-primary bg-opacity-10 text-primary mt-2 mb-3 align-self-center rounded-pill px-3">{{ vet.especialidad?.nombre || 'Sin Especialidad' }}</span>
+                                        <div class="d-flex flex-wrap justify-content-center gap-2 mt-2 mb-3">
+                                            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3">
+                                                {{ vet.especialidad?.nombre || 'Sin Especialidad' }}
+                                            </span>
+                                            <span class="badge bg-info bg-opacity-10 text-info rounded-pill px-3">
+                                                <i class="bi bi-building me-1"></i> {{ vet.sucursal?.nombre || 'Sin Sucursal' }}
+                                            </span>
+                                        </div>
                                         
                                         <div class="text-start mb-3 small flex-grow-1">
                                             <div class="text-muted mb-1 text-truncate"><i class="bi bi-envelope me-2"></i>{{ vet.usuario?.email }}</div>
@@ -275,7 +295,12 @@ export default {
             mostrarConfirmacion: false,
             vetAEliminar: null,
             eliminando: false,
-            filtroTexto: '',
+            veterinariosLocales: this.veterinarios,
+            filtros: {
+                nombre: '',
+                especialidad_id: '',
+                sucursal_id: ''
+            },
             formulario: {
                 name: '',
                 email: '',
@@ -296,28 +321,35 @@ export default {
             return role === 1 || role === 2; // Asumiendo 1=Admin, 2=Veterinario
         },
         listaVacia() {
-            return this.veterinarios.length === 0;
+            return this.veterinariosLocales.length === 0 && !this.filtros.nombre && !this.filtros.especialidad_id && !this.filtros.sucursal_id;
         },
         veterinariosVisibles() {
-            if (!this.filtroTexto) return this.veterinarios;
-            
-            const texto = this.filtroTexto.toLowerCase();
-            return this.veterinarios.filter(vet => {
-                const nombre = vet.usuario?.name?.toLowerCase() || '';
-                const especialidad = vet.especialidad?.nombre?.toLowerCase() || '';
-                return nombre.includes(texto) || especialidad.includes(texto);
-            });
+            return this.veterinariosLocales;
         },
         totalVeterinarios() {
-            return this.veterinarios.length;
+            return this.veterinariosLocales.length;
         },
         sinResultadosFiltro() {
             return !this.listaVacia && this.veterinariosVisibles.length === 0;
         }
     },
     methods: {
+        obtenerVeterinarios() {
+            this.cargando = true;
+            axios.get('/veterinarios', { params: this.filtros })
+                .then(response => {
+                    this.veterinariosLocales = response.data.veterinarios;
+                })
+                .catch(error => console.error("Error obteniendo veterinarios", error))
+                .finally(() => this.cargando = false);
+        },
         limpiarFiltros() {
-            this.filtroTexto = '';
+            this.filtros = {
+                nombre: '',
+                especialidad_id: '',
+                sucursal_id: ''
+            };
+            this.obtenerVeterinarios();
         },
         abrirModalCrear() {
             this.modoEdicion = false;
@@ -361,7 +393,7 @@ export default {
             request
                 .then(() => {
                     this.cerrarModal();
-                    this.$inertia.reload({ only: ['veterinarios'] });
+                    this.obtenerVeterinarios();
                 })
                 .catch((error) => {
                     if (error.response?.status === 422) {
@@ -385,7 +417,7 @@ export default {
             axios.delete(`/api/veterinarios/${this.vetAEliminar.id}`)
                 .then(() => {
                     this.mostrarConfirmacion = false;
-                    this.$inertia.reload({ only: ['veterinarios'] });
+                    this.obtenerVeterinarios();
                 })
                 .catch(error => {
                     console.error("Error al eliminar veterinario:", error);

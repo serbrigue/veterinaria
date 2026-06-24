@@ -3,7 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Mascota;
+use App\Models\Cita;
+use App\Models\Cliente;
+use App\Models\Transaccion;
+use App\Models\Insumo;
+use App\Models\CitaCargo;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 
@@ -12,40 +18,72 @@ class PanelController extends Controller
     public function index()
     {
         $user = Auth::user();
-        
+
         // Evitamos errores en nulo si el usuario logueado no tiene perfil de cliente (ej: admin o veterinario)
         $clienteId = $user->cliente?->id;
 
-        if ($user->isAdmin() || $user->isVeterinario()) {
-            // Personal del centro ve estadísticas globales
-            $cantidadMascotas = Mascota::count();
-            $ultimasMascotas = Mascota::with('cliente.usuario', 'raza.especie')
-                ->latest()
-                ->limit(5)
-                ->get();
-        } else {
-            // Clientes ven solo sus mascotas
-            $cantidadMascotas = $clienteId ? Mascota::where('cliente_id', $clienteId)->count() : 0;
-            $ultimasMascotas = $clienteId
-                ? Mascota::with('cliente.usuario', 'raza.especie')
-                    ->where('cliente_id', $clienteId)
-                    ->latest()
-                    ->limit(5)
-                    ->get()
-                : collect();
-        }
+        // MÉTRICAS FINANCIERAS
+        $ingresosTotales = Transaccion::where('estado', 'pagado')->sum('monto_total');
+        $ingresosMes = Transaccion::where('estado', 'pagado')
+            ->whereMonth('created_at', Carbon::now()->month)
+            ->whereYear('created_at', Carbon::now()->year)
+            ->sum('monto_total');
 
-        return Inertia::render('App/Panel', [
-            'estadisticas' => [
+        // MÉTRICAS OPERATIVAS
+        $citasTotales = Cita::count();
+        $citasCompletadas = Cita::where('estado', 'completada')->count();
+        $citasCanceladas = Cita::where('estado', 'cancelada')->count();
+        $citasAgendadas = Cita::where('estado', 'pendiente')->count();
+        $clientesActivos = Cliente::count();
+        $cantidadMascotas = Mascota::count();
+
+        // INVENTARIO
+        $insumosBajoStock = Insumo::whereColumn('stock_actual', '<=', 'stock_minimo')->count();
+        $valorInventario = Insumo::select(DB::raw('SUM(stock_actual * precio_venta) as total'))->value('total') ?? 0;
+
+        // TOP PRESTACIONES (Últimos 30 días o total)
+        $topPrestaciones = CitaCargo::whereNotNull('prestacion_id')
+            ->select('prestacion_id', DB::raw('count(*) as total'))
+            ->groupBy('prestacion_id')
+            ->orderByDesc('total')
+            ->limit(5)
+            ->with('prestacion')
+            ->get()
+            ->map(fn($cargo) => [
+                'nombre' => $cargo->prestacion->nombre ?? 'Desconocida',
+                'cantidad' => $cargo->total
+            ]);
+
+        $proximasCitas = Cita::with(['mascota', 'veterinario.usuario'])
+            ->where('estado', 'pendiente')
+            ->orderBy('fecha_hora', 'asc')
+            ->limit(5)
+            ->get();
+
+
+        $estadisticas = [
+            'financiero' => [
+                'total' => $ingresosTotales,
+                'mes' => $ingresosMes,
+            ],
+            'operativo' => [
+                'citas_totales' => $citasTotales,
+                'citas_completadas' => $citasCompletadas,
+                'citas_canceladas' => $citasCanceladas,
+                'citas_agendadas' => $citasAgendadas,
+                'clientes' => $clientesActivos,
                 'mascotas' => $cantidadMascotas,
             ],
-            'ultimasMascotas' => $ultimasMascotas->map(fn ($mascota) => [
-                'id' => $mascota->id,
-                'nombre' => $mascota->nombre,
-                'sexo' => $mascota->sexo,
-                'fecha_nacimiento_formato' => $mascota->fecha_nacimiento_formato,
-                'creado_en' => Carbon::parse($mascota->created_at)->locale('es')->diffForHumans(),
-            ]),
+            'inventario' => [
+                'bajo_stock' => $insumosBajoStock,
+                'valor_total' => $valorInventario,
+            ],
+            'top_prestaciones' => $topPrestaciones,
+            'proximas_citas' => $proximasCitas,
+        ];
+
+        return Inertia::render('App/Panel', [
+            'estadisticas' => $estadisticas,
         ]);
     }
 }

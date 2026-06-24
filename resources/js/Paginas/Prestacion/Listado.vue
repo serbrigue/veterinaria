@@ -7,31 +7,6 @@
                 <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <h1 class="h5 mb-0">Catálogo de Prestaciones</h1>
                     <div class="d-flex flex-wrap gap-2 align-items-center">
-                        <select
-                            v-model="filtroSucursal"
-                            class="form-select form-select-sm"
-                            style="width: auto; min-width: 12rem"
-                        >
-                            <option value="">Todas las sucursales</option>
-                            <option v-for="suc in sucursales" :key="suc.id" :value="suc.id">
-                                {{ suc.nombre }}
-                            </option>
-                        </select>
-                        <select
-                            v-model="filtroEspecialidad"
-                            class="form-select form-select-sm"
-                            style="width: auto; min-width: 10rem"
-                        >
-                            <option value="">Todas las especialidades</option>
-                            <option value="general">Medicina General</option>
-                            <option
-                                v-for="esp in especialidades"
-                                :key="esp.id"
-                                :value="esp.id"
-                            >
-                                {{ esp.nombre }}
-                            </option>
-                        </select>
                         <button v-if="isAdmin()" type="button" class="btn btn-sm btn-primary" @click="abrirModalCrear">
                             + Nueva Prestación
                         </button>
@@ -39,8 +14,42 @@
                 </div>
 
                 <div class="card-body">
+                    <!-- Barra de búsqueda y filtros -->
+                    <div class="bg-light p-3 rounded-3 border mb-4 shadow-sm">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-12 col-md-4 col-lg-3">
+                                <label class="form-label small fw-bold text-secondary mb-1">Especialidad</label>
+                                <select class="form-select form-select-sm" v-model="filtros.especialidad_id" @change="obtenerPrestaciones()">
+                                    <option value="">Todas</option>
+                                    <option value="general">Medicina General</option>
+                                    <option v-for="esp in especialidades" :key="esp.id" :value="esp.id">{{ esp.nombre }}</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-4 col-lg-3">
+                                <label class="form-label small fw-bold text-secondary mb-1">Sucursal</label>
+                                <select class="form-select form-select-sm" v-model="filtros.sucursal_id" @change="obtenerPrestaciones()">
+                                    <option value="">Todas</option>
+                                    <option v-for="suc in sucursales" :key="suc.id" :value="suc.id">{{ suc.nombre }}</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-4 col-lg-3">
+                                <label class="form-label small fw-bold text-secondary mb-1">Orden Precio</label>
+                                <select class="form-select form-select-sm" v-model="filtros.orden_precio" @change="obtenerPrestaciones()">
+                                    <option value="">Sin orden</option>
+                                    <option value="desc">Mayor a menor</option>
+                                    <option value="asc">Menor a mayor</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-lg-3 d-flex gap-2 justify-content-lg-end">
+                                <button class="btn btn-outline-secondary btn-sm w-100" @click="limpiarFiltros()">
+                                    Limpiar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <p v-show="!listaVacia" class="text-muted small mb-3">
-                        {{ totalPrestaciones }} prestación{{ totalPrestaciones === 1 ? '' : 'es' }} registrada{{ totalPrestaciones === 1 ? '' : 's' }}
+                        {{ totalPrestaciones }} prestación{{ totalPrestaciones === 1 ? '' : 'es' }} encontrada{{ totalPrestaciones === 1 ? '' : 's' }}
                     </p>
                     <div v-if="cargando" class="text-center py-4">
                         <div class="spinner-border text-primary" role="status">
@@ -59,7 +68,7 @@
 
                     <div v-else-if="sinResultadosFiltro" class="text-center py-5">
                         <p class="text-muted mb-3">Ninguna prestación coincide con el filtro.</p>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" @click="filtroEspecialidad = ''">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" @click="limpiarFiltros()">
                             Quitar filtro
                         </button>
                     </div>
@@ -203,6 +212,10 @@ export default {
         sucursales: {
             type: Array,
             default: () => [],
+        },
+        especialidades: {
+            type: Array,
+            default: () => [],
         }
     },
     data() {
@@ -211,10 +224,12 @@ export default {
             mostrarModal: false,
             modoEdicion: false,
             prestacionEditando: null,
-            filtroEspecialidad: '',
-            filtroSucursal: '',
+            filtros: {
+                especialidad_id: '',
+                sucursal_id: '',
+                orden_precio: ''
+            },
             listaPrestaciones: this.prestaciones,
-            especialidades: [],
             formulario: {
                 sucursal_id: null,
                 nombre: '',
@@ -229,18 +244,7 @@ export default {
     },
     computed: {
         prestacionesVisibles() {
-            let visibles = this.listaPrestaciones;
-            if (this.filtroEspecialidad !== '') {
-                if (this.filtroEspecialidad === 'general') {
-                    visibles = visibles.filter((p) => p.especialidad_id === null);
-                } else {
-                    visibles = visibles.filter((p) => p.especialidad_id === this.filtroEspecialidad);
-                }
-            }
-            if (this.filtroSucursal) {
-                visibles = visibles.filter((p) => p.sucursal_id === this.filtroSucursal);
-            }
-            return visibles;
+            return this.listaPrestaciones;
         },
         totalPrestaciones() {
             return this.prestacionesVisibles.length;
@@ -249,7 +253,7 @@ export default {
             return this.listaPrestaciones.length === 0;
         },
         sinResultadosFiltro() {
-            return this.listaPrestaciones.length > 0 && this.prestacionesVisibles.length === 0;
+            return !this.listaVacia && this.prestacionesVisibles.length === 0 && (this.filtros.especialidad_id || this.filtros.sucursal_id || this.filtros.orden_precio);
         },
         tituloModal() {
             return this.modoEdicion ? 'Editar Prestación' : 'Nueva Prestación';
@@ -328,11 +332,24 @@ export default {
                 });
         },
         obtenerPrestaciones() {
-            axios.get('/prestaciones', { headers: { 'Accept': 'application/json' } })
+            this.cargando = true;
+            axios.get('/prestaciones', { 
+                params: this.filtros,
+                headers: { 'Accept': 'application/json' } 
+            })
                 .then((response) => {
                     this.listaPrestaciones = response.data.prestaciones || response.data;
                 })
-                .catch((error) => console.error("No se pudo recargar la lista:", error));
+                .catch((error) => console.error("No se pudo recargar la lista:", error))
+                .finally(() => this.cargando = false);
+        },
+        limpiarFiltros() {
+            this.filtros = {
+                especialidad_id: '',
+                sucursal_id: '',
+                orden_precio: ''
+            };
+            this.obtenerPrestaciones();
         },
         confirmarEliminar(prestacion) {
             this.$confirmar('¿Eliminar prestación?', `Se eliminará la prestación ${prestacion.nombre}.`)

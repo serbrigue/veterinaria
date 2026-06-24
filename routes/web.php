@@ -11,6 +11,7 @@ use App\Http\Controllers\SucursalController;
 use App\Http\Controllers\BoxController;
 use App\Http\Controllers\VeterinarioController;
 use App\Http\Controllers\InsumoController;
+use App\Http\Controllers\PagoVeterinarioController;
 use App\Http\Controllers\PrestacionController;
 use App\Http\Controllers\TransaccionController;
 use Illuminate\Foundation\Application;
@@ -93,6 +94,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/insumos/{insumo}', [InsumoController::class, 'detalle'])->name('insumos.detalle')->middleware('can:ver,insumo');
 
     // Transacciones y Pagos
+    Route::get('/ingresos', [TransaccionController::class, 'listado'])->name('ingresos.listado');
+    
+    // Pagos a Veterinarios
+    Route::get('/liquidacion-veterinarios', [PagoVeterinarioController::class, 'index'])->name('pagos.veterinarios');
+    
     Route::get('/transacciones/{transaccion}/checkout', [TransaccionController::class, 'checkout'])
         ->name('transacciones.checkout')
         ->middleware('can:pagar,transaccion');

@@ -18,9 +18,14 @@ class VeterinarioController extends Controller
      * MÓDULO 4 — Backend de referencia (no modificar).
      * Tu trabajo: migración, rutas web/api y Vue (axios).
      */
-    public function listado()
+    public function listado(Request $request)
     {
-        $veterinarios = Veterinario::with(['usuario', 'sucursal', 'especialidad'])->get();
+        $query = Veterinario::with(['usuario', 'sucursal', 'especialidad'])
+            ->when($request->filled('nombre'), fn($q) => $q->whereHas('usuario', fn($u) => $u->where('name', 'like', '%' . $request->nombre . '%')))
+            ->when($request->filled('especialidad_id'), fn($q) => $q->where('especialidad_id', $request->especialidad_id))
+            ->when($request->filled('sucursal_id'), fn($q) => $q->where('sucursal_id', $request->sucursal_id));
+
+        $veterinarios = $query->get();
         $sucursales = Sucursal::all();
         $especialidades = Especialidad::all();
 

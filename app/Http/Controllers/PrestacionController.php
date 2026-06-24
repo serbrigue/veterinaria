@@ -15,18 +15,35 @@ class PrestacionController extends Controller
 
     public function listado(Request $request)
     {
-        if (request()->wantsJson()) {
-            $prestaciones = Prestacion::with(['sucursal', 'especialidad'])->get();
+        $query = Prestacion::with(['sucursal', 'especialidad'])
+            ->when($request->filled('especialidad_id'), function ($q) use ($request) {
+                if ($request->especialidad_id === 'general') {
+                    $q->whereNull('especialidad_id');
+                } else {
+                    $q->where('especialidad_id', $request->especialidad_id);
+                }
+            })
+            ->when($request->filled('sucursal_id'), fn($q) => $q->where('sucursal_id', $request->sucursal_id))
+            ->when($request->filled('orden_precio'), function ($q) use ($request) {
+                if ($request->orden_precio === 'asc') {
+                    $q->orderBy('precio_base', 'asc');
+                } elseif ($request->orden_precio === 'desc') {
+                    $q->orderBy('precio_base', 'desc');
+                }
+            });
 
+        $prestaciones = $query->get();
+
+        if ($request->wantsJson()) {
             return response()->json([
                 'prestaciones' => $prestaciones,
-
             ]);
         }
 
         return Inertia::render('Prestacion/Listado', [
-            'prestaciones' => Prestacion::with(['sucursal', 'especialidad'])->get(),
+            'prestaciones' => $prestaciones,
             'sucursales' => Sucursal::all(),
+            'especialidades' => \App\Models\Especialidad::all(),
         ]);
     }
 

@@ -25,22 +25,32 @@ class CitaController extends Controller
     public function listado(Request $request)
     {
         if (auth()->user()->isAdmin() || auth()->user()->isVeterinario()) {
-            $mascotas = Mascota::with('cliente.usuario', 'raza.especie')->get(); // Carga todas
+            $mascotas = Mascota::with('cliente.usuario', 'raza.especie')->get();
         } else {
-            $mascotas = Mascota::where('cliente_id', auth()->user()->cliente?->id)->get(); // Carga solo las suyas
+            $mascotas = Mascota::where('cliente_id', auth()->user()->cliente?->id)->get();
         }
 
-        if (auth()->user()->isAdmin() || auth()->user()->isVeterinario()) {
-            $citas = Cita::with(['mascota.cliente.usuario', 'veterinario.usuario', 'box'])->get();
-        } else {
+        $query = Cita::with(['mascota.cliente.usuario', 'veterinario.usuario', 'box', 'transaccion'])
+            ->when($request->filled('mascota_id'), fn($q) => $q->where('mascota_id', $request->mascota_id))
+            ->when($request->filled('veterinario_id'), fn($q) => $q->where('veterinario_id', $request->veterinario_id))
+            ->when($request->filled('sucursal_id'), fn($q) => $q->whereHas('box', fn($b) => $b->where('sucursal_id', $request->sucursal_id)))
+            ->when($request->filled('titulo'), fn($q) => $q->where('titulo', 'like', '%' . $request->titulo . '%'))
+            ->when($request->filled('estado'), fn($q) => $q->where('estado', $request->estado));
+
+        if (!auth()->user()->isAdmin() && !auth()->user()->isVeterinario()) {
             $clienteId = auth()->user()->cliente?->id;
-            $citas = Cita::whereHas('mascota', function ($query) use ($clienteId) {
-                $query->where('cliente_id', $clienteId);
-            })->with(['mascota.cliente.usuario', 'veterinario.usuario', 'box'])->where('estado', '!=', 'cancelada')->get();
+            $query->whereHas('mascota', fn($q) => $q->where('cliente_id', $clienteId));
+
+            if (!$request->filled('estado')) {
+                $query->where('estado', '!=', 'cancelada');
+            }
         }
+
+        $citas = $query->get();
 
         $sucursales = Sucursal::with(['veterinarios.usuario', 'boxes'])->orderBy('nombre')->get();
         $prestaciones = Prestacion::with(['sucursal', 'especialidad'])->orderBy('nombre')->get();
+        $veterinarios = Veterinario::all();
 
         if ($request->wantsJson()) {
             return response()->json([
@@ -56,6 +66,7 @@ class CitaController extends Controller
             'mascotas' => $mascotas,
             'sucursales' => $sucursales,
             'prestaciones' => $prestaciones,
+            'veterinarios' => $veterinarios,
         ]);
     }
 

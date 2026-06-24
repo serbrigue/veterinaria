@@ -6,19 +6,6 @@
                 <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <h1 class="h5 mb-0">Mis Mascotas</h1>
                     <div class="d-flex flex-wrap gap-2 align-items-center">
-                        <select
-                            v-model="filtroSexo"
-                            class="form-select form-select-sm"
-                            style="width: auto; min-width: 10rem"
-                        >
-                            <option
-                                v-for="op in opcionesFiltroSexo"
-                                :key="op.value"
-                                :value="op.value"
-                            >
-                                {{ op.label }}
-                            </option>
-                        </select>
                         <button type="button" class="btn btn-sm btn-primary" @click="abrirModalCrear">
                             + Nueva Mascota
                         </button>
@@ -26,11 +13,72 @@
                 </div>
 
                 <div class="card-body">
-                    <p v-show="consultadoEn" class="text-muted small mb-2">Actualizado: {{ consultadoEn }}</p>
-                    <p v-show="!listaVacia" class="text-muted small mb-3">
-                        {{ totalMascotas }} mascota{{ totalMascotas === 1 ? '' : 's' }} registrada{{ totalMascotas === 1 ? '' : 's' }}
-                        <span v-show="mascotasEsterilizadas > 0"> · {{ mascotasEsterilizadas }} esterilizada{{ mascotasEsterilizadas === 1 ? '' : 's' }}</span>
-                    </p>
+                    <!-- Barra de búsqueda y filtros -->
+                    <div class="bg-light p-3 rounded-3 border mb-4 shadow-sm">
+                        <div class="row g-3 align-items-end">
+                            <!-- Buscar por Nombre -->
+                            <div class="col-12 col-md-6 col-lg-3">
+                                <label class="form-label small fw-bold text-secondary mb-1" for="filtroNombre">Buscar por Nombre</label>
+                                <input type="text" class="form-control form-control-sm" id="filtroNombre" placeholder="Ej: Toby" v-model="filtros.nombre" @keyup.enter="obtenerMascotas">
+                            </div>
+                            
+                            <!-- Buscar por Especie -->
+                            <div class="col-12 col-md-4 col-lg-2">
+                                <label class="form-label small fw-bold text-secondary mb-1" for="filtroEspecie">Especie</label>
+                                <select class="form-select form-select-sm" id="filtroEspecie" v-model="filtros.especie_id" @change="alCambiarFiltroEspecie">
+                                    <option value="">Todas</option>
+                                    <option v-for="especie in especies" :key="especie.id" :value="especie.id">
+                                        {{ especie.nombre }}
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Buscar por Raza -->
+                            <div class="col-12 col-md-4 col-lg-2">
+                                <label class="form-label small fw-bold text-secondary mb-1" for="filtroRaza">Raza</label>
+                                <select class="form-select form-select-sm" id="filtroRaza" v-model="filtros.raza_id" :disabled="!filtros.especie_id" @change="obtenerMascotas()">
+                                    <option value="">Todas</option>
+                                    <option v-for="raza in razasFiltro" :key="raza.id" :value="raza.id">
+                                        {{ raza.nombre }}
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Buscar por Sexo -->
+                            <div class="col-12 col-md-4 col-lg-1">
+                                <label class="form-label small fw-bold text-secondary mb-1" for="filtroSexo">Sexo</label>
+                                <select class="form-select form-select-sm" id="filtroSexo" v-model="filtros.sexo" @change="obtenerMascotas()">
+                                    <option value="">Todos</option>
+                                    <option v-for="op in opcionesSexo" :key="op.value" :value="op.value">{{ op.label }}</option>
+                                </select>
+                            </div>
+
+                            <!-- Buscar por Esterilizado -->
+                            <div class="col-12 col-md-4 col-lg-2">
+                                <label class="form-label small fw-bold text-secondary mb-1" for="filtroEsterilizado">Esterilizado</label>
+                                <select class="form-select form-select-sm" id="filtroEsterilizado" v-model="filtros.esterilizado" @change="obtenerMascotas()">
+                                    <option value="">Todos</option>
+                                    <option value="1">Sí</option>
+                                    <option value="0">No</option>
+                                </select>
+                            </div>
+
+                            <!-- Limpiar Filtros -->
+                            <div class="col-12 col-lg-2 d-flex gap-2 justify-content-lg-end">
+                                <button class="btn btn-outline-secondary btn-sm w-100" @click="limpiarFiltros()">
+                                    Limpiar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <p v-show="consultadoEn" class="text-muted small mb-0">Actualizado: {{ consultadoEn }}</p>
+                        <p v-show="!listaVacia" class="text-muted small mb-0 text-end">
+                            {{ totalMascotas }} mascota{{ totalMascotas === 1 ? '' : 's' }} encontrada{{ totalMascotas === 1 ? '' : 's' }}
+                            <span v-show="mascotasEsterilizadas > 0"> · {{ mascotasEsterilizadas }} esterilizada{{ mascotasEsterilizadas === 1 ? '' : 's' }}</span>
+                        </p>
+                    </div>
                     <div v-if="cargando" class="text-center py-4">
                         <div class="spinner-border text-primary" role="status">
                             <span class="visually-hidden">Cargando...</span>
@@ -48,7 +96,7 @@
 
                     <div v-else-if="sinResultadosFiltro" class="text-center py-5">
                         <p class="text-muted mb-3">Ninguna mascota coincide con el filtro.</p>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" @click="filtroSexo = ''">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" @click="limpiarFiltros()">
                             Quitar filtro
                         </button>
                     </div>
@@ -388,12 +436,19 @@ export default {
     data() {
         return {
             especies: [],
-            razas: [],
+            razas: [], // Para el modal de crear/editar
+            razasFiltro: [], // Para el filtro
             cargando: false,
             mostrarModal: false,
             modoEdicion: false,
             mascotaEditando: null,
-            filtroSexo: '',
+            filtros: {
+                nombre: '',
+                especie_id: '',
+                raza_id: '',
+                sexo: '',
+                esterilizado: ''
+            },
             opcionesSexo: [
                 { value: 'macho', label: 'Macho' },
                 { value: 'hembra', label: 'Hembra' },
@@ -417,14 +472,8 @@ export default {
         }
     },
     computed: {
-        opcionesFiltroSexo() {
-            return [{ value: '', label: 'Todos los sexos' }, ...this.opcionesSexo]
-        },
         mascotasVisibles() {
-            if (!this.filtroSexo) {
-                return this.mascotas
-            }
-            return this.mascotas.filter((m) => m.sexo === this.filtroSexo)
+            return this.mascotas
         },
         totalMascotas() {
             return this.mascotasVisibles.length
@@ -433,7 +482,7 @@ export default {
             return this.mascotas.length === 0
         },
         sinResultadosFiltro() {
-            return this.mascotas.length > 0 && this.mascotasVisibles.length === 0
+            return this.mascotasVisibles.length === 0 && (this.filtros.nombre || this.filtros.especie_id || this.filtros.sexo || this.filtros.esterilizado !== '')
         },
         mascotasEsterilizadas() {
             return this.mascotasVisibles.filter((m) => m.esterilizado).length
@@ -545,11 +594,41 @@ export default {
             }
         },
         obtenerMascotas(){
-            axios.get(`/mascotas`).then((response)=>{
+            this.cargando = true
+            axios.get(`/mascotas`, {
+                params: {
+                    ...this.filtros
+                }
+            }).then((response)=>{
                 this.mascotas = response.data.mascotas
             }).catch((error)=>{
                 this.$alertaError('Error', 'No se pudo obtener las mascotas.')
+            }).finally(() => {
+                this.cargando = false
             })
+        },
+        limpiarFiltros() {
+            this.filtros = {
+                nombre: '',
+                especie_id: '',
+                raza_id: '',
+                sexo: '',
+                esterilizado: ''
+            }
+            this.razasFiltro = []
+            this.obtenerMascotas()
+        },
+        alCambiarFiltroEspecie() {
+            this.filtros.raza_id = ''
+            if (this.filtros.especie_id) {
+                axios.get(`/razas`, { params: { especie_id: this.filtros.especie_id } })
+                    .then(response => {
+                        this.razasFiltro = response.data.razas
+                    })
+            } else {
+                this.razasFiltro = []
+            }
+            this.obtenerMascotas()
         },
         obtenerEspecies() {
             axios.get('/especies')

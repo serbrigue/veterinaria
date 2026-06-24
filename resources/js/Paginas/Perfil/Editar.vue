@@ -61,7 +61,7 @@
                                             <p class="text-muted small mb-0">Revisa recetas médicas, boletas emitidas y atenciones previas de tus mascotas.</p>
                                         </div>
                                     </div>
-                                    <Link :href="route('citas.listado')" class="btn btn-warning text-dark btn-sm rounded-pill px-4 fw-bold flex-shrink-0">Revisar Historial</Link>
+                                    <Link :href="route('citas.listado') + '?estado=completada'" class="btn btn-warning text-dark btn-sm rounded-pill px-4 fw-bold flex-shrink-0">Revisar Historial</Link>
                                 </div>
                             </div>
                         </div>

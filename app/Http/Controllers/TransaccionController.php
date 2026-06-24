@@ -4,11 +4,56 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Transaccion;
+use App\Models\Sucursal;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 
 class TransaccionController extends Controller
 {
+    /**
+     * Listado detallado de ingresos filtrables (BI Dashboard link).
+     */
+    public function listado(Request $request)
+    {
+        // Esta vista es típicamente para administradores, asumiremos que si llega acá tiene permiso
+        // o se puede proteger con middleware o policies adicionales en el router.
+        
+        $query = Transaccion::with([
+            'cita.veterinario.usuario', 
+            'cita.box.sucursal', 
+            'cliente.usuario', 
+            'cita.mascota'
+        ])->where('estado', 'pagado');
+
+        // Filtro: Mes y Año por separado
+        if ($request->filled('anio')) {
+            $query->whereYear('fecha_pago', $request->anio);
+        }
+        
+        if ($request->filled('mes')) {
+            $query->whereMonth('fecha_pago', $request->mes);
+        }
+
+        // Filtro: Sucursal
+        if ($request->filled('sucursal_id')) {
+            $sucursalId = $request->sucursal_id;
+            $query->whereHas('cita.box', function ($q) use ($sucursalId) {
+                $q->where('sucursal_id', $sucursalId);
+            });
+        }
+
+        $transacciones = $query->orderByDesc('fecha_pago')->get();
+
+        if ($request->wantsJson()) {
+            return response()->json($transacciones);
+        }
+
+        return Inertia::render('Transaccion/Listado', [
+            'transacciones_iniciales' => $transacciones,
+            'sucursales' => Sucursal::all()
+        ]);
+    }
+
     /**
      * Render the mock checkout page for a pending transaction.
      */

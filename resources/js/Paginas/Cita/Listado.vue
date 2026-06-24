@@ -15,12 +15,31 @@
                     <!-- Barra de búsqueda y filtros -->
                     <div class="bg-light p-3 rounded-3 border mb-4 shadow-sm">
                         <div class="row g-3 align-items-end">
-                            <div>
-                                <label class="form-label small fw-bold text-secondary mb-1" for="filtroTitulo">Buscar por Titulo</label>
-                                <input type="text" class="form-control form-control-sm" placeholder="Buscar por titulo" v-model="filtroTitulo" @keyup.enter="obtenerCitas">
+                            <div class="col-12 col-md-6 col-lg-3">
+                                <label class="form-label small fw-bold text-secondary mb-1" for="filtroTitulo">Buscar por Título</label>
+                                <input type="text" class="form-control form-control-sm" id="filtroTitulo" placeholder="Buscar por título" v-model="filtroTitulo" @keyup.enter="obtenerCitas">
+                            </div>
+                            <!-- Buscar por Sucursal -->
+                            <div class="col-12 col-md-4 col-lg-2">
+                                <label class="form-label small fw-bold text-secondary mb-1" for="filtroSucursal">Sucursal</label>
+                                <select 
+                                    class="form-select form-select-sm" 
+                                    id="filtroSucursal"
+                                    v-model="filtroSucursal"
+                                    @change="obtenerCitas()"
+                                >
+                                    <option value="">Todas</option>
+                                    <option 
+                                        v-for="sucursal in sucursales" 
+                                        :key="sucursal.id" 
+                                        :value="sucursal.id"
+                                    >
+                                        {{ sucursal.nombre }}
+                                    </option>
+                                </select>
                             </div>
                             <!-- Buscar por Mascota -->
-                            <div class="col-12 col-md-4 col-lg-3">
+                            <div class="col-12 col-md-4 col-lg-2">
                                 <label class="form-label small fw-bold text-secondary mb-1" for="filtroMascota">Buscar por Mascota</label>
                                 <select 
                                     class="form-select form-select-sm" 
@@ -39,7 +58,7 @@
                                 </select>
                             </div>
                             <!-- Buscar por Veterinario -->
-                            <div class="col-12 col-md-4 col-lg-3">
+                            <div class="col-12 col-md-4 col-lg-2">
                                 <label class="form-label small fw-bold text-secondary mb-1" for="filtroVeterinario">Buscar por Veterinario</label>
                                 <select 
                                     class="form-select form-select-sm"
@@ -58,10 +77,27 @@
                                 </select>
                             </div>
 
+                            <!-- Buscar por Estado -->
+                            <div class="col-12 col-md-4 col-lg-1">
+                                <label class="form-label small fw-bold text-secondary mb-1" for="filtroEstado">Estado</label>
+                                <select 
+                                    class="form-select form-select-sm"
+                                    id="filtroEstado"
+                                    v-model="filtroEstado"
+                                    @change="obtenerCitas()"
+                                >
+                                    <option value="">Todos</option>
+                                    <option value="pendiente">Pendiente</option>
+                                    <option value="en_curso">En curso</option>
+                                    <option value="completada">Completada</option>
+                                    <option value="cancelada">Cancelada</option>
+                                </select>
+                            </div>
+
                             <!-- Limpiar Filtros -->
-                            <div class="col-12 col-lg-3 d-flex gap-2 justify-content-lg-end">
-                                <button class="btn btn-outline-secondary btn-sm" @click="limpiarFiltros()">
-                                    Limpiar Filtros
+                            <div class="col-12 col-lg-2 d-flex gap-2 justify-content-lg-end">
+                                <button class="btn btn-outline-secondary btn-sm w-100" @click="limpiarFiltros()">
+                                    Limpiar
                                 </button>
                             </div>
                         </div>
@@ -126,21 +162,31 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <div class="d-flex justify-content-center gap-2">
-                                            <button
-                                                type="button"
-                                                class="btn btn-sm btn-outline-primary rounded-pill px-3 transition-all hover-opacity"
-                                                @click="abrirModalEditar(cita)"
-                                            >
-                                                Editar
-                                            </button>
-                                            <button
-                                                type="button"
-                                                class="btn btn-sm btn-outline-warning rounded-pill px-3 transition-all hover-opacity"
-                                                @click="confirmarCancelar(cita)"
-                                            >
-                                                <i class="bi bi-x-circle me-1"></i> Cancelar
-                                            </button>
+                                        <div class="d-flex justify-content-center gap-2 align-items-center">
+                                            <template v-if="cita.estado === 'completada'">
+                                                <div v-if="cita.transaccion" class="fw-bold text-success small">
+                                                    Total: ${{ Math.round(cita.transaccion.monto_total).toLocaleString('es-CL') }}
+                                                </div>
+                                                <div v-else class="text-muted small fw-medium">
+                                                    Sin registro de pago
+                                                </div>
+                                            </template>
+                                            <template v-else>
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-sm btn-outline-primary rounded-pill px-3 transition-all hover-opacity"
+                                                    @click="abrirModalEditar(cita)"
+                                                >
+                                                    Editar
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-sm btn-outline-warning rounded-pill px-3 transition-all hover-opacity"
+                                                    @click="confirmarCancelar(cita)"
+                                                >
+                                                    <i class="bi bi-x-circle me-1"></i> Cancelar
+                                                </button>
+                                            </template>
                                         </div>
                                     </td>
                                 </tr>
@@ -424,6 +470,8 @@ export default {
             filtroCliente:'',
             filtroVeterinario: '',
             filtroTitulo: '',
+            filtroEstado: '',
+            filtroSucursal: '',
             veterinariosSucursal: [],
             boxesSucursal: [],
             cargandoDetallesSucursal: false,
@@ -596,7 +644,13 @@ export default {
 
         obtenerCitas(){
             this.cargando=true;
-            axios.get('/citas',{params:{mascota_id:this.filtroMascota,veterinario_id:this.filtroVeterinario,titulo:this.filtroTitulo}})
+            axios.get('/citas',{params:{
+                mascota_id:this.filtroMascota,
+                veterinario_id:this.filtroVeterinario,
+                titulo:this.filtroTitulo,
+                estado:this.filtroEstado,
+                sucursal_id:this.filtroSucursal
+            }})
                 .then(response => {
                     this.citas=response.data.citas;
                 })
@@ -612,6 +666,8 @@ export default {
             this.filtroCliente='';
             this.filtroVeterinario='';
             this.filtroTitulo='';
+            this.filtroEstado='';
+            this.filtroSucursal='';
             this.obtenerCitas();
         },
         guardar() {
@@ -693,6 +749,10 @@ export default {
         },
     },
     mounted(){
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('estado')) {
+            this.filtroEstado = urlParams.get('estado');
+        }
         this.obtenerCitas();
     },
 

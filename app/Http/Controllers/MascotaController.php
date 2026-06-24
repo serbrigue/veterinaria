@@ -21,16 +21,21 @@ class MascotaController extends Controller
 
     public function listado(Request $request)
     {
+        $query = Mascota::with('cliente.usuario', 'raza.especie')
+            ->when($request->filled('nombre'), fn($q) => $q->where('nombre', 'like', '%' . $request->nombre . '%'))
+            ->when($request->filled('especie_id'), fn($q) => $q->whereHas('raza', fn($r) => $r->where('especie_id', $request->especie_id)))
+            ->when($request->filled('raza_id'), fn($q) => $q->where('raza_id', $request->raza_id))
+            ->when($request->filled('sexo'), fn($q) => $q->where('sexo', $request->sexo))
+            ->when($request->filled('esterilizado'), fn($q) => $q->where('esterilizado', $request->esterilizado));
 
         if (auth()->user()->isAdmin() || auth()->user()->isVeterinario()) {
-            $mascotas = Mascota::with('cliente.usuario', 'raza.especie')->get();
             $clientes = Cliente::with('usuario')->get();
         } else {
-            $mascotas = Mascota::with('cliente.usuario', 'raza.especie')
-                ->where('cliente_id', auth()->user()->cliente?->id)
-                ->get();
+            $query->where('cliente_id', auth()->user()->cliente?->id);
             $clientes = Cliente::where('user_id', auth()->id())->with('usuario')->get();
         }
+
+        $mascotas = $query->get();
 
         if ($request->wantsJson()) {
             return response()->json([

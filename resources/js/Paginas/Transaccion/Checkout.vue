@@ -67,7 +67,7 @@ const submitPayment = () => {
                         <div class="row g-0">
                             
                             <!-- Columna Resumen (Izquierda) -->
-                            <div class="col-md-5 bg-dark text-white p-4 p-md-5 d-flex flex-column justify-content-between">
+                            <div class="col-md-5 bg-primary text-white p-4 p-md-5 d-flex flex-column justify-content-between">
                                 <div>
                                     <div class="mb-5">
                                         <Link :href="route('citas.detalle', transaccion.cita_id)" class="text-white text-decoration-none opacity-75 hover-opacity-100 transition-all">
