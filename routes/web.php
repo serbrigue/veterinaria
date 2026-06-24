@@ -12,6 +12,7 @@ use App\Http\Controllers\BoxController;
 use App\Http\Controllers\VeterinarioController;
 use App\Http\Controllers\InsumoController;
 use App\Http\Controllers\PrestacionController;
+use App\Http\Controllers\TransaccionController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -39,7 +40,7 @@ Route::get('/', function () {
 });
 
 Route::get('/panel', [PanelController::class, 'index'])
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth', 'verified', 'can:ver-panel'])
     ->name('panel');
 
 Route::middleware('auth')->group(function () {
@@ -90,6 +91,15 @@ Route::middleware('auth')->group(function () {
     //Insumos
     Route::get('/insumos', [InsumoController::class, 'listado'])->name('insumos.listado')->middleware('can:verTodas,App\Models\Insumo');
     Route::get('/insumos/{insumo}', [InsumoController::class, 'detalle'])->name('insumos.detalle')->middleware('can:ver,insumo');
+
+    // Transacciones y Pagos
+    Route::get('/transacciones/{transaccion}/checkout', [TransaccionController::class, 'checkout'])
+        ->name('transacciones.checkout')
+        ->middleware('can:pagar,transaccion');
+        
+    Route::post('/transacciones/{transaccion}/pagar', [TransaccionController::class, 'procesarPago'])
+        ->name('transacciones.pagar')
+        ->middleware('can:pagar,transaccion');
 });
 
 require __DIR__ . '/auth.php';

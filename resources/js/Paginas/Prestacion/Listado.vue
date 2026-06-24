@@ -66,13 +66,12 @@
 
                     <div v-else class="row g-4">
                         <div v-for="prestacion in prestacionesVisibles" :key="prestacion.id" class="col-md-6 col-lg-4">
+                            <Link :href="route('prestaciones.detalle', prestacion.id)" class="text-decoration-none">
                             <div class="card h-100 shadow-sm border-0 border-top border-primary border-4" style="transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 .5rem 1rem rgba(0,0,0,.15)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 .125rem .25rem rgba(0,0,0,.075)';">
                                 <div class="card-body p-4 d-flex flex-column">
                                     <div class="d-flex justify-content-between align-items-start mb-2 gap-2">
                                         <h3 class="h5 fw-bold mb-0 text-dark">
-                                            <Link :href="route('prestaciones.detalle', prestacion.id)" class="text-decoration-none text-dark hover-primary">
-                                                {{ prestacion.nombre }}
-                                            </Link>
+                                            {{ prestacion.nombre }}
                                         </h3>
                                         <span class="badge rounded-pill text-bg-light border shadow-sm">
                                             {{ prestacion.especialidad_id ? prestacion.especialidad.nombre : 'Medicina General' }}
@@ -104,6 +103,7 @@
                                     </div>
                                 </div>
                             </div>
+                            </Link>
                         </div>
                     </div>
                 </div>

@@ -20,7 +20,7 @@ class AuthApiController extends Controller
     {
         $solicitud->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+            'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
@@ -41,7 +41,7 @@ class AuthApiController extends Controller
 
         Auth::login($usuario);
 
-        return response()->json(['redirect' => route('panel')], 201);
+        return response()->json(['redirect' => route('perfil.editar')], 201);
     }
 
     public function iniciarSesion(LoginRequest $solicitud)
@@ -49,13 +49,15 @@ class AuthApiController extends Controller
         $solicitud->authenticate();
         $solicitud->session()->regenerate();
 
-        return response()->json(['redirect' => route('panel')]);
+        return response()->json(['redirect' => route('perfil.editar')]);
     }
 
     public function cerrarSesion(Request $solicitud)
     {
         Auth::guard('web')->logout();
+
         $solicitud->session()->invalidate();
+
         $solicitud->session()->regenerateToken();
 
         return response()->json(['redirect' => '/']);
@@ -115,13 +117,13 @@ class AuthApiController extends Controller
 
         $solicitud->session()->put('auth.password_confirmed_at', time());
 
-        return response()->json(['redirect' => route('panel')]);
+        return response()->json(['redirect' => route('perfil.editar')]);
     }
 
     public function verificacionEnviar(Request $solicitud)
     {
         if ($solicitud->user()->hasVerifiedEmail()) {
-            return response()->json(['redirect' => route('panel')]);
+            return response()->json(['redirect' => route('perfil.editar')]);
         }
 
         $solicitud->user()->sendEmailVerificationNotification();

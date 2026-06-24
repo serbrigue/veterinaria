@@ -61,7 +61,7 @@
                                 </p>
                             </div>
 
-                            <div v-if="puedeEditarCita" class="mb-0">
+                            <div v-if="puedeEditarCita && estadoCita != 'completada'" class="mb-0">
                                 <h3 class="h6 text-uppercase text-muted fw-bold mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Notas Clinicas (Autoguardado)</h3>
                                 <div class="position-relative">
                                     <textarea 
@@ -80,8 +80,7 @@
                                 </div>
                                 <small class="text-muted mt-1 d-block">Las notas se guardan automáticamente al hacer clic fuera del cuadro de texto.</small>
                             </div>
-
-                            <div v-if="!puedeEditarCita" class="mb-0">
+                            <div class="mb-0" v-else-if="!puedeEditarCita || cita.estado === 'completada'">
                                 <h3 class="h6 text-uppercase text-muted fw-bold mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Notas Clinicas</h3>
                                 <p class="text-secondary bg-light p-3 rounded border-start border-primary border-3 mb-0" style="white-space: pre-wrap;">
                                     {{ cita.notas || 'Sin notas.' }}
@@ -135,6 +134,24 @@
                                             </span>
                                             <h3 class="fw-bold mb-0 text-white">{{ totalFinalFormateado }}</h3>
                                         </div>
+                                        
+                                        <!-- Estado de Transacción -->
+                                        <div v-if="cita.transaccion" class="p-3 bg-light text-center border-top rounded-bottom-4 d-flex justify-content-between align-items-center">
+                                            <span class="badge px-3 py-2 fs-6" :class="{
+                                                'bg-success': cita.transaccion.estado === 'pagado',
+                                                'bg-warning text-dark': cita.transaccion.estado === 'pendiente',
+                                                'bg-info': cita.transaccion.estado === 'abonado',
+                                                'bg-danger': cita.transaccion.estado === 'anulado'
+                                            }">
+                                                <i class="bi bi-info-circle me-1"></i> Estado: {{ cita.transaccion.estado.toUpperCase() }}
+                                            </span>
+                                            
+                                            <Link v-if="cita.transaccion.estado === 'pendiente'" 
+                                                  :href="route('transacciones.checkout', cita.transaccion.id)" 
+                                                  class="btn btn-primary fw-bold px-4 shadow-sm">
+                                                <i class="bi bi-credit-card me-2"></i> Pagar en Línea
+                                            </Link>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -173,7 +190,7 @@
                                                 <span class="small fw-semibold text-dark">{{ cargo.insumo.nombre }}</span>
                                                 
                                                 <!-- Controles de cantidad -->
-                                                <div class="input-group input-group-sm ms-2" style="width: 90px;">
+                                                <div v-if="estadoCita != 'completada'" class="input-group input-group-sm ms-2" style="width: 90px;">
                                                     <button class="btn btn-outline-secondary px-2 fw-bold" type="button" @click="actualizarCantidad(cargo, -1)" :disabled="procesandoCargo === cargo.id || cargo.cantidad <= 1">
                                                         -
                                                     </button>
@@ -185,7 +202,7 @@
                                             </div>
                                             <div class="d-flex align-items-center gap-3">
                                                 <span class="small text-muted fw-semibold">${{ Number(cargo.subtotal).toLocaleString('es-CL') }}</span>
-                                                <button class="btn btn-sm btn-outline-danger p-1" @click="eliminarCargo(cargo.id)" :disabled="procesandoCargo === cargo.id" title="Eliminar Insumo">
+                                                <button v-if="estadoCita != 'completada'" class="btn btn-sm btn-outline-danger p-1" @click="eliminarCargo(cargo.id)" :disabled="procesandoCargo === cargo.id" title="Eliminar Insumo">
                                                     <span v-if="procesandoCargo === cargo.id" class="spinner-border spinner-border-sm"></span>
                                                     <span v-else class="fw-bold px-2">X</span>
                                                 </button>
@@ -195,7 +212,7 @@
                                     <p v-else class="text-muted small mb-3"><i class="bi bi-dash-circle me-1"></i> Aún no se han registrado elementos usados.</p>
 
                                     <!-- Agregar nuevo insumo -->
-                                    <div class="border rounded-3 p-3 bg-white">
+                                    <div v-if="estadoCita != 'completada'" class="border rounded-3 p-3 bg-white">
                                         <h4 class="h6 fw-semibold text-dark mb-2"><i class="bi bi-plus-circle me-1 text-success"></i> Agregar Insumo</h4>
                                         <div class="row g-2 align-items-end">
                                             <div class="col-12 col-sm-6">
@@ -379,7 +396,14 @@ export default {
             return total;
         },
 
+        estadoCita() {
+            return this.cita.estado;
+        },
+
         totalFinal() {
+            if (this.cita.transaccion) {
+                return parseFloat(this.cita.transaccion.monto_total);
+            }
             const precioBase = parseFloat(this.prestacion?.precio_base || 0);
             return this.totalCargos + precioBase;
         },
@@ -478,6 +502,7 @@ export default {
                 cita_id: this.cita.id,
                 insumo_id: this.nuevoInsumoId,
                 cantidad:  this.nuevaCantidad,
+
             })
             .then(response => {
                 // Añadir el cargo devuelto por el servidor a la lista local

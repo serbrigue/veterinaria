@@ -47,6 +47,11 @@ class Cita extends Model
         return $this->belongsTo(Mascota::class, 'mascota_id');
     }
 
+    public function transaccion()
+    {
+        return $this->hasOne(Transaccion::class);
+    }
+
     /**
      * Accessor virtual 'cliente'.
      * Extrae y mapea la información del propietario de la mascota

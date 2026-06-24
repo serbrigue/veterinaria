@@ -134,6 +134,11 @@ class DatabaseSeeder extends Seeder
             'descripcion' => 'Permite eliminar las citas propias.',
         ]);
 
+        $permisoPagarTransacciones = Permiso::create([
+            'nombre' => 'pagar-transacciones',
+            'descripcion' => 'Permite realizar el pago en línea de las transacciones pendientes.',
+        ]);
+
 
         $permisoVerCitasSucursal = Permiso::create([
             'nombre' => 'ver-citas-sucursal',
@@ -222,6 +227,7 @@ class DatabaseSeeder extends Seeder
             $permisoVerMisCitas->id,
             $permisoEditarMisCitas->id,
             $permisoEliminarMisCitas->id,
+            $permisoPagarTransacciones->id,
         ]);
 
         // Asociar permisos a Veterinario
@@ -714,46 +720,24 @@ class DatabaseSeeder extends Seeder
 
         // 11. Cargar el Carrito de Compras (citas_cargo) para las citas de ejemplo
 
-        // Cobro de la Vacunación (Consulta General + 2 Jeringas)
+        // Cobro de la Vacunación (2 Jeringas)
         DB::table('citas_cargo')->insert([
             'cita_id' => $citaVacuna->id,
-            'prestacion_id' => $prestacionGeneralId,
-            'insumo_id' => null,
-            'cantidad' => 1,
-            'precio_unitario' => 20000.00,
-            'subtotal' => 20000.00,
-            'pago_vet' => 10000.00, // 50% de 20k
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ]);
-        DB::table('citas_cargo')->insert([
-            'cita_id' => $citaVacuna->id,
-            'prestacion_id' => null,
+            'prestacion_id' => $citaVacuna->prestacion_id,
             'insumo_id' => $insumoJeringaId,
             'cantidad' => 2,
             'precio_unitario' => 500.00,
             'subtotal' => 1000.00,
-            'pago_vet' => 0, // Los insumos no dan comisión
+            'pago_vet' => 0,
             'created_at' => Carbon::now(),
             'updated_at' => Carbon::now(),
         ]);
 
 
-        DB::table('citas_cargo')->insert([
-            'cita_id' => $citaCirugia->id,
-            'prestacion_id' => $prestacionCirugiaId,
-            'insumo_id' => null,
-            'cantidad' => 1,
-            'precio_unitario' => 150000.00,
-            'subtotal' => 150000.00,
-            'pago_vet' => 60000.00, // 40% de 150k
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ]);
 
         DB::table('citas_cargo')->insert([
             'cita_id' => $citaCirugia->id,
-            'prestacion_id' => null,
+            'prestacion_id' => $citaCirugia->prestacion_id,
             'insumo_id' => $insumoAnestesiaId,
             'cantidad' => 4,
             'precio_unitario' => 5000.00,
@@ -763,6 +747,17 @@ class DatabaseSeeder extends Seeder
             'updated_at' => Carbon::now(),
         ]);
 
-        $this->command->info('¡Base de datos sembrada y expandida exitosamente con el catálogo de prestaciones y carritos de compra médicos!');
+        // 12. Generar Transacción para Cita Completada
+        \App\Models\Transaccion::create([
+            'cita_id' => $citaVacuna->id,
+            'cliente_id' => $cliente1->id,
+            'monto_total' => 21000.00,
+            'monto_pagado' => 21000.00,
+            'estado' => 'pagado',
+            'metodo_pago' => 'tarjeta',
+            'fecha_pago' => Carbon::now()->subDays(10)->setTime(10, 30, 0),
+        ]);
+
+        $this->command->info('¡Base de datos sembrada y expandida exitosamente con transacciones!');
     }
 }

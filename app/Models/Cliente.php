@@ -23,6 +23,11 @@ class Cliente extends Model
         return $this->hasMany(Mascota::class, 'cliente_id');
     }
 
+    public function transacciones()
+    {
+        return $this->hasMany(Transaccion::class);
+    }
+
 
     
 }

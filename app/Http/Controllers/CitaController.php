@@ -8,6 +8,7 @@ use App\Models\Mascota;
 use App\Models\CitaCargo;
 use App\Models\Insumo;
 use App\Models\Prestacion;
+use App\Models\Transaccion;
 use \Illuminate\Support\Carbon;
 use App\Models\Sucursal;
 use App\Models\Box;
@@ -177,12 +178,12 @@ class CitaController extends Controller
         // Traemos solo las columnas necesarias para la comparación de solapamiento
         $citasVet = Cita::where('veterinario_id', $request->veterinario_id)
             ->whereDate('fecha_hora', $fecha)
-            ->where('estado', '!=', 'cancelada')
+            ->where('estado', '==', 'pendiente')
             ->get(['fecha_hora', 'hora_termino']);
 
         $citasBox = Cita::where('box_id', $request->box_id)
             ->whereDate('fecha_hora', $fecha)
-            ->where('estado', '!=', 'cancelada')
+            ->where('estado', '==', 'pendiente')
             ->get(['fecha_hora', 'hora_termino']);
 
         // Genera todos los slots de 30 min entre $inicio y $fin con el tipo indicado
@@ -249,6 +250,7 @@ class CitaController extends Controller
             'mascota.cliente.usuario',
             'veterinario.usuario',
             'box.sucursal',
+            'transaccion'
         ]);
 
         $mascota = Mascota::with([
@@ -292,8 +294,35 @@ class CitaController extends Controller
     {
         $request->validate(['estado' => 'required|in:pendiente,en_curso,completada,cancelada']);
 
-        $cita->update(['estado' => $request->estado]);
+        $nuevoEstado = $request->estado;
 
-        return response()->json($cita);
+        // Si el estado es completada y no tiene transacción, generamos una
+        if ($nuevoEstado === 'completada' && !$cita->transaccion) {
+            $cita->load('prestacion');
+            $mascota = \App\Models\Mascota::find($cita->mascota_id);
+
+            // Calculamos el total de los insumos
+            $totalCargos = CitaCargo::where('cita_id', $cita->id)
+                ->whereNotNull('insumo_id')
+                ->sum('subtotal');
+
+            $montoTotal = ($cita->prestacion ? $cita->prestacion->precio_base : 0) + $totalCargos;
+
+            Transaccion::create([
+                'cita_id' => $cita->id,
+                'cliente_id' => $mascota->cliente_id,
+                'monto_total' => $montoTotal,
+                'monto_pagado' => 0,
+                'estado' => 'pendiente',
+            ]);
+        } elseif ($nuevoEstado === 'cancelada') {
+            if ($cita->transaccion) {
+                $cita->transaccion->update(['estado' => 'anulado']);
+            }
+        }
+
+        $cita->update(['estado' => $nuevoEstado]);
+
+        return response()->json($cita->load('transaccion'));
     }
 }
