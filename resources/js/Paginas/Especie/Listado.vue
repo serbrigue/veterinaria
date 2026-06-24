@@ -67,28 +67,30 @@
                     <!-- Grid de especies -->
                     <div v-else class="row g-4">
                         <div v-for="especie in especiesVisibles" :key="especie.id" class="col-12 col-md-6 col-lg-4 col-xl-3">
-                            <Link :href="`/especies/${especie.id}`">
+                            
                                 <div 
                                     class="card h-100 border-0 shadow-sm hover-elevate transition-all overflow-hidden group-card cursor-pointer"
                                     
                                 >
                                     <!-- Imagen Header -->
                                     <div class="position-relative bg-light" style="height: 160px;">
-                                        <img 
-                                            v-if="especie.imagen_url" 
-                                            :src="especie.imagen_url" 
-                                            class="w-100 h-100 object-fit-cover hover-zoom" 
-                                            alt="Imagen de especie"
-                                        >
-                                        <div v-else class="w-100 h-100 d-flex align-items-center justify-content-center text-primary bg-primary bg-opacity-10">
-                                            <i class="bi bi-bug-fill fs-1"></i>
-                                        </div>
-                                        <!-- Overlay gradient -->
-                                        <div class="position-absolute bottom-0 start-0 w-100 h-50 bg-gradient-dark"></div>
-                                        <!-- Title badge overlapping -->
-                                        <div class="position-absolute bottom-0 start-0 w-100 p-3 pb-2 text-white">
-                                            <h3 class="h5 mb-0 fw-bold text-shadow text-truncate">{{ especie.nombre }}</h3>
-                                        </div>
+                                        <Link :href="`/especies/${especie.id}`">
+                                            <img 
+                                                v-if="especie.imagen_url" 
+                                                :src="especie.imagen_url" 
+                                                class="w-100 h-100 object-fit-cover hover-zoom" 
+                                                alt="Imagen de especie"
+                                            >
+                                            <div v-else class="w-100 h-100 d-flex align-items-center justify-content-center text-primary bg-primary bg-opacity-10">
+                                                <i class="bi bi-bug-fill fs-1"></i>
+                                            </div>
+                                            <!-- Overlay gradient -->
+                                            <div class="position-absolute bottom-0 start-0 w-100 h-50 bg-gradient-dark"></div>
+                                            <!-- Title badge overlapping -->
+                                            <div class="position-absolute bottom-0 start-0 w-100 p-3 pb-2 text-white">
+                                                <h3 class="h5 mb-0 fw-bold text-shadow text-truncate">{{ especie.nombre }}</h3>
+                                            </div>
+                                        </Link>
                                     </div>
                                     
                                     <div class="card-body p-3 d-flex flex-column">
@@ -112,7 +114,6 @@
                                         </div>
                                     </div>
                                 </div>
-                            </Link>
                         </div>
                     </div>
                 </div>

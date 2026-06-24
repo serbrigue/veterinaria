@@ -20,6 +20,7 @@ class ActualizarCitaRequest extends FormRequest
             'mascota_id' => 'required|integer|exists:mascotas,id',
             'veterinario_id' => 'required|integer|exists:veterinarios,id',
             'box_id' => 'required|integer|exists:boxes,id',
+            'prestacion_id' => 'required|integer|exists:prestaciones,id',
         ];
     }
 
@@ -38,6 +39,8 @@ class ActualizarCitaRequest extends FormRequest
             'veterinario_id.exists' => 'El veterinario seleccionado no existe.',
             'box_id.required' => 'El box es obligatorio.',
             'box_id.exists' => 'El box seleccionado no existe.',
+            'prestacion_id.required' => 'La prestacion es obligatoria.',
+            'prestacion_id.exists' => 'La prestacion seleccionada no existe.',
         ];
     }
 }

@@ -12,14 +12,39 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Models\Cita;
+use App\Models\Mascota;
+use App\Models\Veterinario;
+
 
 class ProfileController extends Controller
 {
     public function editar(Request $request): Response
     {
+
+        $clienteId = auth()->user()->cliente?->id;
+
+        $mascota = Mascota::where('cliente_id', $clienteId)->first();
+        $veterinario = Veterinario::all()->first();
+
+
+
+        $proximasCitas = Cita::whereHas('mascota', function ($query) use ($clienteId) {
+            $query->where('cliente_id', $clienteId);
+        })->with(['mascota.cliente.usuario', 'veterinario.usuario', 'box'])->where('estado', '!=', 'cancelada')->where('fecha_hora', '>=', now())->first();
+
+        $historialClinico = Cita::whereHas('mascota', function ($query) use ($clienteId) {
+            $query->where('cliente_id', $clienteId);
+        })->with(['mascota.cliente.usuario', 'veterinario.usuario', 'box'])->where('estado', '=', 'completada')->where('fecha_hora', '<', now())->first();
+
+
         return Inertia::render('Perfil/Editar', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => session('status'),
+            'proximasCitas' => $proximasCitas,
+            'historialClinico' => $historialClinico,
+            'mascota' => $mascota,
+            'veterinario' => $veterinario,
         ]);
     }
 
@@ -71,7 +96,7 @@ class ProfileController extends Controller
     {
         $solicitud->validate([
             'current_password' => ['required', 'current_password'],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'password' => ['required', 'confirmed', Password::defaults()],
         ]);
 
         $solicitud->user()->update([

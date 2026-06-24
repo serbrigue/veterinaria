@@ -82,29 +82,31 @@
                     
                         <div v-else class="row g-4">
                         <div v-for="raza in razas" :key="raza.id" class="col-12 col-md-6 col-lg-4 col-xl-3">
-                            <Link :href="`/razas/${raza.id}`">
+                            
                                 <div 
                                     class="card h-100 border-0 shadow-sm hover-elevate transition-all overflow-hidden group-card cursor-pointer"
                                     
                                 >
                                     <!-- Imagen Header -->
                                     <div class="position-relative bg-light" style="height: 160px;">
-                                        <img 
-                                            v-if="raza.imagen_url" 
-                                            :src="raza.imagen_url" 
-                                            class="w-100 h-100 object-fit-cover hover-zoom" 
-                                            alt="Imagen de raza"
-                                        >
-                                        <div v-else class="w-100 h-100 d-flex align-items-center justify-content-center text-primary bg-primary bg-opacity-10">
-                                            <i class="bi bi-bug-fill fs-1"></i>
-                                        </div>
-                                        <!-- Overlay gradient -->
-                                        <div class="position-absolute bottom-0 start-0 w-100 h-50 bg-gradient-dark"></div>
-                                        <!-- Title badge overlapping -->
-                                        <div class="position-absolute bottom-0 start-0 w-100 p-3 pb-2 text-white">
-                                            <h3 class="h5 mb-0 fw-bold text-shadow text-truncate">{{ raza.nombre }}</h3>
-                                            <span class="badge bg-white text-dark mt-1 shadow-sm"><i class="bi bi-tag-fill text-primary me-1"></i>{{ raza.especie?.nombre || 'Sin especie' }}</span>
-                                        </div>
+                                        <Link :href="`/razas/${raza.id}`">
+                                            <img 
+                                                v-if="raza.imagen_url" 
+                                                :src="raza.imagen_url" 
+                                                class="w-100 h-100 object-fit-cover hover-zoom" 
+                                                alt="Imagen de raza"
+                                            >
+                                            <div v-else class="w-100 h-100 d-flex align-items-center justify-content-center text-primary bg-primary bg-opacity-10">
+                                                <i class="bi bi-bug-fill fs-1"></i>
+                                            </div>
+                                            <!-- Overlay gradient -->
+                                            <div class="position-absolute bottom-0 start-0 w-100 h-50 bg-gradient-dark"></div>
+                                            <!-- Title badge overlapping -->
+                                            <div class="position-absolute bottom-0 start-0 w-100 p-3 pb-2 text-white">
+                                                <h3 class="h5 mb-0 fw-bold text-shadow text-truncate">{{ raza.nombre }}</h3>
+                                                <span class="badge bg-white text-dark mt-1 shadow-sm"><i class="bi bi-tag-fill text-primary me-1"></i>{{ raza.especie?.nombre || 'Sin especie' }}</span>
+                                            </div>
+                                        </Link>
                                     </div>
                                     
                                     <div class="card-body p-3 d-flex flex-column">
@@ -127,8 +129,7 @@
                                             </button>
                                         </div>
                                     </div>
-                                </div>
-                            </Link>
+                                </div>  
                         </div>
                     </div>
 
@@ -242,10 +243,6 @@ export default {
         Link,
     },
     props: {
-        razas: {
-            type: Array,
-            default: () => [],
-        },
         especies:{
             type:Array,
             default:()=> [],
@@ -258,7 +255,7 @@ export default {
             modoEdicion: false,
             razaEditando: null,
             mostrarConfirmacion: false,
-            razasVisibles:[],
+            razas:[],
             filtroEspecie:'',
             filtroTexto:'',
             razaAEliminar: null,
@@ -291,10 +288,10 @@ export default {
             return this.razas.length
         },
         listaVacia() {
-            return this.totalRazas === 0
+            return !this.cargando && this.razas.length === 0 && !this.filtroTexto && !this.filtroEspecie;
         },
         sinResultadosFiltro() {
-            return !this.cargando && this.totalRazas > 0 && this.razasVisibles.length === 0
+            return !this.cargando && this.razas.length === 0 && (this.filtroTexto || this.filtroEspecie);
         },
     },
     methods: {
@@ -355,7 +352,7 @@ export default {
             this.cargando=true;
             axios.get('/razas',{params:{texto:this.filtroTexto,especie_id:this.filtroEspecie}})
                 .then(response => {
-                    this.razasVisibles=response.data;
+                    this.razas=response.data.razas;
                 })
                 .catch(error => {
                     console.error('Error al obtener las razas:', error);

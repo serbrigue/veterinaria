@@ -10,6 +10,8 @@ use App\Http\Controllers\RazaController;
 use App\Http\Controllers\SucursalController;
 use App\Http\Controllers\BoxController;
 use App\Http\Controllers\VeterinarioController;
+use App\Http\Controllers\InsumoController;
+use App\Http\Controllers\PrestacionController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -80,6 +82,14 @@ Route::middleware('auth')->group(function () {
     //Veterinarios
     Route::get('/veterinarios', [VeterinarioController::class, 'listado'])->name('veterinarios.listado')->middleware('can:verTodas,App\Models\Veterinario');
     Route::get('/veterinarios/{veterinario}', [VeterinarioController::class, 'detalle'])->name('veterinarios.detalle')->middleware('can:ver,veterinario');
+
+    //Prestaciones
+    Route::get('/prestaciones', [PrestacionController::class, 'listado'])->name('prestaciones.listado')->middleware('can:verTodas,App\Models\Prestacion');
+    Route::get('/prestaciones/{prestacion}', [PrestacionController::class, 'detalle'])->name('prestaciones.detalle')->middleware('can:ver,prestacion');
+
+    //Insumos
+    Route::get('/insumos', [InsumoController::class, 'listado'])->name('insumos.listado')->middleware('can:verTodas,App\Models\Insumo');
+    Route::get('/insumos/{insumo}', [InsumoController::class, 'detalle'])->name('insumos.detalle')->middleware('can:ver,insumo');
 });
 
 require __DIR__ . '/auth.php';

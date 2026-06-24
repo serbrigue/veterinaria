@@ -10,6 +10,9 @@ use App\Http\Controllers\RazaController;
 use App\Http\Controllers\SucursalController;
 use App\Http\Controllers\BoxController;
 use App\Http\Controllers\VeterinarioController;
+use App\Http\Controllers\InsumoController;
+use App\Http\Controllers\PrestacionController;
+use App\Http\Controllers\CitaCargoController;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -90,6 +93,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/citas/{cita}/estado', [CitaController::class, 'actualizarEstado'])
         ->middleware('can:editar,cita');
 
+    // MÓDULO 6 — Cargos de Citas
+    Route::post('/citas/{cita}/cargo', [CitaCargoController::class, 'crear'])
+        ->middleware('can:crear,App\Models\CitaCargo');
+    Route::put('/cargos/{cargo}', [CitaCargoController::class, 'actualizar'])
+        ->middleware('can:actualizar,cargo');
+    Route::delete('/cargos/{cargo}', [CitaCargoController::class, 'eliminar'])
+        ->middleware('can:eliminar,cargo');
+
     //Sucursales
     Route::get('/sucursales', [SucursalController::class, 'obtenerTodas'])
         ->middleware('can:verTodas,App\Models\Sucursal');
@@ -119,4 +130,24 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('can:editar,veterinario');
     Route::delete('/veterinarios/{veterinario}', [VeterinarioController::class, 'eliminar'])
         ->middleware('can:eliminar,veterinario');
+
+    //Insumos
+    Route::get('/insumos', [InsumoController::class, 'obtenerTodas'])
+        ->middleware('can:verTodas,App\Models\Insumo');
+    Route::post('/insumos', [InsumoController::class, 'crear'])
+        ->middleware('can:crear,App\Models\Insumo');
+    Route::put('/insumos/{insumo}', [InsumoController::class, 'actualizar'])
+        ->middleware('can:editar,insumo');
+    Route::delete('/insumos/{insumo}', [InsumoController::class, 'eliminar'])
+        ->middleware('can:eliminar,insumo');
+
+    //Prestaciones
+    Route::get('/prestaciones', [PrestacionController::class, 'obtenerTodas'])
+        ->middleware('can:verTodas,App\Models\Prestacion');
+    Route::post('/prestaciones', [PrestacionController::class, 'crear'])
+        ->middleware('can:crear,App\Models\Prestacion');
+    Route::put('/prestaciones/{prestacion}', [PrestacionController::class, 'actualizar'])
+        ->middleware('can:editar,prestacion');
+    Route::delete('/prestaciones/{prestacion}', [PrestacionController::class, 'eliminar'])
+        ->middleware('can:eliminar,prestacion');
 });

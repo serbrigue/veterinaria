@@ -59,19 +59,12 @@ class RazaController extends Controller
 
     public function actualizar(ActualizarRazaRequest $solicitud, Raza $raza)
     {
-        // TODO: Verificar que $raza->user_id === auth()->id(), actualizar, retornar JSON
-        if ($raza->user_id !== auth()->id()) {
-            return response()->json(['error' => 'No autorizado'], 403);
-        }
         $raza->update($solicitud->validated());
         return response()->json($raza);
     }
 
     public function eliminar(Raza $raza)
     {
-        if ($raza->user_id !== auth()->id()) {
-            return response()->json(['error' => 'No autorizado'], 403);
-        }
         $raza->delete();
         return response()->json(['mensaje' => 'Raza eliminada correctamente']);
     }

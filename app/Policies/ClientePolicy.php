@@ -32,7 +32,6 @@ class ClientePolicy
 
     public function crear(User $user): bool
     {
-        // Nadie puede crear clientes manualmente por sistema (se crean con la cuenta automáticamente)
         return false;
     }
 

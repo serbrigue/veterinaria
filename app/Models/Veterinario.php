@@ -26,6 +26,11 @@ class Veterinario extends Model
         return $this->usuario?->name;
     }
 
+    public function foto_perfil_url()
+    {
+        return $this->foto_perfil_url;
+    }
+
     public function usuario()
     {
         return $this->belongsTo(User::class, 'user_id');

@@ -196,31 +196,43 @@
                                                 <div v-if="formulario.errors.mascota_id" class="invalid-feedback">{{ formulario.errors.mascota_id }}</div>
                                             </div>
                                             <div v-if="formulario.mascota_id" class="col-12">
+                                                <label for="prestacion_id" class="form-label fw-semibold text-secondary small text-uppercase">Prestación o Servicio</label>
+                                                <select id="prestacion_id" v-model="formulario.prestacion_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.prestacion_id }" required>
+                                                    <option value="" disabled>Selecciona una prestación</option>
+                                                    <option v-for="prestacion in prestaciones" :key="prestacion.id" :value="prestacion.id">
+                                                        {{ prestacion.nombre }} ({{ prestacion.sucursal?.nombre }})
+                                                    </option>
+                                                </select>
+                                                <div v-if="formulario.errors.prestacion_id" class="invalid-feedback">{{ formulario.errors.prestacion_id }}</div>
+                                            </div>
+
+                                            <div v-if="formulario.prestacion_id" class="col-12">
                                                 <label class="form-label fw-semibold text-secondary small text-uppercase">Sucursal</label>
-                                                <select id="sucursal_id" v-model="formulario.sucursal_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.sucursal_id }" @change="obtenerDetallesSucursal(formulario.sucursal_id)" required>
+                                                <select id="sucursal_id" v-model="formulario.sucursal_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.sucursal_id }" required disabled>
                                                     <option value="" disabled>Selecciona una sucursal</option>
-                                                    <option v-for="sucursal in sucursales" :key="sucursal.id" :value="sucursal.id">
+                                                    <option v-for="sucursal in sucursalesFiltradas" :key="sucursal.id" :value="sucursal.id">
                                                         {{ sucursal.nombre }}
                                                     </option>
                                                 </select>
                                                 <div v-if="formulario.errors.sucursal_id" class="invalid-feedback">{{ formulario.errors.sucursal_id }}</div>
                                             </div>
+
                                             <template v-if="formulario.sucursal_id">
                                                 <div class="col-12">
-                                                    <label class="form-label fw-semibold text-secondary small text-uppercase">Veterinario</label>
-                                                    <select id="veterinario_id" v-model="formulario.veterinario_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.veterinario_id }" required :disabled="cargandoDetallesSucursal">
-                                                        <option value="" disabled>{{ cargandoDetallesSucursal ? 'Cargando veterinarios...' : 'Selecciona un veterinario' }}</option>
-                                                        <option v-for="vet in veterinariosSucursal" :key="vet.id" :value="vet.id">
+                                                    <label class="form-label fw-semibold text-secondary small text-uppercase">Veterinario (Aptos)</label>
+                                                    <select id="veterinario_id" v-model="formulario.veterinario_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.veterinario_id }" required>
+                                                        <option value="" disabled>Selecciona un veterinario</option>
+                                                        <option v-for="vet in veterinariosFiltrados" :key="vet.id" :value="vet.id">
                                                             {{ vet.usuario.name }}
                                                         </option>
                                                     </select>
                                                     <div v-if="formulario.errors.veterinario_id" class="invalid-feedback">{{ formulario.errors.veterinario_id }}</div>
                                                 </div>
                                                 <div class="col-12">
-                                                    <label class="form-label fw-semibold text-secondary small text-uppercase">Box</label>
-                                                    <select id="box_id" v-model="formulario.box_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.box_id }" required :disabled="cargandoDetallesSucursal">
-                                                        <option value="" disabled>{{ cargandoDetallesSucursal ? 'Cargando boxes...' : 'Selecciona un box' }}</option>
-                                                        <option v-for="box in boxesSucursal" :key="box.id" :value="box.id">
+                                                    <label class="form-label fw-semibold text-secondary small text-uppercase">Box Disponible</label>
+                                                    <select id="box_id" v-model="formulario.box_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.box_id }" required>
+                                                        <option value="" disabled>Selecciona un box</option>
+                                                        <option v-for="box in boxesFiltrados" :key="box.id" :value="box.id">
                                                             {{ box.nombre }}
                                                         </option>
                                                     </select>
@@ -393,6 +405,10 @@ export default {
             type: Array,
             default: () => [],
         },
+        prestaciones: {
+            type: Array,
+            default: () => [],
+        },
     },
     data() {
         return {
@@ -425,6 +441,7 @@ export default {
                 veterinario_id: '',
                 sucursal_id: '',
                 box_id: '',
+                prestacion_id: '',
                 errors: {},
                 processing: false,
             },
@@ -434,10 +451,60 @@ export default {
         hoy() {
             return new Date().toISOString().split('T')[0];
         },
+        sucursalesFiltradas() {
+            if (!this.formulario.prestacion_id) return [];
+            const prestacion = this.prestaciones.find(p => p.id === this.formulario.prestacion_id);
+            if (!prestacion) return [];
+            return this.sucursales.filter(s => s.id === prestacion.sucursal_id);
+        },
+        veterinariosFiltrados() {
+            if (!this.formulario.sucursal_id || !this.formulario.prestacion_id) return [];
+            const sucursal = this.sucursales.find(s => s.id === this.formulario.sucursal_id);
+            if (!sucursal) return [];
+            const prestacion = this.prestaciones.find(p => p.id === this.formulario.prestacion_id);
+            
+            return sucursal.veterinarios.filter(vet => {
+                if (!prestacion.especialidad_id) return true;
+                return vet.especialidad_id === prestacion.especialidad_id;
+            });
+        },
+        boxesFiltrados() {
+            if (!this.formulario.sucursal_id) return [];
+            const sucursal = this.sucursales.find(s => s.id === this.formulario.sucursal_id);
+            return sucursal ? sucursal.boxes : [];
+        }
     },
     watch: {
-        'formulario.veterinario_id'() { this.cargarHorarios(); },
-        'formulario.box_id'()         { this.cargarHorarios(); },
+        'formulario.prestacion_id'(newVal) {
+            if (newVal) {
+                const prestacion = this.prestaciones.find(p => p.id === newVal);
+                if (prestacion && this.formulario.sucursal_id !== prestacion.sucursal_id) {
+                    this.formulario.sucursal_id = prestacion.sucursal_id;
+                }
+            } else {
+                this.formulario.sucursal_id = '';
+            }
+        },
+        'formulario.sucursal_id'(newVal, oldVal) {
+            if (oldVal && newVal !== oldVal && !this.modoEdicion) {
+                this.formulario.veterinario_id = '';
+                this.formulario.box_id = '';
+            }
+        },
+        'formulario.veterinario_id'(newVal, oldVal) { 
+            if (oldVal && newVal !== oldVal && !this.modoEdicion) {
+                this.formulario.fecha_seleccionada = '';
+                this.formulario.fecha_hora = '';
+            }
+            this.cargarHorarios(); 
+        },
+        'formulario.box_id'(newVal, oldVal) { 
+            if (oldVal && newVal !== oldVal && !this.modoEdicion) {
+                this.formulario.fecha_seleccionada = '';
+                this.formulario.fecha_hora = '';
+            }
+            this.cargarHorarios(); 
+        },
     },
     methods: {
         abrirModalCrear() {
@@ -450,6 +517,7 @@ export default {
             this.formulario.fecha_seleccionada = '';
             this.formulario.tipo = 'normal';
             this.formulario.mascota_id = '';
+            this.formulario.prestacion_id = '';
             this.formulario.sucursal_id = '';
             this.formulario.veterinario_id = '';
             this.formulario.box_id = '';
@@ -469,33 +537,12 @@ export default {
                 fecha_hora: this.formulario.fecha_hora,
                 tipo: this.formulario.tipo,
                 mascota_id: this.formulario.mascota_id,
+                prestacion_id: this.formulario.prestacion_id,
                 veterinario_id: this.formulario.veterinario_id,
                 box_id: this.formulario.box_id,
             };
         },
-        obtenerDetallesSucursal(sucursal_id, preserveSelection = false) {
-            if (!sucursal_id) {
-                this.veterinariosSucursal = [];
-                this.boxesSucursal = [];
-                return;
-            }
-            
-            // Limpiamos los campos dependientes para forzar una nueva selección, a menos que estemos abriendo el modal para editar
-            if (!preserveSelection) {
-                this.formulario.veterinario_id = '';
-                this.formulario.box_id = '';
-            }
-            
-            // Buscamos la sucursal en los props y extraemos sus datos
-            const sucursalSeleccionada = this.sucursales.find(s => s.id === sucursal_id);
-            if (sucursalSeleccionada) {
-                this.veterinariosSucursal = sucursalSeleccionada.veterinarios || [];
-                this.boxesSucursal = sucursalSeleccionada.boxes || [];
-            } else {
-                this.veterinariosSucursal = [];
-                this.boxesSucursal = [];
-            }
-        },
+
         abrirModalEditar(cita) {
             this.modoEdicion = true;
             this.citaEditando = cita;
@@ -506,20 +553,25 @@ export default {
             this.formulario.mascota_id = cita.mascota_id;
             // Obtenemos el ID del cliente mapeado en el accessor o mascota
             this.formulario.cliente_id = cita.cliente?.id || cita.mascota?.cliente_id || '';
-            this.formulario.sucursal_id = cita.box?.sucursal_id || '';
-            this.formulario.veterinario_id = cita.veterinario_id;
-            this.formulario.box_id = cita.box_id;
+            this.formulario.prestacion_id = cita.prestacion_id || '';
+            
+            // Allow watchers to run or simply assign:
+            this.$nextTick(() => {
+                this.formulario.sucursal_id = cita.box?.sucursal_id || '';
+                
+                this.$nextTick(() => {
+                    this.formulario.veterinario_id = cita.veterinario_id;
+                    this.formulario.box_id = cita.box_id;
+                    this.cargarHorarios();
+                });
+            });
+
             this.formulario.errors = {};
             this.mostrarModal = true;
 
             // Cargamos automáticamente la lista de mascotas del cliente asociado al editar
-            if (this.formulario.cliente_id) {
+            if (this.formulario.cliente_id && typeof this.obtenerMascotasCliente === 'function') {
                 this.obtenerMascotasCliente(this.formulario.cliente_id);
-            }
-            
-            // Cargamos veterinarios y boxes de la sucursal de la cita editada
-            if (this.formulario.sucursal_id) {
-                this.obtenerDetallesSucursal(this.formulario.sucursal_id, true);
             }
         },
         cerrarModal() {
@@ -532,6 +584,7 @@ export default {
             this.formulario.fecha_hora='';
             this.formulario.fecha_seleccionada='';
             this.formulario.tipo='normal';
+            this.formulario.prestacion_id='';
             this.formulario.sucursal_id='';
             this.formulario.veterinario_id='';
             this.formulario.box_id='';

@@ -82,7 +82,7 @@ class MascotaController extends Controller
     public function detalle(Mascota $mascota)
     {
 
-        $proximasCitas = Cita::with('veterinario.usuario', 'box.sucursal')->where('mascota_id', $mascota->id)->where('fecha_hora', '>=', Carbon::now())->where('estado', '!=', 'cancelada')->get();
+        $proximasCitas = Cita::with('veterinario.usuario', 'box.sucursal')->where('mascota_id', $mascota->id)->where('fecha_hora', '>=', Carbon::now())->where('estado', '=', 'pendiente')->get();
         $historialClinico = Cita::with('veterinario.usuario', 'box.sucursal')->where('mascota_id', $mascota->id)->where('estado', '=', 'completada')->orderBy('fecha_hora', 'desc')->get();
 
 

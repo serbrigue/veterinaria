@@ -22,6 +22,7 @@ class Cita extends Model
         'veterinario_id',
         'box_id',
         'mascota_id',
+        'prestacion_id',
     ];
 
     protected $appends = ['cliente'];
@@ -29,6 +30,11 @@ class Cita extends Model
     public function veterinario()
     {
         return $this->belongsTo(Veterinario::class, 'veterinario_id');
+    }
+
+    public function prestacion()
+    {
+        return $this->belongsTo(Prestacion::class, 'prestacion_id');
     }
 
     public function box()

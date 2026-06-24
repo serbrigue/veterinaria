@@ -15,6 +15,7 @@
                     <div class="d-flex align-items-center bg-white bg-opacity-10 rounded-pill px-2 py-1 mb-2 mb-lg-0 me-0 me-lg-2">
                         <button type="button" class="btn btn-sm btn-link nav-link text-white px-3 transition-all hover-opacity" @click="irSiExiste('especies.listado')">Especies</button>
                         <button type="button" class="btn btn-sm btn-link nav-link text-white px-3 transition-all hover-opacity" @click="irSiExiste('razas.listado')">Razas</button>
+                        <button type="button" class="btn btn-sm btn-link nav-link text-white px-3 transition-all hover-opacity" @click="irSiExiste('prestaciones.listado')">Servicios</button>
                     </div>
 
                     <!-- Sección Administración (Solo Vets/Admin) -->
@@ -23,6 +24,7 @@
                         <button type="button" class="btn btn-sm btn-link nav-link text-white px-2 fw-medium transition-all hover-opacity" @click="irSiExiste('clientes.listado')">Clientes</button>
                         <button type="button" class="btn btn-sm btn-link nav-link text-white px-2 fw-medium transition-all hover-opacity" @click="irSiExiste('sucursales.listado')">Sucursales</button>
                         <button type="button" class="btn btn-sm btn-link nav-link text-white px-2 fw-medium transition-all hover-opacity" @click="irSiExiste('boxes.listado')">Boxes</button>
+                        <button type="button" class="btn btn-sm btn-link nav-link text-white px-2 fw-medium transition-all hover-opacity" @click="irSiExiste('insumos.listado')">Insumos</button>
                         <button type="button" class="btn btn-sm btn-link nav-link text-white px-3 transition-all hover-opacity" @click="$inertia.visit(route('panel'))">Panel</button>
                     </div>
 
@@ -37,7 +39,7 @@
                     </div>
                 </div>
             </div>
-        </nav>
+        </nav>         
         <main class="flex-grow-1">
             <slot />
         </main>

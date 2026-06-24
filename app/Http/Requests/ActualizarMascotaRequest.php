@@ -15,7 +15,7 @@ class ActualizarMascotaRequest extends FormRequest
     {
         return [
             'nombre' => 'required|string|max:255',
-            'descripcion' => 'required|string|max:500',
+            'descripcion' => 'nullable|string|max:500',
             'sexo' => 'required|in:macho,hembra',
             'fecha_nacimiento' => 'nullable|date|before_or_equal:today',
             'raza_id' => 'required|exists:razas,id',
@@ -32,7 +32,6 @@ class ActualizarMascotaRequest extends FormRequest
         return [
             'nombre.required' => 'El nombre de la mascota es obligatorio.',
             'nombre.max' => 'El nombre no puede tener más de 255 caracteres.',
-            'descripcion.required' => 'La descripción es obligatoria.',
             'descripcion.max' => 'La descripción no puede tener más de 500 caracteres.',
             'sexo.required' => 'El sexo es obligatorio.',
             'sexo.in' => 'El sexo debe ser macho o hembra.',

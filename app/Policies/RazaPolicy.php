@@ -31,7 +31,7 @@ class RazaPolicy
     }
     public function crear(User $user): bool
     {
-        return $user->isVeterinario() && $user->tienePermiso('crear-especies');
+        return $user->isVeterinario() && $user->tienePermiso('crear-razas');
     }
 
 

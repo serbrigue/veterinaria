@@ -40,8 +40,14 @@ class Mascota extends Model
         return $this->belongsTo(Raza::class, 'raza_id');
     }
 
-    public function citas(){
-        return $this->hasMany(Cita::class,'mascota_id');
+    public function foto_url()
+    {
+        return $this->imagen_url;
+    }
+
+    public function citas()
+    {
+        return $this->hasMany(Cita::class, 'mascota_id');
     }
 
     public function getFechaNacimientoFormatoAttribute(): ?string
@@ -59,6 +65,6 @@ class Mascota extends Model
             return null;
         }
 
-        return Carbon::parse($this->fecha_nacimiento)->age.' años';
+        return Carbon::parse($this->fecha_nacimiento)->age . ' años';
     }
 }

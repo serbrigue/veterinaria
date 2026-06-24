@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Cita;
 use App\Models\Cliente;
 use App\Models\Mascota;
+use App\Models\CitaCargo;
+use App\Models\Insumo;
+use App\Models\Prestacion;
 use \Illuminate\Support\Carbon;
 use App\Models\Sucursal;
 use App\Models\Box;
@@ -36,12 +39,14 @@ class CitaController extends Controller
         }
 
         $sucursales = Sucursal::with(['veterinarios.usuario', 'boxes'])->orderBy('nombre')->get();
+        $prestaciones = Prestacion::with(['sucursal', 'especialidad'])->orderBy('nombre')->get();
 
         if ($request->wantsJson()) {
             return response()->json([
                 'citas' => $citas,
                 'mascotas' => $mascotas,
                 'sucursales' => $sucursales,
+                'prestaciones' => $prestaciones,
             ]);
         }
 
@@ -49,6 +54,7 @@ class CitaController extends Controller
             'citas' => $citas,
             'mascotas' => $mascotas,
             'sucursales' => $sucursales,
+            'prestaciones' => $prestaciones,
         ]);
     }
 
@@ -108,6 +114,7 @@ class CitaController extends Controller
                 'mascota_id' => $data['mascota_id'],
                 'veterinario_id' => $data['veterinario_id'],
                 'box_id' => $data['box_id'],
+                'prestacion_id' => $data['prestacion_id'],
             ]);
 
             return response()->json($cita, 201);
@@ -238,10 +245,37 @@ class CitaController extends Controller
 
     public function detalle(Cita $cita)
     {
-        $cita->load(['mascota.cliente.usuario', 'veterinario.usuario', 'box.sucursal']);
+        $cita->load([
+            'mascota.cliente.usuario',
+            'veterinario.usuario',
+            'box.sucursal',
+        ]);
+
+        $mascota = Mascota::with([
+            'cliente.usuario',
+            'raza.especie',
+        ])->find($cita->mascota_id);
+
+        // Cargos ya registrados para esta cita (prestaciones e insumos usados)
+        $cargos = CitaCargo::where('cita_id', $cita->id)
+            ->with(['prestacion', 'insumo'])
+            ->get();
+
+        // Insumos disponibles en la sucursal del veterinario asignado
+        $insumosSucursal = [];
+        if ($cita->veterinario && $cita->box?->sucursal_id) {
+            $insumosSucursal = Insumo::where('sucursal_id', $cita->box->sucursal_id)
+                ->where('stock_actual', '>', 0)
+                ->orderBy('nombre')
+                ->get(['id', 'nombre', 'precio_venta', 'stock_actual']);
+        }
 
         return Inertia::render('Cita/Detalle', [
-            'cita' => $cita,
+            'cita'            => $cita,
+            'cargos'          => $cargos,
+            'insumosSucursal' => $insumosSucursal,
+            'mascota'         => $mascota,
+            'prestacion' => $cita->prestacion,
         ]);
     }
 
