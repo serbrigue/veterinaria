@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Insumo extends Model
 {
+    use \App\Traits\ClearsCache;
+
+    public $cacheKeys = ['insumos_full'];
+
     protected $fillable = [
         'sucursal_id',
         'nombre',

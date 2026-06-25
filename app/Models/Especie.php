@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Especie extends Model
 {
+    use \App\Traits\ClearsCache;
+
+    public $cacheKeys = ['especies_simple', 'razas_full'];
     protected $fillable = [
         'nombre',
         'descripcion',

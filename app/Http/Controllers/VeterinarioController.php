@@ -11,6 +11,7 @@ use App\Http\Requests\GuardarVeterinarioRequest;
 use App\Http\Requests\ActualizarVeterinarioRequest;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Cache;
 
 class VeterinarioController extends Controller
 {
@@ -26,8 +27,13 @@ class VeterinarioController extends Controller
             ->when($request->filled('sucursal_id'), fn($q) => $q->where('sucursal_id', $request->sucursal_id));
 
         $veterinarios = $query->get();
-        $sucursales = Sucursal::all();
-        $especialidades = Especialidad::all();
+        $sucursales = Cache::remember('sucursales_simple', now()->addMinutes(30), function() {
+            return Sucursal::all();
+        });
+        
+        $especialidades = Cache::remember('especialidades_simple', now()->addMinutes(30), function() {
+            return Especialidad::all();
+        });
 
         if (request()->wantsJson()) {
             return response()->json([
@@ -53,7 +59,9 @@ class VeterinarioController extends Controller
 
     public function obtenerTodas()
     {
-        return Veterinario::with(['usuario', 'sucursal', 'especialidad'])->get();
+        return Cache::remember('veterinarios_full', now()->addMinutes(30), function() {
+            return Veterinario::with(['usuario', 'sucursal', 'especialidad'])->get();
+        });
     }
 
     public function crear(GuardarVeterinarioRequest $solicitud)

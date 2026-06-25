@@ -9,6 +9,7 @@ use App\Http\Requests\ActualizarRazaRequest;
 use Illuminate\Http\Request;
 
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Cache;
 
 class RazaController extends Controller
 {
@@ -21,22 +22,29 @@ class RazaController extends Controller
 
         $filtroEspecie = $request->input('especie_id');
 
+        $razasCached = Cache::remember('razas_full', now()->addMinutes(30), function() {
+            return Raza::with('especie')->get();
+        });
+        
+        $especiesCached = Cache::remember('especies_simple', now()->addMinutes(30), function() {
+            return Especie::all();
+        });
 
         if (request()->wantsJson()) {
-            $razas = Raza::with('especie');
+            $razas = $razasCached;
             if ($filtroEspecie) {
-                $razas->where('especie_id', $filtroEspecie);
+                $razas = $razas->where('especie_id', $filtroEspecie)->values();
             }
 
             return response()->json([
-                'razas' => $razas->get(),
-                'especies' => Especie::all(),
+                'razas' => $razas,
+                'especies' => $especiesCached,
             ]);
         }
 
         return Inertia::render('Raza/Listado', [
-            'razas' => Raza::with('especie')->get(),
-            'especies' => Especie::all(),
+            'razas' => $razasCached,
+            'especies' => $especiesCached,
         ]);
     }
 

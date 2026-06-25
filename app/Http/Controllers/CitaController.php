@@ -18,6 +18,7 @@ use App\Http\Requests\ActualizarCitaRequest;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class CitaController extends Controller
 {
@@ -46,11 +47,19 @@ class CitaController extends Controller
             }
         }
 
-        $citas = $query->get();
+        $citas = $query->orderBy('fecha_hora', 'desc')->paginate(15);
 
-        $sucursales = Sucursal::with(['veterinarios.usuario', 'boxes'])->orderBy('nombre')->get();
-        $prestaciones = Prestacion::with(['sucursal', 'especialidad'])->orderBy('nombre')->get();
-        $veterinarios = Veterinario::all();
+        $sucursales = Cache::remember('sucursales_full', now()->addMinutes(30), function() {
+            return Sucursal::with(['veterinarios.usuario', 'boxes'])->orderBy('nombre')->get();
+        });
+        
+        $prestaciones = Cache::remember('prestaciones_full', now()->addMinutes(30), function() {
+            return Prestacion::with(['sucursal', 'especialidad'])->orderBy('nombre')->get();
+        });
+        
+        $veterinarios = Cache::remember('veterinarios_simple', now()->addMinutes(30), function() {
+            return Veterinario::all();
+        });
 
         if ($request->wantsJson()) {
             return response()->json([

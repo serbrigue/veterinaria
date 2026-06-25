@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Sucursal extends Model
 {
+    use \App\Traits\ClearsCache;
+
+    public $cacheKeys = ['sucursales_full', 'sucursales_simple'];
     protected $table = 'sucursales';
     protected $fillable = [
         'nombre',

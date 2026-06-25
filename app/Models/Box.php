@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Box extends Model
 {
+    use \App\Traits\ClearsCache;
+
+    public $cacheKeys = ['boxes_full', 'sucursales_full'];
     protected $fillable = [
         'nombre',
         'descripcion',

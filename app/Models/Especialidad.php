@@ -7,7 +7,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Especialidad extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\ClearsCache;
+
+    public $cacheKeys = ['especialidades_full', 'veterinarios_full', 'prestaciones_full'];
 
     protected $table = 'especialidades';
 

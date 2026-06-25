@@ -98,6 +98,8 @@ Route::middleware('auth')->group(function () {
     
     // Pagos a Veterinarios
     Route::get('/liquidacion-veterinarios', [PagoVeterinarioController::class, 'index'])->name('pagos.veterinarios');
+    Route::get('/liquidacion-veterinarios/{veterinario}', [PagoVeterinarioController::class, 'detalle'])->name('pagos.veterinarios.detalle');
+    Route::post('/liquidacion-veterinarios/{veterinario}/pagar', [PagoVeterinarioController::class, 'procesarPago'])->name('pagos.veterinarios.pagar');
     
     Route::get('/transacciones/{transaccion}/checkout', [TransaccionController::class, 'checkout'])
         ->name('transacciones.checkout')

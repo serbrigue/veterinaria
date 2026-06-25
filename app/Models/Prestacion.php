@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Prestacion extends Model
 {
+    use \App\Traits\ClearsCache;
+
+    public $cacheKeys = ['prestaciones_full'];
     protected $table = 'prestaciones';
 
     protected $fillable = [

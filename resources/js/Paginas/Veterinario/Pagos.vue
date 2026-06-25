@@ -75,9 +75,9 @@
                         <thead class="bg-light">
                             <tr>
                                 <th class="text-uppercase text-muted small fw-bold py-3 ps-4 rounded-start">Veterinario</th>
-                                <th class="text-uppercase text-muted small fw-bold py-3 text-center">Servicios Realizados</th>
-                                <th class="text-uppercase text-muted small fw-bold py-3 text-end">Generado (Bruto)</th>
-                                <th class="text-uppercase text-muted small fw-bold py-3 text-end pe-4 rounded-end">Comisión a Pagar</th>
+                                <th class="text-uppercase text-muted small fw-bold py-3 text-center">Estado</th>
+                                <th class="text-uppercase text-muted small fw-bold py-3 text-end">Comisión Total</th>
+                                <th class="text-uppercase text-muted small fw-bold py-3 text-center pe-4 rounded-end">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -95,7 +95,7 @@
                                     </div>
                                 </td>
                             </tr>
-                            <tr v-for="vet in liquidacionesFiltradas" :key="vet.id" class="border-bottom">
+                            <tr v-for="vet in liquidacionesFiltradas" :key="vet.id" class="border-bottom cursor-pointer hover-bg-light transition-all" @click="irADetalle(vet)">
                                 <td class="ps-4 py-3">
                                     <div class="d-flex align-items-center">
                                         <div class="bg-primary bg-opacity-10 p-2 rounded-circle me-3 text-primary">
@@ -108,15 +108,18 @@
                                     </div>
                                 </td>
                                 <td class="text-center">
-                                    <span class="badge bg-light text-dark border px-3 py-2 fs-6">
-                                        {{ vet.servicios_realizados }}
+                                    <span class="badge rounded-pill px-3 py-2" :class="vet.estado === 'Pagado' ? 'bg-success bg-opacity-10 text-success' : 'bg-warning bg-opacity-10 text-warning'">
+                                        <i class="me-1" :class="vet.estado === 'Pagado' ? 'bi-check-circle-fill' : 'bi-clock-fill'"></i>
+                                        {{ vet.estado }}
                                     </span>
                                 </td>
                                 <td class="text-end">
-                                    <span class="text-secondary fw-semibold">${{ formatoDinero(vet.total_generado) }}</span>
-                                </td>
-                                <td class="text-end pe-4">
                                     <span class="fw-bold fs-5 text-success">${{ formatoDinero(vet.total_comision) }}</span>
+                                </td>
+                                <td class="text-center pe-4">
+                                    <button class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-sm d-print-none">
+                                        Ver Detalle
+                                    </button>
                                 </td>
                             </tr>
                         </tbody>
@@ -130,7 +133,7 @@
 
 <script>
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import axios from 'axios';
 
 export default {
@@ -170,8 +173,8 @@ export default {
     },
     computed: {
         liquidacionesFiltradas() {
-            // Solo mostramos veterinarios que generaron comisiones o hicieron servicios
-            return this.liquidaciones.filter(v => v.servicios_realizados > 0);
+            // Solo mostramos veterinarios que generaron comisiones
+            return this.liquidaciones.filter(v => parseFloat(v.total_comision) > 0);
         },
         totalGeneralComisiones() {
             const total = this.liquidacionesFiltradas.reduce((sum, v) => sum + (parseFloat(v.total_comision) || 0), 0);
@@ -202,12 +205,24 @@ export default {
         },
         imprimirReporte() {
             window.print();
+        },
+        irADetalle(vet) {
+            router.visit(route('pagos.veterinarios.detalle', { veterinario: vet.id, mes: this.filtros.mes, anio: this.filtros.anio }));
         }
     }
 }
 </script>
 
 <style scoped>
+.cursor-pointer {
+    cursor: pointer;
+}
+.hover-bg-light:hover {
+    background-color: #f8f9fa !important;
+}
+.transition-all {
+    transition: all 0.2s ease-in-out;
+}
 .tracking-wide {
     letter-spacing: 0.05em;
 }

@@ -171,7 +171,7 @@
                                                     Sin registro de pago
                                                 </div>
                                             </template>
-                                            <template v-else>
+                                            <template v-else-if="cita.estado === 'pendiente'">
                                                 <button
                                                     type="button"
                                                     class="btn btn-sm btn-outline-primary rounded-pill px-3 transition-all hover-opacity"
@@ -194,7 +194,30 @@
                         </table>
                     </div>
 
-                    <!-- TODO: Agregar paginación cuando haya muchas citas -->
+                    <!-- Controles de Paginación -->
+                    <div v-if="citasData && citasData.last_page > 1" class="d-flex justify-content-between align-items-center mt-4">
+                        <div class="text-muted small">
+                            Mostrando {{ citasData.from }} a {{ citasData.to }} de {{ citasData.total }} citas
+                        </div>
+                        <nav aria-label="Navegación de páginas">
+                            <ul class="pagination pagination-sm mb-0">
+                                <li class="page-item" :class="{ disabled: !citasData.prev_page_url }">
+                                    <button class="page-link" @click.prevent="obtenerCitas(citasData.prev_page_url)">Anterior</button>
+                                </li>
+                                <li 
+                                    v-for="link in citasData.links.slice(1, -1)" 
+                                    :key="link.label" 
+                                    class="page-item" 
+                                    :class="{ active: link.active }"
+                                >
+                                    <button class="page-link" @click.prevent="obtenerCitas(link.url)" v-html="link.label"></button>
+                                </li>
+                                <li class="page-item" :class="{ disabled: !citasData.next_page_url }">
+                                    <button class="page-link" @click.prevent="obtenerCitas(citasData.next_page_url)">Siguiente</button>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
                 </div>
             </div>
 
@@ -466,6 +489,7 @@ export default {
             citaAEliminar: null,
             eliminando: false,
             filtroMascota:'',
+            citasData: null,
             citas:[],
             filtroCliente:'',
             filtroVeterinario: '',
@@ -642,9 +666,10 @@ export default {
             this.horariosUrgencia=[];
         },
 
-        obtenerCitas(){
+        obtenerCitas(url = '/citas'){
+            if (!url) return;
             this.cargando=true;
-            axios.get('/citas',{params:{
+            axios.get(url,{params:{
                 mascota_id:this.filtroMascota,
                 veterinario_id:this.filtroVeterinario,
                 titulo:this.filtroTitulo,
@@ -652,7 +677,14 @@ export default {
                 sucursal_id:this.filtroSucursal
             }})
                 .then(response => {
-                    this.citas=response.data.citas;
+                    if (response.data.citas.data) {
+                        this.citasData = response.data.citas;
+                        this.citas = response.data.citas.data;
+                    } else {
+                        // En caso de que se pase data sin paginar por algún motivo
+                        this.citasData = null;
+                        this.citas = response.data.citas;
+                    }
                 })
                 .catch(error => {
                     console.error('Error al obtener las citas:', error);

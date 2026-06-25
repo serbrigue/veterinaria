@@ -8,14 +8,19 @@ use App\Http\Requests\GuardarBoxRequest;
 use App\Http\Requests\ActualizarBoxRequest;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Cache;
 
 class BoxController extends Controller
 {
 
     public function listado(Request $request)
     {
-        $boxes = Box::with('sucursal')->orderBy('nombre')->get();
-        $sucursales = Sucursal::orderBy('nombre')->get();
+        $boxes = Cache::remember('boxes_full', now()->addMinutes(30), function() {
+            return Box::with('sucursal')->orderBy('nombre')->get();
+        });
+        $sucursales = Cache::remember('sucursales_simple', now()->addMinutes(30), function() {
+            return Sucursal::orderBy('nombre')->get();
+        });
 
 
         if ($request->wantsJson()) {
@@ -33,7 +38,9 @@ class BoxController extends Controller
 
     public function obtenerTodas()
     {
-        $boxes = Box::orderBy('nombre')->get();
+        $boxes = Cache::remember('boxes_simple', now()->addMinutes(30), function() {
+            return Box::orderBy('nombre')->get();
+        });
 
         if (request()->wantsJson()) {
             return response()->json([

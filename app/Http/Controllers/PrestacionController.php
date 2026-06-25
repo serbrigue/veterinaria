@@ -9,6 +9,7 @@ use App\Http\Requests\ActualizarPrestacionRequest;
 use Illuminate\Http\Request;
 
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Cache;
 
 class PrestacionController extends Controller
 {
@@ -42,14 +43,16 @@ class PrestacionController extends Controller
 
         return Inertia::render('Prestacion/Listado', [
             'prestaciones' => $prestaciones,
-            'sucursales' => Sucursal::all(),
-            'especialidades' => \App\Models\Especialidad::all(),
+            'sucursales' => Cache::remember('sucursales_simple', now()->addMinutes(30), fn() => Sucursal::all()),
+            'especialidades' => Cache::remember('especialidades_simple', now()->addMinutes(30), fn() => \App\Models\Especialidad::all()),
         ]);
     }
 
     public function obtenerTodas()
     {
-        return Prestacion::with(['sucursal', 'especialidad'])->orderBy('nombre')->get();
+        return Cache::remember('prestaciones_full', now()->addMinutes(30), function() {
+            return Prestacion::with(['sucursal', 'especialidad'])->orderBy('nombre')->get();
+        });
     }
 
     public function crear(GuardarPrestacionRequest $solicitud)

@@ -7,6 +7,7 @@ use App\Models\Transaccion;
 use App\Models\Sucursal;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Cache;
 
 class TransaccionController extends Controller
 {
@@ -50,7 +51,9 @@ class TransaccionController extends Controller
 
         return Inertia::render('Transaccion/Listado', [
             'transacciones_iniciales' => $transacciones,
-            'sucursales' => Sucursal::all()
+            'sucursales' => Cache::remember('sucursales_simple', now()->addMinutes(30), function() {
+                return Sucursal::all();
+            })
         ]);
     }
 

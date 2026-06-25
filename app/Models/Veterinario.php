@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Veterinario extends Model
 {
+    use \App\Traits\ClearsCache;
+
+    public $cacheKeys = ['veterinarios_full', 'veterinarios_simple', 'sucursales_full'];
     protected $fillable = [
         'telefono',
         'direccion',

@@ -9,6 +9,7 @@ use App\Http\Requests\ActualizarInsumoRequest;
 use Illuminate\Http\Request;
 
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Cache;
 
 class InsumoController extends Controller
 {
@@ -18,22 +19,27 @@ class InsumoController extends Controller
 
     public function listado(Request $request)
     {
+        $insumosCached = Cache::remember('insumos_full', now()->addMinutes(30), function() {
+            return Insumo::with('sucursal')->orderBy('nombre')->get();
+        });
+
         if (request()->wantsJson()) {
-            $insumos = Insumo::with('sucursal')->get();
             return response()->json([
-                'insumos' => $insumos,
+                'insumos' => $insumosCached,
             ]);
         }
 
         return Inertia::render('Insumo/Listado', [
-            'insumos' => Insumo::with('sucursal')->get(),
-            'sucursales' => Sucursal::all(),
+            'insumos' => $insumosCached,
+            'sucursales' => Cache::remember('sucursales_simple', now()->addMinutes(30), fn() => Sucursal::all()),
         ]);
     }
 
     public function obtenerTodas()
     {
-        return Insumo::with('sucursal')->orderBy('nombre')->get();
+        return Cache::remember('insumos_full', now()->addMinutes(30), function() {
+            return Insumo::with('sucursal')->orderBy('nombre')->get();
+        });
     }
 
     public function crear(GuardarInsumoRequest $solicitud)
