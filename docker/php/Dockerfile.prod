@@ -1,0 +1,76 @@
+# ============================================================
+# Etapa 1: Construcción de Assets (Node.js)
+# ============================================================
+FROM node:20-alpine AS node-builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+# ============================================================
+# Etapa 2: Dependencias de PHP (Composer)
+# ============================================================
+FROM composer:2.7 AS composer-builder
+WORKDIR /app
+COPY composer.json composer.lock ./
+# Ignorar dependencias de desarrollo y scripts para evitar errores en build
+RUN composer install --no-dev --no-interaction --no-scripts --prefer-dist
+COPY . .
+RUN composer dump-autoload --optimize
+
+# ============================================================
+# Etapa 3: Imagen Final (PHP-FPM)
+# ============================================================
+FROM php:8.4-fpm
+
+# Dependencias del sistema
+RUN apt-get update && apt-get install -y \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    libzip-dev \
+    libpq-dev \
+    zip \
+    unzip \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Extensiones PHP necesarias para Laravel
+RUN docker-php-ext-install \
+    pdo_mysql \
+    mbstring \
+    exif \
+    pcntl \
+    bcmath \
+    gd \
+    zip \
+    opcache
+
+# Instalar extensión Redis para PHP
+RUN pecl install redis && docker-php-ext-enable redis
+
+# Copiar configuración personalizada de PHP y entrypoint
+COPY ./docker/php/php.ini /usr/local/etc/php/conf.d/custom.ini
+COPY ./docker/php/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Directorio de trabajo
+WORKDIR /var/www
+
+# Copiar todo el código fuente primero
+COPY . .
+
+# Sobrescribir carpetas con los builds de las etapas anteriores
+COPY --from=composer-builder /app/vendor /var/www/vendor
+COPY --from=node-builder /app/public/build /var/www/public/build
+
+# Permisos para storage y bootstrap/cache (crítico para Laravel)
+RUN chown -R www-data:www-data /var/www \
+    && chmod -R 775 /var/www/storage \
+    && chmod -R 775 /var/www/bootstrap/cache
+
+# Cambiar a usuario www-data
+USER www-data
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
