@@ -83,9 +83,9 @@ resource "aws_instance" "vet_server" {
     apt-get update -y
     apt-get install -y docker.io docker-compose-v2 git
 
-    # Clonar el repositorio
+    # Clonar el repositorio asegurando que sea la rama main
     cd /home/ubuntu
-    git clone https://github.com/${var.github_repository}.git veterinaria
+    git clone -b main https://github.com/${var.github_repository}.git veterinaria
     cd veterinaria
 
     # Crear el archivo .env necesario para Docker Compose
