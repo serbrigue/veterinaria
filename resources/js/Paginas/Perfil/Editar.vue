@@ -153,7 +153,7 @@
                                     </div>
                                     <h3 class="h5 fw-bold text-dark">Mi Agenda Clínica</h3>
                                     <p class="text-muted small mb-4">Revisa tus turnos y las citas agendadas para el día de hoy.</p>
-                                    <Link :href="route('citas.listado')" class="btn btn-outline-primary btn-sm mt-auto rounded-pill px-4 fw-medium">Ver Pacientes de Hoy</Link>
+                                    <Link :href="route('citas.listado') + (usuario.veterinario ? '?veterinario_id=' + usuario.veterinario.id : '')" class="btn btn-outline-primary btn-sm mt-auto rounded-pill px-4 fw-medium">Ver Pacientes de Hoy</Link>
                                 </div>
                             </div>
                         </div>
@@ -193,6 +193,42 @@
                         </div>
                     </div>
 
+                    <!-- Próxima Cita para Veterinario -->
+                    <div v-if="isVeterinario" class="row g-4 mb-4">
+                        <div class="col-md-12" v-if="proximaCitaVet && proximaCitaVet.fecha_hora">
+                            <div class="card border-0 shadow-sm rounded-4 border-start border-info border-4">
+                                <div class="card-body p-4 d-flex flex-column flex-sm-row align-items-center justify-content-between text-center text-sm-start gap-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="bg-light rounded p-3 text-center border shadow-sm">
+                                            <span class="d-block h4 fw-bold text-dark mb-0">{{ formatearDia(proximaCitaVet.fecha_hora) }}</span>
+                                            <span class="d-block small text-muted text-uppercase fw-bold">{{ formatearMes(proximaCitaVet.fecha_hora) }}</span>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <img :src="proximaCitaVet.mascota?.foto_url || `https://ui-avatars.com/api/?name=${proximaCitaVet.mascota?.nombre || 'Mascota'}&background=random&color=fff&rounded=true`" 
+                                                 alt="Foto mascota" class="rounded-circle shadow-sm" style="width: 50px; height: 50px; object-fit: cover;">
+                                            <div>
+                                                <h4 class="h6 fw-bold text-dark mb-1">Próxima Cita: {{ proximaCitaVet.mascota?.nombre || 'Paciente' }}</h4>
+                                                <p class="small text-muted mb-0"><i class="bi bi-clock me-1"></i> {{ formatearHora(proximaCitaVet.fecha_hora) }} hrs</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <Link :href="route('citas.detalle', proximaCitaVet.id)" class="btn btn-outline-info btn-sm rounded-pill px-4 fw-medium flex-shrink-0">Ver Detalles</Link>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12" v-else>
+                            <div class="card border-0 shadow-sm rounded-4 border-start border-secondary border-opacity-25 border-4 bg-light">
+                                <div class="card-body p-4 text-center d-flex align-items-center justify-content-center gap-3">
+                                    <i class="bi bi-calendar-x text-muted opacity-50 fs-2"></i>
+                                    <div class="text-start">
+                                        <h3 class="h6 fw-bold text-secondary mb-0">Agenda Libre</h3>
+                                        <p class="small text-muted mb-0">No tienes citas programadas próximamente.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- WIDGETS PARA ADMINISTRADOR -->
                     <div v-if="isAdmin" class="row g-4 mb-4">
                         <!-- Widget 1: Resumen General -->
@@ -206,7 +242,7 @@
                                     </div>
                                     <h3 class="h5 fw-bold text-dark">Métricas del Sistema</h3>
                                     <p class="text-muted small mb-4">Supervisa citas, ingresos financieros y nuevas mascotas registradas.</p>
-                                    <button class="btn btn-outline-danger btn-sm mt-auto rounded-pill px-4 fw-medium">Ver Reportes</button>
+                                    <Link :href="route('panel')" class="btn btn-outline-danger btn-sm mt-auto rounded-pill px-4 fw-medium">Ver Reportes</Link>
                                 </div>
                             </div>
                         </div>
@@ -222,7 +258,7 @@
                                     </div>
                                     <h3 class="h5 fw-bold text-dark">Gestión de Usuarios</h3>
                                     <p class="text-muted small mb-4">Administra cuentas de clientes, veterinarios y asigna permisos.</p>
-                                    <button class="btn btn-outline-primary btn-sm mt-auto rounded-pill px-4 fw-medium">Directorio de Cuentas</button>
+                                    <Link :href="route('clientes.listado')" class="btn btn-outline-primary btn-sm mt-auto rounded-pill px-4 fw-medium">Directorio de Cuentas</Link>
                                 </div>
                             </div>
                         </div>
@@ -240,7 +276,7 @@
                                             <p class="text-muted small mb-0">Control total sobre la red de clínicas y organización de boxes físicos.</p>
                                         </div>
                                     </div>
-                                    <button class="btn btn-warning text-dark btn-sm rounded-pill px-4 fw-bold flex-shrink-0">Gestionar Sedes</button>
+                                    <Link :href="route('sucursales.listado')" class="btn btn-warning text-dark btn-sm rounded-pill px-4 fw-bold flex-shrink-0">Gestionar Sedes</Link>
                                 </div>
                             </div>
                         </div>
@@ -343,7 +379,9 @@ export default {
     props: {
         proximasCitas: {
             type: Object,
-            
+        },
+        proximaCitaVet: {
+            type: Object,
         },
         historialClinico: {
             type: Object,

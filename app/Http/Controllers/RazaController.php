@@ -22,11 +22,11 @@ class RazaController extends Controller
 
         $filtroEspecie = $request->input('especie_id');
 
-        $razasCached = Cache::remember('razas_full', now()->addMinutes(30), function() {
+        $razasCached = Cache::remember('razas_full', now()->addMinutes(30), function () {
             return Raza::with('especie')->get();
         });
-        
-        $especiesCached = Cache::remember('especies_simple', now()->addMinutes(30), function() {
+
+        $especiesCached = Cache::remember('especies_simple', now()->addMinutes(30), function () {
             return Especie::all();
         });
 
@@ -50,8 +50,7 @@ class RazaController extends Controller
 
     public function obtenerTodas()
     {
-        // TODO: Retornar todas las razas del usuario autenticado
-        // return Raza::where('user_id', auth()->id())->get();
+
         return Raza::orderBy('nombre')->get();
     }
 

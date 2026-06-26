@@ -52,6 +52,11 @@ class Cita extends Model
         return $this->hasOne(Transaccion::class);
     }
 
+    public function cargos()
+    {
+        return $this->hasMany(CitaCargo::class, 'cita_id');
+    }
+
     /**
      * Accessor virtual 'cliente'.
      * Extrae y mapea la información del propietario de la mascota

@@ -18,11 +18,6 @@ class PanelController extends Controller
     public function index()
     {
         $user = Auth::user();
-
-        // Evitamos errores en nulo si el usuario logueado no tiene perfil de cliente (ej: admin o veterinario)
-        $clienteId = $user->cliente?->id;
-
-        // MÉTRICAS FINANCIERAS
         $ingresosTotales = Transaccion::where('estado', 'pagado')->sum('monto_total');
         $ingresosMes = Transaccion::where('estado', 'pagado')
             ->whereMonth('created_at', Carbon::now()->month)
@@ -42,16 +37,16 @@ class PanelController extends Controller
         $valorInventario = Insumo::select(DB::raw('SUM(stock_actual * precio_venta) as total'))->value('total') ?? 0;
 
         // TOP PRESTACIONES (Últimos 30 días o total)
-        $topPrestaciones = CitaCargo::whereNotNull('prestacion_id')
+        $topPrestaciones = Cita::whereNotNull('prestacion_id')
             ->select('prestacion_id', DB::raw('count(*) as total'))
             ->groupBy('prestacion_id')
             ->orderByDesc('total')
             ->limit(5)
             ->with('prestacion')
             ->get()
-            ->map(fn($cargo) => [
-                'nombre' => $cargo->prestacion->nombre ?? 'Desconocida',
-                'cantidad' => $cargo->total
+            ->map(fn($cita) => [
+                'nombre' => $cita->prestacion->nombre ?? 'Desconocida',
+                'cantidad' => $cita->total
             ]);
 
         $proximasCitas = Cita::with(['mascota', 'veterinario.usuario'])

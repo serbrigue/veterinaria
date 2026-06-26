@@ -252,14 +252,18 @@ class CitaController extends Controller
         ]);
     }
 
-    public function cancelar(Cita $cita)
+    public function cancelar(Request $request, Cita $cita)
     {
 
         if ($cita->estado === 'cancelada') {
             return response()->json(['mensaje' => 'La cita ya estaba cancelada'], 422);
         }
 
-        $cita->update(['estado' => 'cancelada']);
+        $motivo = $request->input('motivo_cancelacion', 'Cancelada sin motivo especificado.');
+        $cita->update([
+            'estado' => 'cancelada',
+            'notas' => $motivo
+        ]);
 
         return response()->json(['mensaje' => 'Cita cancelada correctamente']);
     }

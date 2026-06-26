@@ -25,7 +25,8 @@
                         <button type="button" class="btn btn-sm btn-link nav-link text-white px-2 fw-medium transition-all hover-opacity" @click="irSiExiste('sucursales.listado')">Sucursales</button>
                         <button type="button" class="btn btn-sm btn-link nav-link text-white px-2 fw-medium transition-all hover-opacity" @click="irSiExiste('boxes.listado')">Boxes</button>
                         <button type="button" class="btn btn-sm btn-link nav-link text-white px-2 fw-medium transition-all hover-opacity" @click="irSiExiste('insumos.listado')">Insumos</button>
-                        <button type="button" class="btn btn-sm btn-link nav-link text-white px-3 transition-all hover-opacity" @click="$inertia.visit(route('panel'))">Panel</button>
+
+                        <button v-if="esAdmin()" type="button" class="btn btn-sm btn-link nav-link text-white px-3 transition-all hover-opacity" @click="$inertia.visit(route('panel'))">Panel</button>
                     </div>
 
                     <!-- Sección Usuario -->
@@ -63,6 +64,10 @@ export default {
         esVeterinarioOAdmin() {
             const user = this.$page.props.auth.user;
             return user && user.rol && (user.rol.nombre_interno === 'veterinario' || user.rol.nombre_interno === 'admin');
+        },
+        esAdmin() {
+            const user = this.$page.props.auth.user;
+            return user && user.rol && user.rol.nombre_interno === 'admin';
         }
     },
 }

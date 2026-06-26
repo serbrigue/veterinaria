@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cliente;
+use App\Models\Sucursal;
 use App\Http\Requests\GuardarClienteRequest;
 use App\Http\Requests\ActualizarClienteRequest;
 use Illuminate\Http\Request;
@@ -14,30 +15,78 @@ class ClienteController extends Controller
      * MÓDULO 4 — Backend de referencia (no modificar).
      * Tu trabajo: migración, rutas web/api y Vue (axios).
      */
-    public function listado()
+    public function listado(Request $request)
     {
-        /**
-         * Intención de negocio:
-         * Controlar el listado de clientes en base al rol de usuario autenticado.
-         * Los administradores y veterinarios pueden ver el listado de todos los clientes de la veterinaria.
-         * Los clientes solo pueden ver su propia ficha de cliente para resguardar la privacidad.
-         */
+        $query = Cliente::with(['usuario', 'mascotas']);
+
         if (auth()->user()->isAdmin() || auth()->user()->isVeterinario()) {
-            $clientes = Cliente::with('usuario')->get();
+            // Administradores y veterinarios ven todos, con opción a filtrar
         } else {
-            // Si es un cliente, cargamos únicamente su propia información.
-            // Si por alguna razón no tiene perfil de cliente aún, evitamos el error retornando una colección vacía.
-            $clientes = Cliente::where('user_id', auth()->id())->with('usuario')->get();
+            // Un cliente solo ve su perfil
+            $query->where('user_id', auth()->id());
         }
 
-        if (request()->wantsJson()) {
+        // Filtros usando when() para mantener consistencia con otros controladores
+        $query->when($request->filled('nombre'), fn($q) => 
+            $q->whereHas('usuario', fn($u) => $u->where('name', 'like', '%' . $request->nombre . '%'))
+        )
+        ->when($request->filled('mascota'), fn($q) => 
+            $q->whereHas('mascotas', fn($m) => $m->where('nombre', 'like', '%' . $request->mascota . '%'))
+        )
+        ->when($request->filled('sucursal_id'), fn($q) => 
+            $q->whereHas('mascotas.citas.box', fn($b) => $b->where('sucursal_id', $request->sucursal_id))
+        )
+        ->when($request->filled('estado_pago'), function($q) use ($request) {
+            if ($request->estado_pago === 'moroso') {
+                $q->whereHas('transacciones', fn($t) => $t->where('estado', 'pendiente'));
+            } elseif ($request->estado_pago === 'al_dia') {
+                $q->whereDoesntHave('transacciones', fn($t) => $t->where('estado', 'pendiente'));
+            }
+        });
+
+        // Cargamos las transacciones pendientes explícitamente para mostrarlas rápido en el badge
+        $query->with(['transacciones' => function ($q) {
+            $q->where('estado', 'pendiente');
+        }]);
+
+        $clientes = $query->paginate(15);
+
+        if ($request->wantsJson()) {
             return response()->json([
                 'clientes' => $clientes,
             ]);
         }
 
+        $sucursales = Sucursal::select('id', 'nombre')->get();
+
         return Inertia::render('Cliente/Listado', [
             'clientes' => $clientes,
+            'sucursales' => $sucursales,
+        ]);
+    }
+
+    public function detalle(Request $request, Cliente $cliente)
+    {
+        $this->authorize('ver', $cliente);
+
+        $cliente->load([
+            'usuario',
+            'mascotas.raza.especie'
+        ]);
+
+        $transacciones = $cliente->transacciones()
+            ->with('cita.prestacion')
+            ->orderByDesc('created_at')
+            ->paginate(5);
+
+        $deudaTotal = $cliente->transacciones()->where('estado', 'pendiente')->sum('monto_total');
+        $transaccionesPendientesCount = $cliente->transacciones()->where('estado', 'pendiente')->count();
+
+        return Inertia::render('Cliente/Detalle', [
+            'cliente' => $cliente,
+            'transacciones' => $transacciones,
+            'deudaTotal' => $deudaTotal,
+            'transaccionesPendientesCount' => $transaccionesPendientesCount
         ]);
     }
 

@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\Transaccion;
 use App\Models\Sucursal;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\PagoConfirmadoMail;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Cache;
 
@@ -18,11 +20,11 @@ class TransaccionController extends Controller
     {
         // Esta vista es típicamente para administradores, asumiremos que si llega acá tiene permiso
         // o se puede proteger con middleware o policies adicionales en el router.
-        
+
         $query = Transaccion::with([
-            'cita.veterinario.usuario', 
-            'cita.box.sucursal', 
-            'cliente.usuario', 
+            'cita.veterinario.usuario',
+            'cita.box.sucursal',
+            'cliente.usuario',
             'cita.mascota'
         ])->where('estado', 'pagado');
 
@@ -30,7 +32,7 @@ class TransaccionController extends Controller
         if ($request->filled('anio')) {
             $query->whereYear('fecha_pago', $request->anio);
         }
-        
+
         if ($request->filled('mes')) {
             $query->whereMonth('fecha_pago', $request->mes);
         }
@@ -43,15 +45,20 @@ class TransaccionController extends Controller
             });
         }
 
-        $transacciones = $query->orderByDesc('fecha_pago')->get();
+        $totalFiltrado = (clone $query)->sum('monto_pagado');
+        $transacciones = $query->orderByDesc('fecha_pago')->paginate(15);
 
         if ($request->wantsJson()) {
-            return response()->json($transacciones);
+            return response()->json([
+                'transacciones' => $transacciones,
+                'totalFiltrado' => $totalFiltrado
+            ]);
         }
 
         return Inertia::render('Transaccion/Listado', [
             'transacciones_iniciales' => $transacciones,
-            'sucursales' => Cache::remember('sucursales_simple', now()->addMinutes(30), function() {
+            'total_filtrado_inicial' => $totalFiltrado,
+            'sucursales' => Cache::remember('sucursales_simple', now()->addMinutes(30), function () {
                 return Sucursal::all();
             })
         ]);
@@ -98,6 +105,12 @@ class TransaccionController extends Controller
             'monto_pagado' => $transaccion->monto_total,
             'fecha_pago' => Carbon::now(),
         ]);
+
+        $transaccion->loadMissing(['cliente.usuario', 'cita.mascota', 'cita.prestacion']);
+        $clienteEmail = $transaccion->cliente->usuario->email ?? null;
+        if ($clienteEmail) {
+            Mail::to($clienteEmail)->send(new PagoConfirmadoMail($transaccion));
+        }
 
         return response()->json(['message' => 'Pago procesado con éxito.', 'transaccion' => $transaccion]);
     }

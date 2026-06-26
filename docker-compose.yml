@@ -130,6 +130,7 @@ services:
       DB_PORT: 3306
       REDIS_HOST: redis
       REDIS_PORT: 6379
+    entrypoint: []
     command: >
       sh -c "sleep 15 &&
              php artisan queue:work

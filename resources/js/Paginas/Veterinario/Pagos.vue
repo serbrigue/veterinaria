@@ -63,7 +63,7 @@
                 </div>
                 <div class="card-body p-4 position-relative z-1">
                     <p class="mb-1 fw-medium text-white-50 text-uppercase tracking-wide">Total a Pagar en Honorarios</p>
-                    <h2 class="display-5 fw-bold mb-0">${{ totalGeneralComisiones }}</h2>
+                    <h2 class="display-5 fw-bold mb-0">${{ totalGeneralComisionesFormatted }}</h2>
                     <p class="mb-0 mt-2 text-white-50 small">Corresponde a la suma de todas las comisiones de los veterinarios en {{ nombreMesActual }} {{ filtros.anio }}.</p>
                 </div>
             </div>
@@ -117,13 +117,91 @@
                                     <span class="fw-bold fs-5 text-success">${{ formatoDinero(vet.total_comision) }}</span>
                                 </td>
                                 <td class="text-center pe-4">
-                                    <button class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-sm d-print-none">
-                                        Ver Detalle
-                                    </button>
+                                    <div class="d-flex justify-content-center gap-2">
+                                        <button class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-sm d-print-none" @click.stop="irADetalle(vet)">
+                                            Ver Detalle
+                                        </button>
+                                        <button v-if="vet.estado === 'Pagado'" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm d-print-none" @click.stop="verComprobante(vet)">
+                                            <i class="bi bi-receipt me-1"></i> Comprobante
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
+                </div>
+                
+                <!-- Paginación -->
+                <div v-if="liquidacionesData && liquidacionesData.last_page > 1" class="d-flex justify-content-between align-items-center p-4 border-top">
+                    <div class="text-muted small">
+                        Mostrando {{ liquidacionesData.from }} a {{ liquidacionesData.to }} de {{ liquidacionesData.total }} veterinarios
+                    </div>
+                    <nav aria-label="Navegación de páginas">
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item" :class="{ disabled: !liquidacionesData.prev_page_url }">
+                                <button class="page-link" @click.prevent="aplicarFiltros(liquidacionesData.prev_page_url)">Anterior</button>
+                            </li>
+                            <li 
+                                v-for="link in liquidacionesData.links.slice(1, -1)" 
+                                :key="link.label" 
+                                class="page-item" 
+                                :class="{ active: link.active }"
+                            >
+                                <button class="page-link" @click.prevent="aplicarFiltros(link.url)" v-html="link.label"></button>
+                            </li>
+                            <li class="page-item" :class="{ disabled: !liquidacionesData.next_page_url }">
+                                <button class="page-link" @click.prevent="aplicarFiltros(liquidacionesData.next_page_url)">Siguiente</button>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- MODAL COMPROBANTE DE LIQUIDACION -->
+            <div v-if="mostrarModalComprobante && liquidacionSeleccionada" class="modal fade show d-block d-print-none" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow rounded-4">
+                        <div class="modal-header bg-light border-bottom-0 rounded-top-4 p-4">
+                            <h5 class="modal-title fw-bold text-dark"><i class="bi bi-receipt me-2 text-primary"></i> Comprobante de Honorarios</h5>
+                            <button type="button" class="btn-close" @click="mostrarModalComprobante = false"></button>
+                        </div>
+                        <div class="modal-body p-4" id="comprobante-vet-imprimir">
+                            <div class="text-center mb-4">
+                                <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+                                <h4 class="mt-2 fw-bold text-success">Honorarios Pagados</h4>
+                                <p class="text-muted mb-0">Comprobante LIQ-{{ filtros.anio }}{{ String(filtros.mes).padStart(2, '0') }}-{{ liquidacionSeleccionada.id.toString().padStart(4, '0') }}</p>
+                            </div>
+                            
+                            <div class="card bg-light border-0 rounded-4">
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between mb-3">
+                                        <span class="text-muted small">Periodo de Pago:</span>
+                                        <span class="fw-medium text-dark">{{ nombreMesActual }} {{ filtros.anio }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-3">
+                                        <span class="text-muted small">Veterinario:</span>
+                                        <span class="fw-medium text-dark">{{ liquidacionSeleccionada.nombre }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-3">
+                                        <span class="text-muted small">Estado:</span>
+                                        <span class="fw-medium text-success"><i class="bi bi-check-circle-fill me-1"></i> Pagado</span>
+                                    </div>
+                                    <hr class="border-secondary opacity-25">
+                                    <div class="d-flex justify-content-between align-items-center mt-3">
+                                        <span class="text-uppercase fw-bold text-muted small">Total Comisiones</span>
+                                        <span class="fs-4 fw-bold text-success">${{ formatoDinero(liquidacionSeleccionada.total_comision) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-center mt-4">
+                                <small class="text-muted">Documento generado por el Sistema Veterinario.</small>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-top-0 p-4">
+                            <button type="button" class="btn btn-secondary rounded-pill px-4" @click="mostrarModalComprobante = false">Cerrar</button>
+                            <button type="button" class="btn btn-primary rounded-pill px-4" @click="imprimirComprobanteVet"><i class="bi bi-printer me-2"></i>Imprimir</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -144,7 +222,11 @@ export default {
     },
     props: {
         liquidaciones_iniciales: {
-            type: Array,
+            type: Object,
+            required: true
+        },
+        total_general_inicial: {
+            type: Number,
             required: true
         },
         mes_inicial: {
@@ -158,8 +240,12 @@ export default {
     },
     data() {
         return {
-            liquidaciones: this.liquidaciones_iniciales,
+            liquidacionesData: this.liquidaciones_iniciales,
+            liquidaciones: this.liquidaciones_iniciales.data || [],
+            totalGeneralAPI: this.total_general_inicial,
             cargando: false,
+            mostrarModalComprobante: false,
+            liquidacionSeleccionada: null,
             meses: {
                 1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril', 5: 'Mayo', 6: 'Junio',
                 7: 'Julio', 8: 'Agosto', 9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
@@ -176,23 +262,38 @@ export default {
             // Solo mostramos veterinarios que generaron comisiones
             return this.liquidaciones.filter(v => parseFloat(v.total_comision) > 0);
         },
-        totalGeneralComisiones() {
-            const total = this.liquidacionesFiltradas.reduce((sum, v) => sum + (parseFloat(v.total_comision) || 0), 0);
-            return this.formatoDinero(total);
+        totalGeneralComisionesFormatted() {
+            return this.formatoDinero(this.totalGeneralAPI);
         },
         nombreMesActual() {
             return this.meses[this.filtros.mes] || '';
         }
     },
     methods: {
-        async aplicarFiltros() {
+        verComprobante(vet) {
+            this.liquidacionSeleccionada = vet;
+            this.mostrarModalComprobante = true;
+        },
+        imprimirComprobanteVet() {
+            window.print();
+        },
+        async aplicarFiltros(url = null) {
             this.cargando = true;
             try {
-                const response = await axios.get(route('pagos.veterinarios'), {
-                    params: this.filtros,
+                const fetchUrl = typeof url === 'string' ? url : route('pagos.veterinarios');
+                const response = await axios.get(fetchUrl, {
+                    params: typeof url === 'string' ? {} : this.filtros,
                     headers: { 'Accept': 'application/json' }
                 });
-                this.liquidaciones = response.data;
+                
+                if (response.data.liquidaciones) {
+                    this.liquidacionesData = response.data.liquidaciones;
+                    this.liquidaciones = response.data.liquidaciones.data;
+                    this.totalGeneralAPI = response.data.totalGeneral;
+                } else {
+                    this.liquidacionesData = null;
+                    this.liquidaciones = response.data;
+                }
             } catch (error) {
                 console.error('Error al calcular liquidaciones:', error);
             } finally {
@@ -262,6 +363,16 @@ export default {
         background-color: #f8f9fa !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
+    }
+    #comprobante-vet-imprimir, #comprobante-vet-imprimir * {
+        visibility: visible;
+    }
+    #comprobante-vet-imprimir {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background-color: white;
     }
 }
 </style>

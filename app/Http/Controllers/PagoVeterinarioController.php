@@ -24,9 +24,10 @@ class PagoVeterinarioController extends Controller
                     ->whereYear('fecha_pago', $anio);
               })
               ->with('prestacion');
-        }])->get();
+        }])->paginate(15);
 
-        $liquidaciones = $veterinarios->map(function ($vet) use ($mes, $anio) {
+        // Transformar la colección subyacente para inyectar cálculos de comisiones
+        $veterinarios->getCollection()->transform(function ($vet) use ($mes, $anio) {
             $totalComision = 0;
 
             foreach ($vet->citas as $cita) {
@@ -50,12 +51,31 @@ class PagoVeterinarioController extends Controller
             ];
         });
 
+        // Calcular total general de todas las comisiones del periodo (sin importar paginación)
+        $citasMes = Cita::where('estado', 'completada')
+            ->whereHas('transaccion', function ($t) use ($mes, $anio) {
+                $t->where('estado', 'pagado')
+                  ->whereMonth('fecha_pago', $mes)
+                  ->whereYear('fecha_pago', $anio);
+            })
+            ->with('prestacion')->get();
+
+        $totalGeneral = $citasMes->sum(function($cita) {
+            $precio = $cita->prestacion->precio_base ?? 0;
+            $porcentaje = $cita->prestacion->comision_vet ?? 0;
+            return ($precio * $porcentaje) / 100;
+        });
+
         if ($request->wantsJson()) {
-            return response()->json($liquidaciones);
+            return response()->json([
+                'liquidaciones' => $veterinarios,
+                'totalGeneral' => $totalGeneral
+            ]);
         }
 
         return Inertia::render('Veterinario/Pagos', [
-            'liquidaciones_iniciales' => $liquidaciones,
+            'liquidaciones_iniciales' => $veterinarios,
+            'total_general_inicial' => $totalGeneral,
             'mes_inicial' => $mes,
             'anio_inicial' => $anio
         ]);

@@ -758,6 +758,60 @@ class DatabaseSeeder extends Seeder
             'fecha_pago' => Carbon::now()->subDays(10)->setTime(10, 30, 0),
         ]);
 
-        $this->command->info('¡Base de datos sembrada y expandida exitosamente con transacciones!');
+        // 13. Generar Clientes extra con Transacciones Pendientes (Para pruebas masivas de correo)
+        for ($i = 1; $i <= 5; $i++) {
+            $userExtra = User::create([
+                'name' => 'Cliente Deuda ' . $i,
+                'email' => "cliente.deuda{$i}@prueba.com",
+                'password' => Hash::make('password123'),
+                'rol_id' => $rolCliente->id,
+            ]);
+
+            $clienteExtra = Cliente::create([
+                'user_id' => $userExtra->id,
+                'telefono' => '+5690000000' . $i,
+                'direccion' => "Calle Falsa 12{$i}, Viña del Mar",
+                'foto_perfil_url' => "https://i.pravatar.cc/150?u=deuda{$i}",
+            ]);
+
+            $mascotaExtra = Mascota::create([
+                'nombre' => 'Mascota Morosa ' . $i,
+                'descripcion' => 'Paciente generado masivamente',
+                'sexo' => $i % 2 == 0 ? 'Macho' : 'Hembra',
+                'fecha_nacimiento' => Carbon::create(2021, 1, $i),
+                'peso_kg' => 5.0 + $i,
+                'color' => 'Mestizo',
+                'esterilizado' => true,
+                'cliente_id' => $clienteExtra->id,
+                'raza_id' => $razaPug->id,
+                'imagen_url' => 'https://ui-avatars.com/api/?name=Mascota&background=random'
+            ]);
+
+            $citaExtra = Cita::create([
+                'titulo' => 'Consulta General (Atrasada)',
+                'descripcion' => 'Atención realizada, pendiente de pago.',
+                'fecha_hora' => Carbon::now()->subDays($i)->setTime(11, 0, 0),
+                'hora_termino' => Carbon::now()->subDays($i)->setTime(11, 30, 0),
+                'estado' => 'completada',
+                'notas' => 'Atención finalizada, el cliente indicó que pagaría después vía transferencia.',
+                'mascota_id' => $mascotaExtra->id,
+                'veterinario_id' => $veterinario1->id,
+                'box_id' => $box1->id,
+                'prestacion_id' => $prestacionGeneralId,
+                'tipo' => 'normal',
+            ]);
+
+            \App\Models\Transaccion::create([
+                'cita_id' => $citaExtra->id,
+                'cliente_id' => $clienteExtra->id,
+                'monto_total' => 20000.00,
+                'monto_pagado' => 0.00,
+                'estado' => 'pendiente',
+                'metodo_pago' => null,
+                'fecha_pago' => null,
+            ]);
+        }
+
+        $this->command->info('¡Base de datos sembrada y expandida exitosamente con transacciones y clientes morosos!');
     }
 }

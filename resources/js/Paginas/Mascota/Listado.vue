@@ -160,6 +160,31 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Controles de Paginación -->
+                    <div v-if="mascotasData && mascotasData.last_page > 1" class="d-flex justify-content-between align-items-center mt-4">
+                        <div class="text-muted small">
+                            Mostrando {{ mascotasData.from }} a {{ mascotasData.to }} de {{ mascotasData.total }} mascotas
+                        </div>
+                        <nav aria-label="Navegación de páginas">
+                            <ul class="pagination pagination-sm mb-0">
+                                <li class="page-item" :class="{ disabled: !mascotasData.prev_page_url }">
+                                    <button class="page-link" @click.prevent="obtenerMascotas(mascotasData.prev_page_url)">Anterior</button>
+                                </li>
+                                <li 
+                                    v-for="link in mascotasData.links.slice(1, -1)" 
+                                    :key="link.label" 
+                                    class="page-item" 
+                                    :class="{ active: link.active }"
+                                >
+                                    <button class="page-link" @click.prevent="obtenerMascotas(link.url)" v-html="link.label"></button>
+                                </li>
+                                <li class="page-item" :class="{ disabled: !mascotasData.next_page_url }">
+                                    <button class="page-link" @click.prevent="obtenerMascotas(mascotasData.next_page_url)">Siguiente</button>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
                 </div>
             </div>
 
@@ -453,6 +478,7 @@ export default {
                 { value: 'macho', label: 'Macho' },
                 { value: 'hembra', label: 'Hembra' },
             ],
+            mascotasData: null,
             mascotas:[],
             formulario: {
                 nombre: '',
@@ -593,14 +619,20 @@ export default {
                 })
             }
         },
-        obtenerMascotas(){
+        obtenerMascotas(url = '/mascotas'){
             this.cargando = true
-            axios.get(`/mascotas`, {
+            axios.get(url, {
                 params: {
                     ...this.filtros
                 }
             }).then((response)=>{
-                this.mascotas = response.data.mascotas
+                if (response.data.mascotas.data) {
+                    this.mascotasData = response.data.mascotas;
+                    this.mascotas = response.data.mascotas.data;
+                } else {
+                    this.mascotasData = null;
+                    this.mascotas = response.data.mascotas;
+                }
             }).catch((error)=>{
                 this.$alertaError('Error', 'No se pudo obtener las mascotas.')
             }).finally(() => {

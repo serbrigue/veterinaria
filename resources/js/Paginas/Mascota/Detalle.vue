@@ -151,14 +151,14 @@
                     <div class="card border-0 shadow-sm mb-4">
                         <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
                       <div class="card-body p-3">
-                            <div v-if="!historialClinico || historialClinico.length === 0" class="py-4 text-center text-muted">
+                            <div v-if="!historialClinico || !historialClinico.data || historialClinico.data.length === 0" class="py-4 text-center text-muted">
                                 <i class="bi bi-calendar-x fs-1 mb-3 d-block" style="color: #dee2e6;"></i>
                                 <p class="mb-0">No hay historial clínico.</p>
                             </div>
                             <div v-else class="d-flex flex-column gap-3">
                                 <h3 class="h6 text-uppercase text-muted fw-bold mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Historial Clínico</h3>
                                 <div
-                                    v-for="cita in historialClinico"
+                                    v-for="cita in historialClinico.data"
                                     :key="cita.id"
                                     class="border rounded-3 p-3 bg-white shadow-sm cita-card"
                                 >
@@ -202,6 +202,31 @@
                                         </div>
                                     </Link>
                                 </div>
+                                
+                                <!-- Controles de Paginación -->
+                                <div v-if="historialClinico.last_page > 1" class="d-flex justify-content-between align-items-center mt-3 border-top pt-3">
+                                    <div class="text-muted small">
+                                        Mostrando {{ historialClinico.from }} a {{ historialClinico.to }} de {{ historialClinico.total }} citas
+                                    </div>
+                                    <nav aria-label="Navegación de páginas">
+                                        <ul class="pagination pagination-sm mb-0">
+                                            <li class="page-item" :class="{ disabled: !historialClinico.prev_page_url }">
+                                                <Link class="page-link" :href="historialClinico.prev_page_url || '#'">Anterior</Link>
+                                            </li>
+                                            <li 
+                                                v-for="link in historialClinico.links.slice(1, -1)" 
+                                                :key="link.label" 
+                                                class="page-item" 
+                                                :class="{ active: link.active }"
+                                            >
+                                                <Link class="page-link" :href="link.url || '#'" v-html="link.label"></Link>
+                                            </li>
+                                            <li class="page-item" :class="{ disabled: !historialClinico.next_page_url }">
+                                                <Link class="page-link" :href="historialClinico.next_page_url || '#'">Siguiente</Link>
+                                            </li>
+                                        </ul>
+                                    </nav>
+                                </div>
                             </div>
                       </div>
                         </div>
@@ -229,7 +254,7 @@ export default {
             required: true
         },
         historialClinico: {
-            type: Array,
+            type: Object,
             required: true
         },
 

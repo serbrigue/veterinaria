@@ -15,7 +15,7 @@ class HistoricalDataSeeder extends Seeder
 {
     public function run(): void
     {
-        $mascotas = Mascota::all();
+        $mascotas = Mascota::with('cliente.usuario')->get();
         $veterinarios = Veterinario::with('sucursal')->get();
         $boxes = Box::all();
         $prestaciones = Prestacion::all();
@@ -72,14 +72,17 @@ class HistoricalDataSeeder extends Seeder
 
                 // Si se completó, generar el pago asociado
                 if ($estado === 'completada') {
+                    // Si el cliente es uno de los morosos o por probabilidad del 15% queda pendiente
+                    $esMoroso = str_contains($mascota->cliente->usuario->email ?? '', 'deuda') || (rand(1, 100) <= 15);
+
                     Transaccion::create([
                         'cita_id' => $cita->id,
                         'cliente_id' => $mascota->cliente_id,
                         'monto_total' => $prestacion->precio_base,
-                        'monto_pagado' => $prestacion->precio_base,
-                        'estado' => 'pagado',
-                        'metodo_pago' => $metodosPago[array_rand($metodosPago)],
-                        'fecha_pago' => clone $horaTermino,
+                        'monto_pagado' => $esMoroso ? 0.00 : $prestacion->precio_base,
+                        'estado' => $esMoroso ? 'pendiente' : 'pagado',
+                        'metodo_pago' => $esMoroso ? null : $metodosPago[array_rand($metodosPago)],
+                        'fecha_pago' => $esMoroso ? null : clone $horaTermino,
                     ]);
                 }
 

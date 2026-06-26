@@ -164,8 +164,11 @@
                                     <td>
                                         <div class="d-flex justify-content-center gap-2 align-items-center">
                                             <template v-if="cita.estado === 'completada'">
-                                                <div v-if="cita.transaccion" class="fw-bold text-success small">
-                                                    Total: ${{ Math.round(cita.transaccion.monto_total).toLocaleString('es-CL') }}
+                                                <div v-if="cita.transaccion" class="d-flex flex-column align-items-center gap-1">
+                                                    <span class="fw-bold text-success small">Total: ${{ Math.round(cita.transaccion.monto_total).toLocaleString('es-CL') }}</span>
+                                                    <button v-if="cita.transaccion.estado === 'pagado'" class="btn btn-outline-primary btn-sm rounded-pill px-2 py-0 shadow-sm" style="font-size: 0.75rem" @click.stop="verComprobante(cita.transaccion, cita)">
+                                                        <i class="bi bi-receipt me-1"></i> Comprobante
+                                                    </button>
                                                 </div>
                                                 <div v-else class="text-muted small fw-medium">
                                                     Sin registro de pago
@@ -217,6 +220,58 @@
                                 </li>
                             </ul>
                         </nav>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL COMPROBANTE DE PAGO -->
+            <div v-if="mostrarModalComprobante && transaccionSeleccionada" class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5); z-index: 1055;">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow rounded-4">
+                        <div class="modal-header bg-light border-bottom-0 rounded-top-4 p-4">
+                            <h5 class="modal-title fw-bold text-dark"><i class="bi bi-receipt me-2 text-primary"></i> Comprobante de Pago</h5>
+                            <button type="button" class="btn-close" @click="mostrarModalComprobante = false"></button>
+                        </div>
+                        <div class="modal-body p-4" id="comprobante-imprimir">
+                            <div class="text-center mb-4">
+                                <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+                                <h4 class="mt-2 fw-bold text-success">¡Pago Exitoso!</h4>
+                                <p class="text-muted mb-0">Comprobante #{{ transaccionSeleccionada.id.toString().padStart(6, '0') }}</p>
+                            </div>
+                            
+                            <div class="card bg-light border-0 rounded-4">
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between mb-3">
+                                        <span class="text-muted small">Fecha de pago:</span>
+                                        <span class="fw-medium text-dark">{{ formatearFecha(transaccionSeleccionada.fecha_pago) }} {{ formatearHora(transaccionSeleccionada.fecha_pago) }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-3">
+                                        <span class="text-muted small">Cliente:</span>
+                                        <span class="fw-medium text-dark">{{ citaSeleccionadaParaComprobante?.cliente?.nombre || citaSeleccionadaParaComprobante?.mascota?.cliente?.nombre || 'Desconocido' }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-3">
+                                        <span class="text-muted small">Paciente:</span>
+                                        <span class="fw-medium text-dark">{{ citaSeleccionadaParaComprobante?.mascota?.nombre || 'N/A' }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-3">
+                                        <span class="text-muted small">Método de pago:</span>
+                                        <span class="fw-medium text-dark">{{ formatearMetodo(transaccionSeleccionada.metodo_pago) }}</span>
+                                    </div>
+                                    <hr class="border-secondary opacity-25">
+                                    <div class="d-flex justify-content-between align-items-center mt-3">
+                                        <span class="text-uppercase fw-bold text-muted small">Total Pagado</span>
+                                        <span class="fs-4 fw-bold text-success">${{ Math.round(transaccionSeleccionada.monto_pagado).toLocaleString('es-CL') }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-center mt-4">
+                                <small class="text-muted">Gracias por confiar en nuestra clínica veterinaria.</small>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-top-0 p-4">
+                            <button type="button" class="btn btn-secondary rounded-pill px-4" @click="mostrarModalComprobante = false">Cerrar</button>
+                            <button type="button" class="btn btn-primary rounded-pill px-4" @click="imprimirComprobante"><i class="bi bi-printer me-2"></i>Imprimir</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -503,6 +558,9 @@ export default {
             horariosNormales: [],
             horariosUrgencia: [],
             cargandoHorarios: false,
+            mostrarModalComprobante: false,
+            transaccionSeleccionada: null,
+            citaSeleccionadaParaComprobante: null,
             formulario: {
                 titulo: '',
                 descripcion: '',
@@ -779,6 +837,28 @@ export default {
             .catch((error) => { console.error('Error al cancelar la cita:', error); })
             .finally(() => { this.formulario.processing = false; });
         },
+        verComprobante(transaccion, cita) {
+            this.transaccionSeleccionada = transaccion;
+            this.citaSeleccionadaParaComprobante = cita;
+            this.mostrarModalComprobante = true;
+        },
+        imprimirComprobante() {
+            window.print();
+        },
+        formatearFecha(fechaStr) {
+            if (!fechaStr) return 'N/A';
+            const f = new Date(fechaStr);
+            return f.toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
+        },
+        formatearHora(fechaStr) {
+            if (!fechaStr) return '';
+            const f = new Date(fechaStr);
+            return f.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+        },
+        formatearMetodo(metodo) {
+            if (!metodo) return 'No registrado';
+            return metodo.charAt(0).toUpperCase() + metodo.slice(1);
+        }
     },
     mounted(){
         const urlParams = new URLSearchParams(window.location.search);
@@ -790,3 +870,21 @@ export default {
 
 }
 </script>
+
+<style scoped>
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #comprobante-imprimir, #comprobante-imprimir * {
+        visibility: visible;
+    }
+    #comprobante-imprimir {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background-color: white;
+    }
+}
+</style>

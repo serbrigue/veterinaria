@@ -2,52 +2,71 @@
 
 namespace App\Policies;
 
+use App\Models\Cliente;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
+use Illuminate\Auth\Access\HandlesAuthorization;
 
 class ClientePolicy
 {
+    use HandlesAuthorization;
 
-    public function before(User $user, string $ability)
+    /**
+     * Determine whether the user can view any models.
+     *
+     * @param  \App\Models\User  $user
+     * @return \Illuminate\Auth\Access\Response|bool
+     */
+    public function verTodas(User $user)
     {
-        if ($user->isAdmin()) {
-            return true;
-        }
+        return $user->isAdmin() || $user->isVeterinario();
     }
 
-    public function verTodas(User $user): bool
+    /**
+     * Determine whether the user can view the model.
+     *
+     * @param  \App\Models\User  $user
+     * @param  \App\Models\Cliente  $cliente
+     * @return \Illuminate\Auth\Access\Response|bool
+     */
+    public function ver(User $user, Cliente $cliente)
     {
-        return $user->isVeterinario() && $user->tienePermiso('ver-clientes');
+        // Solo administradores y veterinarios pueden ver detalles de clientes
+        // (Si se desea en el futuro que un cliente vea su propio detalle: || $user->id === $cliente->user_id)
+        return $user->isAdmin() || $user->isVeterinario();
     }
 
-    public function ver(User $user, Cliente $cliente): bool
+    /**
+     * Determine whether the user can create models.
+     *
+     * @param  \App\Models\User  $user
+     * @return \Illuminate\Auth\Access\Response|bool
+     */
+    public function create(User $user)
     {
-        if ($user->isVeterinario() && $user->tienePermiso('ver-clientes')) {
-            return true;
-        }
-
-        // Permitir si es el propio perfil del cliente
-        return $user->cliente && $user->cliente->id === $cliente->id;
+        return true;
     }
 
-    public function crear(User $user): bool
+    /**
+     * Determine whether the user can update the model.
+     *
+     * @param  \App\Models\User  $user
+     * @param  \App\Models\Cliente  $cliente
+     * @return \Illuminate\Auth\Access\Response|bool
+     */
+    public function update(User $user, Cliente $cliente)
     {
-        return false;
+        return $user->isAdmin() || $user->isVeterinario() || $user->id === $cliente->user_id;
     }
 
-    public function editar(User $user, Cliente $cliente): bool
+    /**
+     * Determine whether the user can delete the model.
+     *
+     * @param  \App\Models\User  $user
+     * @param  \App\Models\Cliente  $cliente
+     * @return \Illuminate\Auth\Access\Response|bool
+     */
+    public function delete(User $user, Cliente $cliente)
     {
-        if ($user->isVeterinario() && $user->tienePermiso('editar-clientes')) {
-            return true;
-        }
-
-        // Permitir editar su propio perfil
-        return $user->cliente && $user->cliente->id === $cliente->id;
-    }
-
-    public function eliminar(User $user, Cliente $cliente): bool
-    {
-        // Nadie puede eliminar clientes
-        return false;
+        return $user->isAdmin() || $user->isVeterinario();
     }
 }

@@ -23,11 +23,10 @@ class ProfileController extends Controller
     {
 
         $clienteId = auth()->user()->cliente?->id;
+        $veterinarioId = auth()->user()->veterinario?->id;
 
         $mascota = Mascota::where('cliente_id', $clienteId)->first();
-        $veterinario = Veterinario::all()->first();
-
-
+        $veterinario = auth()->user()->veterinario;
 
         $proximasCitas = Cita::whereHas('mascota', function ($query) use ($clienteId) {
             $query->where('cliente_id', $clienteId);
@@ -35,14 +34,25 @@ class ProfileController extends Controller
 
         $historialClinico = Cita::whereHas('mascota', function ($query) use ($clienteId) {
             $query->where('cliente_id', $clienteId);
-        })->with(['mascota.cliente.usuario', 'veterinario.usuario', 'box'])->where('estado', '=', 'completada')->where('fecha_hora', '<', now())->first();
+        })->with(['mascota.cliente.usuario', 'veterinario.usuario', 'box'])
+            ->where('estado', '=', 'completada')
+            ->where('fecha_hora', '<', now())
+            ->orderBy('fecha_hora', 'desc')
+            ->first();
 
+        $proximaCitaVet = Cita::where('veterinario_id', $veterinarioId)
+            ->with(['mascota.cliente.usuario', 'veterinario.usuario', 'box'])
+            ->where('estado', '!=', 'cancelada')
+            ->where('fecha_hora', '>=', now())
+            ->orderBy('fecha_hora', 'asc')
+            ->first();
 
         return Inertia::render('Perfil/Editar', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => session('status'),
             'proximasCitas' => $proximasCitas,
             'historialClinico' => $historialClinico,
+            'proximaCitaVet' => $proximaCitaVet,
             'mascota' => $mascota,
             'veterinario' => $veterinario,
         ]);

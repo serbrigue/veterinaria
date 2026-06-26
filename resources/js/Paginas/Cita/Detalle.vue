@@ -151,6 +151,9 @@
                                                   class="btn btn-primary fw-bold px-4 shadow-sm">
                                                 <i class="bi bi-credit-card me-2"></i> Pagar en Línea
                                             </Link>
+                                            <button v-else-if="cita.transaccion.estado === 'pagado'" class="btn btn-outline-primary fw-bold px-4 shadow-sm" @click="verComprobante">
+                                                <i class="bi bi-receipt me-2"></i> Ver Comprobante
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -324,6 +327,59 @@
                     </div>
                 </div>
             </div>
+
+            <!-- MODAL COMPROBANTE DE PAGO -->
+            <div v-if="mostrarModalComprobante && cita.transaccion" class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5); z-index: 1055;">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow rounded-4">
+                        <div class="modal-header bg-light border-bottom-0 rounded-top-4 p-4">
+                            <h5 class="modal-title fw-bold text-dark"><i class="bi bi-receipt me-2 text-primary"></i> Comprobante de Pago</h5>
+                            <button type="button" class="btn-close" @click="mostrarModalComprobante = false"></button>
+                        </div>
+                        <div class="modal-body p-4" id="comprobante-imprimir">
+                            <div class="text-center mb-4">
+                                <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+                                <h4 class="mt-2 fw-bold text-success">¡Pago Exitoso!</h4>
+                                <p class="text-muted mb-0">Comprobante #{{ cita.transaccion.id.toString().padStart(6, '0') }}</p>
+                            </div>
+                            
+                            <div class="card bg-light border-0 rounded-4">
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between mb-3">
+                                        <span class="text-muted small">Fecha de pago:</span>
+                                        <span class="fw-medium text-dark">{{ formatearFechaComprobante(cita.transaccion.fecha_pago) }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-3">
+                                        <span class="text-muted small">Cliente:</span>
+                                        <span class="fw-medium text-dark">{{ cita.mascota?.cliente?.usuario?.name || cita.cliente?.nombre || 'Desconocido' }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-3">
+                                        <span class="text-muted small">Paciente:</span>
+                                        <span class="fw-medium text-dark">{{ cita.mascota?.nombre || 'N/A' }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-3">
+                                        <span class="text-muted small">Método de pago:</span>
+                                        <span class="fw-medium text-dark">{{ formatearMetodo(cita.transaccion.metodo_pago) }}</span>
+                                    </div>
+                                    <hr class="border-secondary opacity-25">
+                                    <div class="d-flex justify-content-between align-items-center mt-3">
+                                        <span class="text-uppercase fw-bold text-muted small">Total Pagado</span>
+                                        <span class="fs-4 fw-bold text-success">${{ Math.round(cita.transaccion.monto_pagado).toLocaleString('es-CL') }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-center mt-4">
+                                <small class="text-muted">Gracias por confiar en nuestra clínica veterinaria.</small>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-top-0 p-4">
+                            <button type="button" class="btn btn-secondary rounded-pill px-4" @click="mostrarModalComprobante = false">Cerrar</button>
+                            <button type="button" class="btn btn-primary rounded-pill px-4" @click="imprimirComprobante"><i class="bi bi-printer me-2"></i>Imprimir</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </AuthenticatedLayout>
 </template>
@@ -331,6 +387,7 @@
 <script>
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
 import { Head, Link } from '@inertiajs/vue3';
+import Swal from 'sweetalert2';
 
 export default {
     name: 'CitaDetalle',
@@ -383,6 +440,7 @@ export default {
             errorCargo:     null,
             nuevoInsumoId:  '',
             nuevaCantidad:  1,
+            mostrarModalComprobante: false
         }
     },
     computed: {
@@ -470,17 +528,29 @@ export default {
                 });
         },
         confirmarEliminar() {
-            // El backend lo implementas tú — aquí solo el stub frontend
-            this.$confirmar('¿Cancelar cita?', 'El registro se conservará con estado Cancelada.')
-                .then(resultado => {
-                    if (resultado.isConfirmed) {
-                        this.procesando = true;
-                        axios.patch(`/api/citas/${this.cita.id}/cancelar`)
-                            .then(() => { this.estadoActual = 'cancelada'; })
-                            .catch(error => console.error(error))
-                            .finally(() => { this.procesando = false; });
-                    }
-                });
+            Swal.fire({
+                title: '¿Cancelar cita?',
+                text: "Escribe el motivo de la cancelación. Esto reemplazará cualquier nota clínica actual y se enviará al cliente.",
+                input: 'textarea',
+                inputPlaceholder: 'Motivo de la cancelación...',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, cancelar cita',
+                cancelButtonText: 'No, volver'
+            }).then(resultado => {
+                if (resultado.isConfirmed) {
+                    const motivo = resultado.value || 'Cancelada sin motivo especificado.';
+                    this.procesando = true;
+                    axios.patch(`/api/citas/${this.cita.id}/cancelar`, { motivo_cancelacion: motivo })
+                        .then(() => { 
+                            this.estadoActual = 'cancelada'; 
+                            this.notasConsulta = motivo;
+                        })
+                        .catch(error => console.error(error))
+                        .finally(() => { this.procesando = false; });
+                }
+            });
         },
         confirmarCompletar() {
             this.$confirmar('¿Completar cita?', 'El registro se conservará con estado Completada.')
@@ -573,12 +643,42 @@ export default {
                 .finally(() => {
                     this.procesandoCargo = null;
                 });
+        },
+        verComprobante() {
+            this.mostrarModalComprobante = true;
+        },
+        imprimirComprobante() {
+            window.print();
+        },
+        formatearFechaComprobante(fechaStr) {
+            if (!fechaStr) return 'N/A';
+            const f = new Date(fechaStr);
+            return f.toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        },
+        formatearMetodo(metodo) {
+            if (!metodo) return 'No registrado';
+            return metodo.charAt(0).toUpperCase() + metodo.slice(1);
         }
     }
 }
 </script>
 
 <style scoped>
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #comprobante-imprimir, #comprobante-imprimir * {
+        visibility: visible;
+    }
+    #comprobante-imprimir {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background-color: white;
+    }
+}
 .fs-7 {
     font-size: 0.85rem;
 }

@@ -95,18 +95,19 @@
                                 <th class="text-uppercase text-muted small fw-bold py-3">Cliente / Mascota</th>
                                 <th class="text-uppercase text-muted small fw-bold py-3">Sucursal</th>
                                 <th class="text-uppercase text-muted small fw-bold py-3">Método</th>
-                                <th class="text-uppercase text-muted small fw-bold py-3 text-end pe-4 rounded-end">Monto Total</th>
+                                <th class="text-uppercase text-muted small fw-bold py-3 text-end">Monto Total</th>
+                                <th class="text-uppercase text-muted small fw-bold py-3 text-center pe-4 rounded-end">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="cargando">
-                                <td colspan="5" class="text-center py-5">
+                                <td colspan="6" class="text-center py-5">
                                     <div class="spinner-border text-primary" role="status"></div>
                                     <p class="text-muted mt-2 mb-0">Cargando ingresos...</p>
                                 </td>
                             </tr>
                             <tr v-else-if="transacciones.length === 0">
-                                <td colspan="5" class="text-center py-5">
+                                <td colspan="6" class="text-center py-5">
                                     <div class="text-muted">
                                         <i class="bi bi-wallet2 display-4 d-block mb-3 opacity-50"></i>
                                         <p class="mb-0 fw-medium">No se encontraron ingresos pagados para los filtros seleccionados.</p>
@@ -140,12 +141,98 @@
                                         {{ formatearMetodo(t.metodo_pago) }}
                                     </span>
                                 </td>
-                                <td class="text-end pe-4">
+                                <td class="text-end">
                                     <span class="fw-bold fs-5 text-success">${{ formatoDinero(t.monto_pagado) }}</span>
+                                </td>
+                                <td class="text-center pe-4">
+                                    <button class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-sm" @click="verComprobante(t)">
+                                        <i class="bi bi-receipt me-1"></i> Comprobante
+                                    </button>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Paginación -->
+                <div v-if="transaccionesData && transaccionesData.last_page > 1" class="d-flex justify-content-between align-items-center p-4 border-top">
+                    <div class="text-muted small">
+                        Mostrando {{ transaccionesData.from }} a {{ transaccionesData.to }} de {{ transaccionesData.total }} transacciones
+                    </div>
+                    <nav aria-label="Navegación de páginas">
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item" :class="{ disabled: !transaccionesData.prev_page_url }">
+                                <button class="page-link" @click.prevent="aplicarFiltros(transaccionesData.prev_page_url)">Anterior</button>
+                            </li>
+                            <li 
+                                v-for="link in transaccionesData.links.slice(1, -1)" 
+                                :key="link.label" 
+                                class="page-item" 
+                                :class="{ active: link.active }"
+                            >
+                                <button class="page-link" @click.prevent="aplicarFiltros(link.url)" v-html="link.label"></button>
+                            </li>
+                            <li class="page-item" :class="{ disabled: !transaccionesData.next_page_url }">
+                                <button class="page-link" @click.prevent="aplicarFiltros(transaccionesData.next_page_url)">Siguiente</button>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- MODAL COMPROBANTE DE PAGO -->
+            <div v-if="mostrarModalComprobante && transaccionSeleccionada" class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow rounded-4">
+                        <div class="modal-header bg-light border-bottom-0 rounded-top-4 p-4">
+                            <h5 class="modal-title fw-bold text-dark"><i class="bi bi-receipt me-2 text-primary"></i> Comprobante de Pago</h5>
+                            <button type="button" class="btn-close" @click="mostrarModalComprobante = false"></button>
+                        </div>
+                        <div class="modal-body p-4" id="comprobante-imprimir">
+                            <div class="text-center mb-4">
+                                <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+                                <h4 class="mt-2 fw-bold text-success">¡Pago Exitoso!</h4>
+                                <p class="text-muted mb-0">Comprobante #{{ transaccionSeleccionada.id.toString().padStart(6, '0') }}</p>
+                            </div>
+                            
+                            <div class="card bg-light border-0 rounded-4">
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between mb-3">
+                                        <span class="text-muted small">Fecha de pago:</span>
+                                        <span class="fw-medium text-dark">{{ formatearFecha(transaccionSeleccionada.fecha_pago) }} {{ formatearHora(transaccionSeleccionada.fecha_pago) }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-3">
+                                        <span class="text-muted small">Cliente:</span>
+                                        <span class="fw-medium text-dark">{{ transaccionSeleccionada.cliente?.usuario?.name || 'Cliente Desconocido' }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-3">
+                                        <span class="text-muted small">Paciente:</span>
+                                        <span class="fw-medium text-dark">{{ transaccionSeleccionada.cita?.mascota?.nombre || 'N/A' }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-3">
+                                        <span class="text-muted small">Sucursal:</span>
+                                        <span class="fw-medium text-dark">{{ transaccionSeleccionada.cita?.box?.sucursal?.nombre || 'N/A' }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-3">
+                                        <span class="text-muted small">Método de pago:</span>
+                                        <span class="fw-medium text-dark">{{ formatearMetodo(transaccionSeleccionada.metodo_pago) }}</span>
+                                    </div>
+                                    <hr class="border-secondary opacity-25">
+                                    <div class="d-flex justify-content-between align-items-center mt-3">
+                                        <span class="text-uppercase fw-bold text-muted small">Total Pagado</span>
+                                        <span class="fs-4 fw-bold text-success">${{ formatoDinero(transaccionSeleccionada.monto_pagado) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-center mt-4">
+                                <small class="text-muted">Gracias por confiar en nuestra clínica veterinaria.</small>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-top-0 p-4">
+                            <button type="button" class="btn btn-secondary rounded-pill px-4" @click="mostrarModalComprobante = false">Cerrar</button>
+                            <button type="button" class="btn btn-primary rounded-pill px-4" @click="imprimirComprobante"><i class="bi bi-printer me-2"></i>Imprimir</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -166,7 +253,11 @@ export default {
     },
     props: {
         transacciones_iniciales: {
-            type: Array,
+            type: Object,
+            required: true
+        },
+        total_filtrado_inicial: {
+            type: Number,
             required: true
         },
         sucursales: {
@@ -176,8 +267,12 @@ export default {
     },
     data() {
         return {
-            transacciones: this.transacciones_iniciales,
+            transaccionesData: this.transacciones_iniciales,
+            transacciones: this.transacciones_iniciales.data || [],
+            totalFiltradoAPI: this.total_filtrado_inicial,
             cargando: false,
+            mostrarModalComprobante: false,
+            transaccionSeleccionada: null,
             meses: {
                 1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril', 5: 'Mayo', 6: 'Junio',
                 7: 'Julio', 8: 'Agosto', 9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
@@ -192,20 +287,37 @@ export default {
     },
     computed: {
         totalFiltrado() {
-            const total = this.transacciones.reduce((sum, t) => sum + (parseFloat(t.monto_pagado) || 0), 0);
-            return this.formatoDinero(total);
+            return this.formatoDinero(this.totalFiltradoAPI);
         }
     },
     methods: {
-        async aplicarFiltros() {
+        verComprobante(transaccion) {
+            this.transaccionSeleccionada = transaccion;
+            this.mostrarModalComprobante = true;
+        },
+        imprimirComprobante() {
+            // Un enfoque sencillo para imprimir el comprobante es usar window.print() 
+            // ocultando lo demás mediante CSS de @media print. 
+            // Como esto es un mockup, simplemente llamaremos a print().
+            window.print();
+        },
+        async aplicarFiltros(url = null) {
             this.cargando = true;
             try {
-                // Hacemos petición a la misma ruta pero pidiendo JSON
-                const response = await axios.get(route('ingresos.listado'), {
-                    params: this.filtros,
+                const fetchUrl = typeof url === 'string' ? url : route('ingresos.listado');
+                const response = await axios.get(fetchUrl, {
+                    params: typeof url === 'string' ? {} : this.filtros,
                     headers: { 'Accept': 'application/json' }
                 });
-                this.transacciones = response.data;
+                
+                if (response.data.transacciones) {
+                    this.transaccionesData = response.data.transacciones;
+                    this.transacciones = response.data.transacciones.data;
+                    this.totalFiltradoAPI = response.data.totalFiltrado;
+                } else {
+                    this.transaccionesData = null;
+                    this.transacciones = response.data;
+                }
             } catch (error) {
                 console.error('Error al filtrar ingresos:', error);
             } finally {
@@ -262,5 +374,19 @@ export default {
 }
 .z-1 {
     z-index: 1;
+}
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #comprobante-imprimir, #comprobante-imprimir * {
+        visibility: visible;
+    }
+    #comprobante-imprimir {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
 }
 </style>
