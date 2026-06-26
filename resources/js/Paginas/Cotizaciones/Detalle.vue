@@ -24,7 +24,7 @@ const props = defineProps({
                 </p>
                 <Link href="/cotizaciones" class="btn btn-secondary btn-sm mt-3">
                     Volver
-                </btn>
+                </Link>
             </div>
         </div>
     </div>
