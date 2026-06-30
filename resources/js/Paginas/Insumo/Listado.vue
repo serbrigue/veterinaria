@@ -6,28 +6,20 @@
                 <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <h1 class="h5 mb-0">Catálogo de Insumos</h1>
                     <div class="d-flex flex-wrap gap-2 align-items-center">
-                        <select
-                            v-model="filtroSucursal"
-                            class="form-select form-select-sm"
-                            style="width: auto; min-width: 12rem"
-                        >
+                        <select v-model="filtroSucursal" class="form-select form-select-sm" style="width: auto; min-width: 12rem">
                             <option value="">Todas las sucursales</option>
-                            <option v-for="suc in sucursales" :key="suc.id" :value="suc.id">
-                                {{ suc.nombre }}
-                            </option>
+                            <option v-for="suc in sucursales" :key="suc.id" :value="suc.id">{{ suc.nombre }}</option>
                         </select>
-                        <select
-                            v-model="filtroEstado"
-                            class="form-select form-select-sm"
-                            style="width: auto; min-width: 10rem"
-                        >
+                        <select v-model="filtroCategoria" class="form-select form-select-sm" style="width: auto; min-width: 12rem">
+                            <option value="">Todas las categorías</option>
+                            <option v-for="cat in categoriasInsumo" :key="cat.id" :value="cat.id">{{ cat.nombre }}</option>
+                        </select>
+                        <select v-model="filtroEstado" class="form-select form-select-sm" style="width: auto; min-width: 10rem">
                             <option value="">Todos los estados</option>
                             <option value="activo">Activos</option>
                             <option value="inactivo">Inactivos</option>
                         </select>
-                        <button type="button" class="btn btn-sm btn-primary" @click="abrirModalCrear">
-                            + Nuevo Insumo
-                        </button>
+                        <button type="button" class="btn btn-sm btn-primary" @click="abrirModalCrear">+ Nuevo Insumo</button>
                     </div>
                 </div>
 
@@ -62,8 +54,8 @@
                             <thead class="table-light">
                                 <tr>
                                     <th>Nombre</th>
+                                    <th>Categoría</th>
                                     <th>Sucursal</th>
-                                    <th>Descripción</th>
                                     <th>Precio Venta</th>
                                     <th>Stock Actual</th>
                                     <th>Stock Mínimo</th>
@@ -74,14 +66,15 @@
                             <tbody>
                                 <tr v-for="insumo in insumosVisibles" :key="insumo.id" :class="{'table-warning': insumo.stock_actual <= insumo.stock_minimo}">
                                     <td class="fw-semibold">
-                                        <Link :href="route('insumos.detalle', insumo.id)" class="text-decoration-none">
-                                            {{ insumo.nombre }}
-                                        </Link>
+                                        <Link :href="route('insumos.detalle', insumo.id)" class="text-decoration-none">{{ insumo.nombre }}</Link>
                                     </td>
                                     <td>
-                                        <span class="badge bg-info text-dark">{{ insumo.sucursal?.nombre || '—' }}</span>
+                                        <span v-if="insumo.categoria_insumo" class="badge rounded-pill px-3" :class="badgeCategoria(insumo.categoria_insumo.nombre)">
+                                            {{ insumo.categoria_insumo.nombre }}
+                                        </span>
+                                        <span v-else class="text-muted">—</span>
                                     </td>
-                                    <td>{{ insumo.descripcion || '—' }}</td>
+                                    <td><span class="badge bg-info text-dark">{{ insumo.sucursal?.nombre || '—' }}</span></td>
                                     <td>${{ Math.round(insumo.precio_venta).toLocaleString('es-CL') }}</td>
                                     <td>
                                         <span class="badge" :class="insumo.stock_actual <= insumo.stock_minimo ? 'bg-danger' : 'bg-success'">
@@ -120,6 +113,15 @@
                             <button type="button" class="btn-close" @click="cerrarModal"></button>
                         </div>
                         <div class="modal-body p-4">
+                            <div class="mb-3">
+                                <label for="categoria_insumo_id" class="form-label fw-semibold text-secondary">Categoría</label>
+                                <select id="categoria_insumo_id" v-model="formulario.categoria_insumo_id" class="form-select" :class="{ 'is-invalid': formulario.errors.categoria_insumo_id }">
+                                    <option :value="null">Sin categoría</option>
+                                    <option v-for="cat in categoriasInsumo" :key="cat.id" :value="cat.id">{{ cat.nombre }}</option>
+                                </select>
+                                <div v-if="formulario.errors.categoria_insumo_id" class="invalid-feedback">{{ formulario.errors.categoria_insumo_id }}</div>
+                            </div>
+
                             <div class="mb-3">
                                 <label for="sucursal_id" class="form-label fw-semibold text-secondary">Sucursal</label>
                                 <select id="sucursal_id" v-model="formulario.sucursal_id" class="form-select" :class="{ 'is-invalid': formulario.errors.sucursal_id }" required>
@@ -199,14 +201,9 @@ export default {
         Link,
     },
     props: {
-        insumos: {
-            type: Array,
-            default: () => [],
-        },
-        sucursales: {
-            type: Array,
-            default: () => [],
-        }
+        insumos: { type: Array, default: () => [] },
+        sucursales: { type: Array, default: () => [] },
+        categoriasInsumo: { type: Array, default: () => [] },
     },
     data() {
         return {
@@ -216,9 +213,11 @@ export default {
             insumoEditando: null,
             filtroEstado: '',
             filtroSucursal: '',
-            listaInsumos: this.insumos, // Copia local para reactividad si viene por prop
+            filtroCategoria: '',
+            listaInsumos: this.insumos,
             formulario: {
                 sucursal_id: null,
+                categoria_insumo_id: null,
                 nombre: '',
                 descripcion: '',
                 precio_venta: 0,
@@ -233,12 +232,9 @@ export default {
     computed: {
         insumosVisibles() {
             let visibles = this.listaInsumos;
-            if (this.filtroEstado) {
-                visibles = visibles.filter((i) => i.estado === this.filtroEstado);
-            }
-            if (this.filtroSucursal) {
-                visibles = visibles.filter((i) => i.sucursal_id === this.filtroSucursal);
-            }
+            if (this.filtroEstado)    visibles = visibles.filter(i => i.estado === this.filtroEstado);
+            if (this.filtroSucursal)  visibles = visibles.filter(i => i.sucursal_id === this.filtroSucursal);
+            if (this.filtroCategoria) visibles = visibles.filter(i => i.categoria_insumo_id === this.filtroCategoria);
             return visibles;
         },
         totalInsumos() {
@@ -262,6 +258,7 @@ export default {
             this.modoEdicion = false;
             this.insumoEditando = null;
             this.formulario.sucursal_id = null;
+            this.formulario.categoria_insumo_id = null;
             this.formulario.nombre = '';
             this.formulario.descripcion = '';
             this.formulario.precio_venta = 0;
@@ -271,10 +268,20 @@ export default {
             this.formulario.errors = {};
             this.mostrarModal = true;
         },
+
+        badgeCategoria(nombre) {
+            const mapa = {
+                'Medicamento': 'bg-info text-dark',
+                'Material Quirúrgico': 'bg-danger',
+            };
+            return mapa[nombre] || 'bg-secondary';
+        },
+
         abrirModalEditar(insumo) {
             this.modoEdicion = true;
             this.insumoEditando = insumo;
             this.formulario.sucursal_id = insumo.sucursal_id;
+            this.formulario.categoria_insumo_id = insumo.categoria_insumo_id;
             this.formulario.nombre = insumo.nombre;
             this.formulario.descripcion = insumo.descripcion || '';
             this.formulario.precio_venta = Number(insumo.precio_venta);
@@ -290,13 +297,14 @@ export default {
         },
         datosFormulario() {
             return {
-                sucursal_id: this.formulario.sucursal_id,
-                nombre: this.formulario.nombre,
-                descripcion: this.formulario.descripcion,
-                precio_venta: this.formulario.precio_venta,
-                stock_actual: this.formulario.stock_actual,
-                stock_minimo: this.formulario.stock_minimo,
-                estado: this.formulario.estado,
+                sucursal_id:       this.formulario.sucursal_id,
+                categoria_insumo_id: this.formulario.categoria_insumo_id,
+                nombre:            this.formulario.nombre,
+                descripcion:       this.formulario.descripcion,
+                precio_venta:      this.formulario.precio_venta,
+                stock_actual:      this.formulario.stock_actual,
+                stock_minimo:      this.formulario.stock_minimo,
+                estado:            this.formulario.estado,
             };
         },
         guardar() {

@@ -13,11 +13,17 @@ class Box extends Model
         'nombre',
         'descripcion',
         'sucursal_id',
+        'categoria_prestacion_id',
     ];
 
     public function sucursal()
     {
         return $this->belongsTo(Sucursal::class, 'sucursal_id');
+    }
+
+    public function categoriaPrestacion()
+    {
+        return $this->belongsTo(CategoriaPrestacion::class, 'categoria_prestacion_id');
     }
 
 }

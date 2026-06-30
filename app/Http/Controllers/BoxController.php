@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Box;
 use App\Models\Sucursal;
+use App\Models\CategoriaPrestacion;
 use App\Http\Requests\GuardarBoxRequest;
 use App\Http\Requests\ActualizarBoxRequest;
 use Illuminate\Http\Request;
@@ -16,23 +17,27 @@ class BoxController extends Controller
     public function listado(Request $request)
     {
         $boxes = Cache::remember('boxes_full', now()->addMinutes(30), function() {
-            return Box::with('sucursal')->orderBy('nombre')->get();
+            return Box::with('sucursal', 'categoriaPrestacion')->orderBy('nombre')->get();
         });
         $sucursales = Cache::remember('sucursales_simple', now()->addMinutes(30), function() {
             return Sucursal::orderBy('nombre')->get();
         });
-
+        $categoriasPrestacion = Cache::remember('categorias_prestaciones_full', now()->addMinutes(60), function() {
+            return CategoriaPrestacion::orderBy('nombre')->get();
+        });
 
         if ($request->wantsJson()) {
             return response()->json([
-                'boxes' => $boxes,
-                'sucursales' => $sucursales,
+                'boxes'               => $boxes,
+                'sucursales'          => $sucursales,
+                'categoriasPrestacion' => $categoriasPrestacion,
             ]);
         }
 
         return Inertia::render('Box/Listado', [
-            'boxes' => $boxes,
-            'sucursales' => $sucursales,
+            'boxes'               => $boxes,
+            'sucursales'          => $sucursales,
+            'categoriasPrestacion' => $categoriasPrestacion,
         ]);
     }
 
@@ -76,9 +81,9 @@ class BoxController extends Controller
 
     public function detalle(Box $box)
     {
+        $box->load('sucursal', 'categoriaPrestacion');
         return Inertia::render('Box/Detalle', [
             'box' => $box,
-
         ]);
     }
 }

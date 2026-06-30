@@ -7,8 +7,8 @@
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h1 class="h3 fw-bold text-dark mb-0">Dashboard Operativo</h1>
                     <div class="d-flex align-items-center gap-2">
-                        <Link :href="route('pagos.veterinarios')" class="btn btn-primary rounded-pill shadow-sm px-3 py-2">
-                            <i class="bi bi-wallet2 me-1"></i> Pago a Veterinarios
+                        <Link :href="route('pagos.personal')" class="btn btn-primary rounded-pill shadow-sm px-3 py-2">
+                            <i class="bi bi-wallet2 me-1"></i> Realizar Pagos
                         </Link>
                         <span class="badge bg-secondary bg-opacity-10 text-secondary px-3 py-2 rounded-pill shadow-sm fs-6 border border-secondary">
                             <i class="bi bi-calendar-event me-1"></i> {{ fechaActual }}

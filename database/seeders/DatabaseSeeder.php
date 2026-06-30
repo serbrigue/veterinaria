@@ -351,6 +351,7 @@ class DatabaseSeeder extends Seeder
             'sucursal_id' => $sucursalVina->id,
             'especialidad_id' => $especialidadCirugia->id,
             'comision_vet' => 40.00, // 40%
+            'comision_equipo' => 20.00,
             'created_at' => Carbon::now(),
             'updated_at' => Carbon::now(),
         ]);
@@ -384,6 +385,7 @@ class DatabaseSeeder extends Seeder
             'sucursal_id' => $sucursalValparaiso->id,
             'especialidad_id' => $especialidadCirugia->id,
             'comision_vet' => 50.00, // 50%
+            'comision_equipo' => 15.00,
             'created_at' => Carbon::now(),
             'updated_at' => Carbon::now(),
         ]);
@@ -812,6 +814,251 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        $this->command->info('¡Base de datos sembrada y expandida exitosamente con transacciones y clientes morosos!');
+        // ─────────────────────────────────────────────────────────────────────
+        // 14. Catálogo de Categorías de Prestación
+        // ─────────────────────────────────────────────────────────────────────
+        $catPrestConsultaId = DB::table('categorias_prestaciones')->insertGetId([
+            'nombre'      => 'Consulta',
+            'descripcion' => 'Atención clínica básica y revisiones generales.',
+            'created_at'  => Carbon::now(),
+            'updated_at'  => Carbon::now(),
+        ]);
+        $catPrestCirugiaId = DB::table('categorias_prestaciones')->insertGetId([
+            'nombre'      => 'Cirugia',
+            'descripcion' => 'Procedimientos quirúrgicos que requieren quirófano y equipo especializado.',
+            'created_at'  => Carbon::now(),
+            'updated_at'  => Carbon::now(),
+        ]);
+        $catPrestUrgenciaId = DB::table('categorias_prestaciones')->insertGetId([
+            'nombre'      => 'Urgencia',
+            'descripcion' => 'Atención de emergencia fuera de horario habitual.',
+            'created_at'  => Carbon::now(),
+            'updated_at'  => Carbon::now(),
+        ]);
+        $catPrestEsteticaId = DB::table('categorias_prestaciones')->insertGetId([
+            'nombre'      => 'Estetica',
+            'descripcion' => 'Servicios de peluquería, baño y estética animal.',
+            'created_at'  => Carbon::now(),
+            'updated_at'  => Carbon::now(),
+        ]);
+
+        // — Asignar categorías a TODAS las prestaciones existentes —
+        DB::table('prestaciones')
+            ->whereIn('nombre', ['Consulta General', 'Ecocardiograma', 'Ecografía Abdominal'])
+            ->update(['categoria_prestacion_id' => $catPrestConsultaId]);
+        DB::table('prestaciones')
+            ->whereIn('nombre', ['Cirugía Mayor', 'Castración'])
+            ->update(['categoria_prestacion_id' => $catPrestCirugiaId]);
+        DB::table('prestaciones')
+            ->where('nombre', 'Corte de pelo')   // nombre real en BD
+            ->update(['categoria_prestacion_id' => $catPrestEsteticaId]);
+
+        // — Nuevas prestaciones Viña del Mar —
+        DB::table('prestaciones')->insert([
+            [
+                'nombre' => 'Vacunación Antirrábica', 'descripcion' => 'Vacuna antirrábica anual obligatoria.',
+                'precio_base' => 12000.00, 'sucursal_id' => $sucursalVina->id,
+                'especialidad_id' => null, 'comision_vet' => 40.00, 'comision_equipo' => 0.00,
+                'categoria_prestacion_id' => $catPrestConsultaId,
+                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+            ],
+            [
+                'nombre' => 'Limpieza Dental', 'descripcion' => 'Destartarización y profilaxis dental bajo sedación leve.',
+                'precio_base' => 55000.00, 'sucursal_id' => $sucursalVina->id,
+                'especialidad_id' => null, 'comision_vet' => 45.00, 'comision_equipo' => 0.00,
+                'categoria_prestacion_id' => $catPrestConsultaId,
+                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+            ],
+            [
+                'nombre' => 'Esterilización Quirúrgica', 'descripcion' => 'Esterilización con anestesia general.',
+                'precio_base' => 80000.00, 'sucursal_id' => $sucursalVina->id,
+                'especialidad_id' => $especialidadCirugia->id, 'comision_vet' => 40.00, 'comision_equipo' => 15.00,
+                'categoria_prestacion_id' => $catPrestCirugiaId,
+                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+            ],
+            [
+                'nombre' => 'Atención Urgencia', 'descripcion' => 'Consulta de emergencia con prioridad inmediata.',
+                'precio_base' => 35000.00, 'sucursal_id' => $sucursalVina->id,
+                'especialidad_id' => null, 'comision_vet' => 50.00, 'comision_equipo' => 10.00,
+                'categoria_prestacion_id' => $catPrestUrgenciaId,
+                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+            ],
+        ]);
+
+        // — Nuevas prestaciones Valparaíso —
+        DB::table('prestaciones')->insert([
+            [
+                'nombre' => 'Vacunación Antirrábica', 'descripcion' => 'Vacuna antirrábica anual obligatoria.',
+                'precio_base' => 12000.00, 'sucursal_id' => $sucursalValparaiso->id,
+                'especialidad_id' => null, 'comision_vet' => 40.00, 'comision_equipo' => 0.00,
+                'categoria_prestacion_id' => $catPrestConsultaId,
+                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+            ],
+            [
+                'nombre' => 'Baño y Secado', 'descripcion' => 'Baño completo con secado profesional.',
+                'precio_base' => 12000.00, 'sucursal_id' => $sucursalValparaiso->id,
+                'especialidad_id' => $especialidadPeluqueria->id, 'comision_vet' => 50.00, 'comision_equipo' => 0.00,
+                'categoria_prestacion_id' => $catPrestEsteticaId,
+                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+            ],
+            [
+                'nombre' => 'Cirugía Ortopédica', 'descripcion' => 'Intervención ortopédica de alta complejidad.',
+                'precio_base' => 200000.00, 'sucursal_id' => $sucursalValparaiso->id,
+                'especialidad_id' => $especialidadCirugia->id, 'comision_vet' => 35.00, 'comision_equipo' => 20.00,
+                'categoria_prestacion_id' => $catPrestCirugiaId,
+                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+            ],
+        ]);
+
+        // — Asignar categorías a TODOS los boxes existentes —
+        DB::table('boxes')->where('id', $box1->id)->update(['categoria_prestacion_id' => $catPrestConsultaId]);
+        DB::table('boxes')->where('id', $box2->id)->update(['categoria_prestacion_id' => $catPrestCirugiaId]);
+        DB::table('boxes')->where('id', $box3->id)->update(['categoria_prestacion_id' => $catPrestConsultaId]);
+        DB::table('boxes')->where('id', $box4->id)->update(['categoria_prestacion_id' => $catPrestEsteticaId]);
+
+        // — Nuevos boxes Viña del Mar —
+        DB::table('boxes')->insert([
+            [
+                'nombre' => 'Box Consulta 2', 'descripcion' => 'Segundo box de atención general para consultas.',
+                'sucursal_id' => $sucursalVina->id, 'categoria_prestacion_id' => $catPrestConsultaId,
+                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+            ],
+            [
+                'nombre' => 'Box Urgencias', 'descripcion' => 'Box destinado a atenciones de urgencia y emergencias.',
+                'sucursal_id' => $sucursalVina->id, 'categoria_prestacion_id' => $catPrestUrgenciaId,
+                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+            ],
+            [
+                'nombre' => 'Quirófano B', 'descripcion' => 'Segundo quirófano para cirugías mayores y ortopedia.',
+                'sucursal_id' => $sucursalVina->id, 'categoria_prestacion_id' => $catPrestCirugiaId,
+                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+            ],
+        ]);
+
+        // — Nuevos boxes Valparaíso —
+        DB::table('boxes')->insert([
+            [
+                'nombre' => 'Box Consulta 2 Valparaíso', 'descripcion' => 'Segundo box de atención clínica en Valparaíso.',
+                'sucursal_id' => $sucursalValparaiso->id, 'categoria_prestacion_id' => $catPrestConsultaId,
+                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+            ],
+            [
+                'nombre' => 'Quirófano Valparaíso', 'descripcion' => 'Box quirúrgico para procedimientos de alta complejidad.',
+                'sucursal_id' => $sucursalValparaiso->id, 'categoria_prestacion_id' => $catPrestCirugiaId,
+                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+            ],
+        ]);
+
+        // ─────────────────────────────────────────────────────────────────────
+        // 15. Catálogo de Categorías de Insumo
+        // ─────────────────────────────────────────────────────────────────────
+        $catInsumoMedicamentoId = DB::table('categorias_insumos')->insertGetId([
+            'nombre' => 'Medicamento', 'descripcion' => 'Fármacos, anestésicos y soluciones inyectables.',
+            'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+        ]);
+        $catInsumoMaterialId = DB::table('categorias_insumos')->insertGetId([
+            'nombre' => 'Material Quirúrgico', 'descripcion' => 'Instrumental, suturas y material estéril de un solo uso.',
+            'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+        ]);
+        DB::table('categorias_insumos')->insert([
+            ['nombre' => 'Vacuna', 'descripcion' => 'Vacunas obligatorias y opcionales.', 'created_at' => Carbon::now(), 'updated_at' => Carbon::now()],
+            ['nombre' => 'Consumible General', 'descripcion' => 'Vendas, guantes, gasas y fungibles.', 'created_at' => Carbon::now(), 'updated_at' => Carbon::now()],
+        ]);
+
+        // — Asignar categorías a insumos existentes —
+        DB::table('insumos')->where('nombre', 'Anestesia General (ml)')
+            ->update(['categoria_insumo_id' => $catInsumoMedicamentoId]);
+        DB::table('insumos')->whereIn('nombre', ['Jeringa 5ml estéril', 'Vendas Elásticas'])
+            ->update(['categoria_insumo_id' => $catInsumoMaterialId]);
+
+        // — Nuevos insumos con categoría asignada —
+        DB::table('insumos')->insert([
+            [
+                'nombre' => 'Ketamina 10mg/ml', 'descripcion' => 'Anestésico disociativo de uso veterinario.',
+                'precio_venta' => 8000.00, 'sucursal_id' => $sucursalVina->id,
+                'stock_actual' => 60, 'stock_minimo' => 10, 'estado' => 'activo',
+                'categoria_insumo_id' => $catInsumoMedicamentoId,
+                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+            ],
+            [
+                'nombre' => 'Hilo de Sutura 3-0', 'descripcion' => 'Sutura absorbible de uso quirúrgico.',
+                'precio_venta' => 3500.00, 'sucursal_id' => $sucursalVina->id,
+                'stock_actual' => 80, 'stock_minimo' => 15, 'estado' => 'activo',
+                'categoria_insumo_id' => $catInsumoMaterialId,
+                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+            ],
+            [
+                'nombre' => 'Guantes Estériles M', 'descripcion' => 'Guantes de látex estériles talla mediana.',
+                'precio_venta' => 800.00, 'sucursal_id' => $sucursalValparaiso->id,
+                'stock_actual' => 200, 'stock_minimo' => 30, 'estado' => 'activo',
+                'categoria_insumo_id' => $catInsumoMaterialId,
+                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+            ],
+        ]);
+
+        // ─────────────────────────────────────────────────────────────────────
+        // 16. Roles médicos adicionales
+        // ─────────────────────────────────────────────────────────────────────
+        $rolAnestesista = Rol::create(['nombre_interno' => 'anestesista', 'nombre_legible' => 'Anestesista']);
+        $rolArsenalero  = Rol::create(['nombre_interno' => 'arsenalero',  'nombre_legible' => 'Arsenalero']);
+        $rolTens        = Rol::create(['nombre_interno' => 'tens',        'nombre_legible' => 'Técnico en Enfermería (TENS)']);
+        Rol::create(['nombre_interno' => 'enfermero', 'nombre_legible' => 'Enfermero/a']);
+
+        // ─────────────────────────────────────────────────────────────────────
+        // 17. Usuarios dedicados para personal médico de apoyo
+        // ─────────────────────────────────────────────────────────────────────
+        $userAnestesista1 = User::create([
+            'name'     => 'Dr. Miguel Herrera',
+            'email'    => 'anestesista@prueba.com',
+            'password' => Hash::make('password123'),
+            'rol_id'   => $rolAnestesista->id,
+        ]);
+
+        $userArsenalero1 = User::create([
+            'name'     => 'Sra. Valentina Torres',
+            'email'    => 'arsenalero@prueba.com',
+            'password' => Hash::make('password123'),
+            'rol_id'   => $rolArsenalero->id,
+        ]);
+
+        $userTens1 = User::create([
+            'name'     => 'Sr. Felipe Muñoz',
+            'email'    => 'tens@prueba.com',
+            'password' => Hash::make('password123'),
+            'rol_id'   => $rolTens->id,
+        ]);
+
+        // ─────────────────────────────────────────────────────────────────────
+        // 18. Equipo médico para la cita quirúrgica de ejemplo
+        //     El cirujano principal (veterinario2) ya está en citas.veterinario_id.
+        //     Aquí solo se registra el personal de apoyo.
+        // ─────────────────────────────────────────────────────────────────────
+        DB::table('equipos_medicos')->insert([
+            [
+                'cita_id'    => $citaCirugia->id,
+                'usuario_id' => $userAnestesista1->id,
+                'rol_id'     => $rolAnestesista->id,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ],
+            [
+                'cita_id'    => $citaCirugia->id,
+                'usuario_id' => $userArsenalero1->id,
+                'rol_id'     => $rolArsenalero->id,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ],
+            [
+                'cita_id'    => $citaCirugia->id,
+                'usuario_id' => $userTens1->id,
+                'rol_id'     => $rolTens->id,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ],
+        ]);
+
+        $this->call(HistoricalDataSeeder::class);
+
+        $this->command->info('¡Base de datos sembrada y expandida exitosamente con transacciones, clientes morosos y datos históricos!');
     }
 }

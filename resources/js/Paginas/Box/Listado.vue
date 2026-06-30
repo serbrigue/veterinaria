@@ -84,7 +84,19 @@
                                         <p class="card-text text-muted small mb-3 flex-grow-1 line-clamp-3">
                                             {{ box.descripcion || 'Sin descripción disponible para este box.' }}
                                         </p>
-                                        
+
+                                        <!-- Badge de categoría -->
+                                        <div class="mb-3" v-if="box.categoria_prestacion">
+                                            <span class="badge rounded-pill px-3 py-2" :class="badgeCategoria(box.categoria_prestacion.nombre)">
+                                                <i class="bi bi-tag-fill me-1"></i>{{ box.categoria_prestacion.nombre }}
+                                            </span>
+                                        </div>
+                                        <div class="mb-3" v-else>
+                                            <span class="badge bg-secondary bg-opacity-50 rounded-pill px-3 py-2">
+                                                <i class="bi bi-tag me-1"></i>Sin restricción
+                                            </span>
+                                        </div>
+
                                         <div v-if="esVeterinarioOAdmin" class="d-flex gap-2 pt-3 border-top mt-auto justify-content-between">
                                             <button 
                                                 class="btn btn-sm btn-light text-primary border border-primary-subtle flex-grow-1 btn-hover-primary transition-all rounded-pill" 
@@ -141,15 +153,27 @@
                                     <div v-if="formulario.errors.descripcion" class="invalid-feedback">{{ formulario.errors.descripcion }}</div>
                                 </div>
                                 <div class="mb-4">
-                                    <label class="form-label fw-semibold text-secondary small text-uppercase">ID de Sucursal</label>
-                                    <select v-model="formulario.sucursal_id" class="form-select">
-                                        <option value="">Seleccionar sucursal</option>
+                                    <label class="form-label fw-semibold text-secondary small text-uppercase">Tipo de Box</label>
+                                    <select v-model="formulario.categoria_prestacion_id" class="form-select bg-light border-0 py-2"
+                                        :class="{ 'is-invalid': formulario.errors.categoria_prestacion_id }">
+                                        <option :value="null">Sin restricción (acepta cualquier tipo)</option>
+                                        <option v-for="cat in categoriasPrestacion" :key="cat.id" :value="cat.id">
+                                            {{ cat.nombre }}
+                                        </option>
+                                    </select>
+                                    <div v-if="formulario.errors.categoria_prestacion_id" class="invalid-feedback">{{ formulario.errors.categoria_prestacion_id }}</div>
+                                    <div class="form-text text-muted small">Define qué tipo de prestaciones puede atender este box.</div>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold text-secondary small text-uppercase">Sucursal</label>
+                                    <select v-model="formulario.sucursal_id" class="form-select bg-light border-0 py-2"
+                                        :class="{ 'is-invalid': formulario.errors.sucursal_id }">
+                                        <option :value="null">Seleccionar sucursal</option>
                                         <option v-for="sucursal in sucursales" :key="sucursal.id" :value="sucursal.id">{{ sucursal.nombre }}</option>
                                     </select>
                                     <div v-if="formulario.errors.sucursal_id" class="invalid-feedback">{{ formulario.errors.sucursal_id }}</div>
-                                    <div class="form-text text-muted small">Ingresa el ID de la sucursal a la que pertenece este box.</div>
                                 </div>
-                            </form>
+            </form>
                         </div>
                         <div class="modal-footer bg-light border-top-0 py-3">
                             <button type="button" class="btn btn-light rounded-pill px-4 text-muted fw-medium" @click="cerrarModal">
@@ -185,6 +209,10 @@ export default {
             type: Array,
             default: () => [],
         },
+        categoriasPrestacion: {
+            type: Array,
+            default: () => [],
+        },
         sucursales:{
             type: Array,
             default: () => [],
@@ -201,7 +229,8 @@ export default {
             formulario: {
                 nombre: '',
                 descripcion: '',
-                sucursal_id: '',
+                sucursal_id: null,
+                categoria_prestacion_id: null,
                 errors: {},
                 processing: false,
             },
@@ -218,38 +247,29 @@ export default {
             const user = this.$page.props.auth.user;
             return user && (user.rol?.nombre_interno === 'veterinario' || user.rol?.nombre_interno === 'admin');
         },
-        textoBotonGuardar() {
-            return this.modoEdicion ? 'Guardar Cambios' : 'Crear Box';
-        },
-        tituloModal() {
-            return this.modoEdicion ? 'Editar Box' : 'Nuevo Box';
-        },
-        totalBoxes() {
-            return this.boxesVisibles.length;
-        },
-        listaVacia() {
-            return this.boxesVisibles.length === 0 && this.filtroTexto === '';
-        },
-        sinResultadosFiltro() {
-            return this.boxesVisibles.length === 0 && this.filtroTexto !== '';
-        },
+        textoBotonGuardar() { return this.modoEdicion ? 'Guardar Cambios' : 'Crear Box'; },
+        tituloModal()       { return this.modoEdicion ? 'Editar Box' : 'Nuevo Box'; },
+        totalBoxes()        { return this.boxesVisibles.length; },
+        listaVacia()        { return this.boxesVisibles.length === 0 && this.filtroTexto === ''; },
+        sinResultadosFiltro() { return this.boxesVisibles.length === 0 && this.filtroTexto !== ''; },
     },
     methods: {
+        badgeCategoria(nombre) {
+            const mapa = {
+                'Consulta':   'bg-info text-dark',
+                'Cirugia':    'bg-danger',
+                'Urgencia':   'bg-warning text-dark',
+                'Estetica':   'bg-success',
+            };
+            return mapa[nombre] || 'bg-secondary';
+        },
         datosFormulario() {
             return {
                 nombre: this.formulario.nombre,
                 descripcion: this.formulario.descripcion,
                 sucursal_id: this.formulario.sucursal_id,
+                categoria_prestacion_id: this.formulario.categoria_prestacion_id,
             }
-        },
-        obtenerSucursales(){
-            axios.get(route('sucursales.obtenerTodas'))
-                .then(response => {
-                    this.sucursales = response.data.sucursales || response.data;
-                })
-                .catch(error => {
-                    console.error('Error al obtener sucursales:', error);
-                });
         },
         
         abrirModalCrear() {
@@ -257,7 +277,8 @@ export default {
             this.boxEditando = null;
             this.formulario.nombre = '';
             this.formulario.descripcion = '';
-            this.formulario.sucursal_id = '';
+            this.formulario.sucursal_id = null;
+            this.formulario.categoria_prestacion_id = null;
             this.formulario.errors = {};
             this.mostrarModal = true;
         },
@@ -267,6 +288,7 @@ export default {
             this.formulario.nombre = box.nombre;
             this.formulario.descripcion = box.descripcion;
             this.formulario.sucursal_id = box.sucursal_id;
+            this.formulario.categoria_prestacion_id = box.categoria_prestacion_id;
             this.formulario.errors = {};
             this.mostrarModal = true;
         },
@@ -279,7 +301,8 @@ export default {
             this.boxEditando = null;
             this.formulario.nombre = '';
             this.formulario.descripcion = '';
-            this.formulario.sucursal_id = '';
+            this.formulario.sucursal_id = null;
+            this.formulario.categoria_prestacion_id = null;
             this.formulario.errors = {};
             this.mostrarModal = false;
         },
@@ -350,9 +373,6 @@ export default {
         },
 
     },
-    mounted() {
-        this.obtenerSucursales();
-    },   
 }
 </script>
 

@@ -361,6 +361,10 @@
                                                         </option>
                                                     </select>
                                                     <div v-if="formulario.errors.box_id" class="invalid-feedback">{{ formulario.errors.box_id }}</div>
+                                                    <div v-if="boxesFiltrados.length === 0 && formulario.sucursal_id" class="form-text text-danger">
+                                                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                                        No hay boxes disponibles para este tipo de prestación en esta sucursal.
+                                                    </div>
                                                 </div>
                                             </template>
                                         </div>
@@ -601,18 +605,38 @@ export default {
         boxesFiltrados() {
             if (!this.formulario.sucursal_id) return [];
             const sucursal = this.sucursales.find(s => s.id === this.formulario.sucursal_id);
-            return sucursal ? sucursal.boxes : [];
-        }
+            if (!sucursal) return [];
+
+            const prestacion = this.prestaciones.find(p => p.id === this.formulario.prestacion_id);
+            const catPrestId = prestacion?.categoria_prestacion_id ?? null;
+
+            return sucursal.boxes.filter(box => {
+                // Box sin restricción: acepta cualquier tipo de prestación
+                if (!box.categoria_prestacion_id) return true;
+                // Box con restricción: solo coincide si la categoría es la misma
+                return box.categoria_prestacion_id === catPrestId;
+            });
+        },
     },
     watch: {
-        'formulario.prestacion_id'(newVal) {
+        'formulario.prestacion_id'(newVal, oldVal) {
             if (newVal) {
                 const prestacion = this.prestaciones.find(p => p.id === newVal);
                 if (prestacion && this.formulario.sucursal_id !== prestacion.sucursal_id) {
                     this.formulario.sucursal_id = prestacion.sucursal_id;
                 }
+                // Si la prestación cambió (no es la primera vez) y no estamos editando,
+                // reseteamos box y veterinario porque pueden ser incompatibles
+                if (oldVal && newVal !== oldVal && !this.modoEdicion) {
+                    this.formulario.box_id = '';
+                    this.formulario.veterinario_id = '';
+                    this.formulario.fecha_seleccionada = '';
+                    this.formulario.fecha_hora = '';
+                }
             } else {
                 this.formulario.sucursal_id = '';
+                this.formulario.box_id = '';
+                this.formulario.veterinario_id = '';
             }
         },
         'formulario.sucursal_id'(newVal, oldVal) {

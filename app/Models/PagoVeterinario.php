@@ -8,6 +8,7 @@ class PagoVeterinario extends Model
 {
     protected $fillable = [
         'veterinario_id',
+        'usuario_id',
         'mes',
         'anio',
         'monto_total',
@@ -17,5 +18,10 @@ class PagoVeterinario extends Model
     public function veterinario()
     {
         return $this->belongsTo(Veterinario::class);
+    }
+
+    public function usuario()
+    {
+        return $this->belongsTo(User::class, 'usuario_id');
     }
 }

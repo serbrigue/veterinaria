@@ -18,7 +18,8 @@ class Prestacion extends Model
         'especialidad_id',
         'precio_base',
         'comision_vet',
-
+        'comision_equipo',
+        'categoria_prestacion_id',
     ];
 
     public function especialidad()
@@ -29,5 +30,10 @@ class Prestacion extends Model
     public function sucursal()
     {
         return $this->belongsTo(Sucursal::class);
+    }
+
+    public function categoriaPrestacion()
+    {
+        return $this->belongsTo(CategoriaPrestacion::class, 'categoria_prestacion_id');
     }
 }

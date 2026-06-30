@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cita;
-use App\Models\Cliente;
 use App\Models\Mascota;
 use App\Models\CitaCargo;
 use App\Models\Insumo;
@@ -13,6 +12,8 @@ use \Illuminate\Support\Carbon;
 use App\Models\Sucursal;
 use App\Models\Box;
 use App\Models\Veterinario;
+use App\Models\Rol;
+use App\Models\User;
 use App\Http\Requests\GuardarCitaRequest;
 use App\Http\Requests\ActualizarCitaRequest;
 use Inertia\Inertia;
@@ -49,15 +50,15 @@ class CitaController extends Controller
 
         $citas = $query->orderBy('fecha_hora', 'desc')->paginate(15);
 
-        $sucursales = Cache::remember('sucursales_full', now()->addMinutes(30), function() {
+        $sucursales = Cache::remember('sucursales_full', now()->addMinutes(30), function () {
             return Sucursal::with(['veterinarios.usuario', 'boxes'])->orderBy('nombre')->get();
         });
-        
-        $prestaciones = Cache::remember('prestaciones_full', now()->addMinutes(30), function() {
+
+        $prestaciones = Cache::remember('prestaciones_full', now()->addMinutes(30), function () {
             return Prestacion::with(['sucursal', 'especialidad'])->orderBy('nombre')->get();
         });
-        
-        $veterinarios = Cache::remember('veterinarios_simple', now()->addMinutes(30), function() {
+
+        $veterinarios = Cache::remember('veterinarios_simple', now()->addMinutes(30), function () {
             return Veterinario::all();
         });
 
@@ -103,6 +104,19 @@ class CitaController extends Controller
         return DB::transaction(function () use ($data) {
             $horaTermino = Carbon::parse($data['fecha_hora'])->addMinutes(30);
 
+            // Validar compatibilidad Box ↔ Prestación
+            $box        = Box::find($data['box_id']);
+            $prestacion = Prestacion::find($data['prestacion_id']);
+            if ($box && $box->categoria_prestacion_id !== null) {
+                if ($prestacion && $box->categoria_prestacion_id !== $prestacion->categoria_prestacion_id) {
+                    return response()->json([
+                        'error' => 'El box "' . $box->nombre . '" no es compatible con el tipo de prestación seleccionada.'
+                    ], 422);
+                }
+            }
+
+
+
             // Bloqueamos los recursos padre para evitar condiciones de carrera (doble reserva concurrente)
             Veterinario::where('id', $data['veterinario_id'])->lockForUpdate()->first();
             Box::where('id', $data['box_id'])->lockForUpdate()->first();
@@ -127,14 +141,14 @@ class CitaController extends Controller
             }
 
             $cita = Cita::create([
-                'titulo' => $data['titulo'],
-                'descripcion' => $data['descripcion'],
-                'fecha_hora' => $data['fecha_hora'],
-                'hora_termino' => $horaTermino,
-                'estado' => 'pendiente',
-                'mascota_id' => $data['mascota_id'],
+                'titulo'        => $data['titulo'],
+                'descripcion'   => $data['descripcion'],
+                'fecha_hora'    => $data['fecha_hora'],
+                'hora_termino'  => $horaTermino,
+                'estado'        => 'pendiente',
+                'mascota_id'    => $data['mascota_id'],
                 'veterinario_id' => $data['veterinario_id'],
-                'box_id' => $data['box_id'],
+                'box_id'        => $data['box_id'],
                 'prestacion_id' => $data['prestacion_id'],
             ]);
 
@@ -144,15 +158,21 @@ class CitaController extends Controller
 
     public function actualizar(ActualizarCitaRequest $solicitud, Cita $cita)
     {
-        /**
-         * Intención de negocio:
-         * Modificar los datos de la cita médica agendada.
-         * La verificación de propiedad está delegada al middleware 'can' de la policy.
-         */
         $data = $solicitud->validated();
 
         return DB::transaction(function () use ($data, $cita) {
             $horaTermino = Carbon::parse($data['fecha_hora'])->addMinutes(30);
+
+            // Validar compatibilidad Box ↔ Prestación
+            $box        = Box::find($data['box_id']);
+            $prestacion = Prestacion::find($data['prestacion_id']);
+            if ($box && $box->categoria_prestacion_id !== null) {
+                if ($prestacion && $box->categoria_prestacion_id !== $prestacion->categoria_prestacion_id) {
+                    return response()->json([
+                        'error' => 'El box "' . $box->nombre . '" no es compatible con el tipo de prestación seleccionada.'
+                    ], 422);
+                }
+            }
 
             // Bloqueamos los recursos padre para evitar condiciones de carrera
             Veterinario::where('id', $data['veterinario_id'])->lockForUpdate()->first();
@@ -198,12 +218,12 @@ class CitaController extends Controller
         // Traemos solo las columnas necesarias para la comparación de solapamiento
         $citasVet = Cita::where('veterinario_id', $request->veterinario_id)
             ->whereDate('fecha_hora', $fecha)
-            ->where('estado', '==', 'pendiente')
+            ->where('estado', '!=', 'cancelada')
             ->get(['fecha_hora', 'hora_termino']);
 
         $citasBox = Cita::where('box_id', $request->box_id)
             ->whereDate('fecha_hora', $fecha)
-            ->where('estado', '==', 'pendiente')
+            ->where('estado', '!=', 'cancelada')
             ->get(['fecha_hora', 'hora_termino']);
 
         // Genera todos los slots de 30 min entre $inicio y $fin con el tipo indicado
@@ -274,7 +294,10 @@ class CitaController extends Controller
             'mascota.cliente.usuario',
             'veterinario.usuario',
             'box.sucursal',
-            'transaccion'
+            'transaccion',
+            'prestacion.categoriaPrestacion',
+            'equipoMedico.usuario',
+            'equipoMedico.rol'
         ]);
 
         $mascota = Mascota::with([
@@ -296,12 +319,24 @@ class CitaController extends Controller
                 ->get(['id', 'nombre', 'precio_venta', 'stock_actual']);
         }
 
+        // Obtener personal médico adicional si la cita es una cirugía
+        $rolesMedicos = [];
+
+
+        $usuariosMedicos = [];
+        if ($cita->prestacion?->categoriaPrestacion?->nombre === 'Cirugia') {
+            $rolesMedicos = Rol::whereIn('nombre_interno', ['anestesista', 'arsenalero', 'tens', 'enfermero'])->get();
+            $usuariosMedicos = User::whereIn('rol_id', $rolesMedicos->pluck('id'))->with('rol')->orderBy('name')->get();
+        }
+
         return Inertia::render('Cita/Detalle', [
             'cita'            => $cita,
             'cargos'          => $cargos,
             'insumosSucursal' => $insumosSucursal,
             'mascota'         => $mascota,
-            'prestacion' => $cita->prestacion,
+            'prestacion'      => $cita->prestacion,
+            'rolesMedicos'    => $rolesMedicos,
+            'usuariosMedicos' => $usuariosMedicos,
         ]);
     }
 
@@ -319,6 +354,25 @@ class CitaController extends Controller
         $request->validate(['estado' => 'required|in:pendiente,en_curso,completada,cancelada']);
 
         $nuevoEstado = $request->estado;
+
+        // Si la cita es una cirugía, verificar que tenga al menos un arsenalero antes de iniciar o completar
+
+        $cita->load('prestacion.categoriaPrestacion');
+        if ($cita->prestacion?->categoriaPrestacion?->nombre === 'Cirugia') {
+            if (in_array($nuevoEstado, ['en_curso', 'completada'])) {
+                $tieneArsenalero = $cita->equipoMedico()
+                    ->whereHas('rol', function ($q) {
+                        $q->where('nombre_interno', 'arsenalero');
+                    })
+                    ->exists();
+
+                if (!$tieneArsenalero) {
+                    return response()->json([
+                        'error' => 'Para iniciar o completar una cirugía, debe asignar al menos un arsenalero en el equipo médico.'
+                    ], 422);
+                }
+            }
+        }
 
         // Si el estado es completada y no tiene transacción, generamos una
         if ($nuevoEstado === 'completada' && !$cita->transaccion) {

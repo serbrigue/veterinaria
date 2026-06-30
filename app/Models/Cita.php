@@ -57,11 +57,12 @@ class Cita extends Model
         return $this->hasMany(CitaCargo::class, 'cita_id');
     }
 
-    /**
-     * Accessor virtual 'cliente'.
-     * Extrae y mapea la información del propietario de la mascota
-     * para que sea devuelta directamente en la serialización JSON de la cita.
-     */
+    public function equipoMedico()
+    {
+        return $this->hasMany(EquipoMedico::class, 'cita_id');
+    }
+
+
     public function getClienteAttribute()
     {
         $cliente = $this->mascota?->cliente;

@@ -82,9 +82,14 @@
                                         <h3 class="h5 fw-bold mb-0 text-dark">
                                             {{ prestacion.nombre }}
                                         </h3>
-                                        <span class="badge rounded-pill text-bg-light border shadow-sm">
-                                            {{ prestacion.especialidad_id ? prestacion.especialidad.nombre : 'Medicina General' }}
-                                        </span>
+                                        <div class="d-flex flex-column align-items-end gap-1">
+                                            <span class="badge rounded-pill text-bg-light border shadow-sm">
+                                                {{ prestacion.especialidad_id ? prestacion.especialidad.nombre : 'Medicina General' }}
+                                            </span>
+                                            <span v-if="prestacion.categoria_prestacion" class="badge rounded-pill bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 shadow-sm small">
+                                                {{ prestacion.categoria_prestacion.nombre }}
+                                            </span>
+                                        </div>
                                     </div>
                                     
                                     <div class="mb-3 text-muted small d-flex align-items-center gap-1">
@@ -162,6 +167,18 @@
                                 <div v-if="formulario.errors.especialidad_id" class="invalid-feedback">{{ formulario.errors.especialidad_id }}</div>
                             </div>
 
+                            <div class="mb-3">
+                                <label for="categoria_prestacion_id" class="form-label fw-semibold text-secondary">Categoría de Prestación</label>
+                                <select id="categoria_prestacion_id" v-model="formulario.categoria_prestacion_id" class="form-select" :class="{ 'is-invalid': formulario.errors.categoria_prestacion_id }">
+                                    <option :value="null">Seleccione una categoría...</option>
+                                    <option v-for="cat in categoriasPrestaciones" :key="cat.id" :value="cat.id">
+                                        {{ cat.nombre }}
+                                    </option>
+                                </select>
+                                <div v-if="formulario.errors.categoria_prestacion_id" class="invalid-feedback">{{ formulario.errors.categoria_prestacion_id }}</div>
+                            </div>
+
+
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="precio_base" class="form-label fw-semibold text-secondary">Precio Base ($)</label>
@@ -216,6 +233,10 @@ export default {
         especialidades: {
             type: Array,
             default: () => [],
+        },
+        categoriasPrestaciones: {
+            type: Array,
+            default: () => [],
         }
     },
     data() {
@@ -237,6 +258,7 @@ export default {
                 precio_base: 0,
                 especialidad_id: null,
                 comision_vet: 0,
+                categoria_prestacion_id: null,
                 errors: {},
                 processing: false,
             },
@@ -276,6 +298,7 @@ export default {
             this.formulario.precio_base = 0;
             this.formulario.especialidad_id = null;
             this.formulario.comision_vet = 0;
+            this.formulario.categoria_prestacion_id = null;
             this.formulario.errors = {};
             this.mostrarModal = true;
         },
@@ -288,6 +311,7 @@ export default {
             this.formulario.precio_base = Number(prestacion.precio_base);
             this.formulario.especialidad_id = prestacion.especialidad_id || null;
             this.formulario.comision_vet = Number(prestacion.comision_vet) || 0;
+            this.formulario.categoria_prestacion_id = prestacion.categoria_prestacion_id || null;
             this.formulario.errors = {};
             this.mostrarModal = true;
         },
@@ -303,6 +327,7 @@ export default {
                 precio_base: this.formulario.precio_base,
                 especialidad_id: this.formulario.especialidad_id,
                 comision_vet: this.formulario.comision_vet === 0 ? null : this.formulario.comision_vet,
+                categoria_prestacion_id: this.formulario.categoria_prestacion_id,
             };
         },
         guardar() {

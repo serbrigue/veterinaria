@@ -26,6 +26,16 @@
                             </div>
 
                             <h2 class="h4 fw-bold text-dark mb-3">{{ insumo.nombre }}</h2>
+
+                            <!-- Categoría del insumo -->
+                            <div class="mb-3">
+                                <h3 class="h6 text-uppercase text-muted fw-bold mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Categoría</h3>
+                                <span v-if="insumo.categoria_insumo" class="badge rounded-pill px-3 py-2" :class="badgeCategoria(insumo.categoria_insumo.nombre)">
+                                    <i class="bi bi-tag-fill me-1"></i>{{ insumo.categoria_insumo.nombre }}
+                                </span>
+                                <span v-else class="badge bg-secondary">Sin categoría</span>
+                            </div>
+
                             <div class="mb-4">
                                 <h3 class="h6 text-uppercase text-muted fw-bold mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Descripción</h3>
                                 <p class="text-secondary bg-light p-3 rounded border-start border-primary border-3 mb-0" style="white-space: pre-wrap;">
@@ -94,16 +104,13 @@ import { Head, Link } from '@inertiajs/vue3';
 
 export default {
     name: 'InsumoDetalle',
-    components: {
-        AuthenticatedLayout,
-        Head,
-        Link
+    components: { AuthenticatedLayout, Head, Link },
+    props: { insumo: { type: Object, required: true } },
+    methods: {
+        badgeCategoria(nombre) {
+            const mapa = { 'Medicamento': 'bg-danger', 'Material Quirúrgico': 'bg-warning text-dark', 'Vacuna': 'bg-success', 'Consumible General': 'bg-secondary' };
+            return mapa[nombre] || 'bg-info text-dark';
+        },
     },
-    props: {
-        insumo: {
-            type: Object,
-            required: true,
-        }
-    }
 }
 </script>
