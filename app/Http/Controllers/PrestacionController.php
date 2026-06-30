@@ -16,7 +16,7 @@ class PrestacionController extends Controller
 
     public function listado(Request $request)
     {
-        $query = Prestacion::with(['sucursal', 'especialidad'])
+        $query = Prestacion::with(['sucursal', 'especialidad', 'categoriaPrestacion'])
             ->when($request->filled('especialidad_id'), function ($q) use ($request) {
                 if ($request->especialidad_id === 'general') {
                     $q->whereNull('especialidad_id');
@@ -45,13 +45,14 @@ class PrestacionController extends Controller
             'prestaciones' => $prestaciones,
             'sucursales' => Cache::remember('sucursales_simple', now()->addMinutes(30), fn() => Sucursal::all()),
             'especialidades' => Cache::remember('especialidades_simple', now()->addMinutes(30), fn() => \App\Models\Especialidad::all()),
+            'categoriasPrestaciones' => Cache::remember('categorias_prestaciones_simple', now()->addMinutes(30), fn() => \App\Models\CategoriaPrestacion::all()),
         ]);
     }
 
     public function obtenerTodas()
     {
         return Cache::remember('prestaciones_full', now()->addMinutes(30), function() {
-            return Prestacion::with(['sucursal', 'especialidad'])->orderBy('nombre')->get();
+            return Prestacion::with(['sucursal', 'especialidad', 'categoriaPrestacion'])->orderBy('nombre')->get();
         });
     }
 
@@ -77,6 +78,7 @@ class PrestacionController extends Controller
 
     public function detalle(Prestacion $prestacion)
     {
+        $prestacion->load(['sucursal', 'especialidad', 'categoriaPrestacion']);
         $especialidad = $prestacion->especialidad;
         return Inertia::render('Prestacion/Detalle', [
             'prestacion' => $prestacion,

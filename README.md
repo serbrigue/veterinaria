@@ -27,13 +27,14 @@ El sistema utiliza un control de acceso basado en roles (RBAC) que adapta la int
 
 ### 👑 Perfil Administrador
 - **Dashboard BI:** Panel de administración avanzado con métricas clave de rendimiento financiero y operativo, incluyendo filtros dinámicos.
-- **Gestión de Infraestructura:** Administración completa de `Sucursales` y asignación de `Boxes` de atención.
+- **Gestión de Infraestructura:** Administración completa de `Sucursales` y asignación de `Boxes` de atención (clasificados por tipo de prestación/categoría).
 - **Gestión de Personal:** Registro de `Veterinarios`, asignación a sucursales y definición de sus `Especialidades`.
-- **Inventario y Facturación:** Control de `Insumos` (inventario) y `Prestaciones` (servicios médicos).
-- **Control de Honorarios:** Cálculo y liquidación de sueldos mediante el módulo de `PagoVeterinario`.
+- **Inventario y Facturación:** Control y organización de `Insumos` y `Prestaciones` (servicios médicos) mediante un sistema unificado de **Categorización**.
+- **Control de Honorarios:** Cálculo y liquidación de comisiones tanto para médicos veterinarios principales como para personal de apoyo mediante el módulo unificado de liquidaciones (`PagoVeterinario`).
 
-### 🩺 Perfil Veterinario
+### 🩺 Perfil Veterinario / Personal Médico
 - **Gestión de Agenda:** Visualización y administración de sus `Citas` médicas diarias.
+- **Equipos Médicos (Cirugías):** Asignación y gestión de personal médico colaborador y de apoyo para cirugías en citas específicas de tipo "Cirugía", con validación de conflictos horarios.
 - **Atención Clínica:** Registro de uso de insumos y prestaciones durante una cita (generando `CitaCargos`).
 - **Historial Clínico:** Acceso a la información de los `Clientes` y sus respectivas `Mascotas` (especie, raza, edad, etc.).
 
@@ -49,18 +50,21 @@ La base de datos está normalizada e implementa relaciones completas a través d
 - **Autenticación y Autorización:**
   - `User` pertenece a un `Rol`. Un `Rol` tiene muchos `Permisos` (Relación M:N).
   - `User` tiene un (hasOne) `Veterinario` o un `Cliente` (Polimorfismo lógico).
-- **Gestión de Pacientes (CRM):**
+- **Gestión de Pacientes (CRM) y Comunicación:**
   - `Mascota` pertenece a un `Cliente` y a una `Raza`.
   - `Raza` pertenece a una `Especie`.
+  - Notificaciones masivas para `Clientes` enviadas de manera asíncrona mediante correo electrónico.
 - **Infraestructura Médica:**
   - `Sucursal` tiene muchos `Boxes` y muchos `Veterinarios`.
   - `Veterinario` pertenece a una `Sucursal` y a una `Especialidad`.
-- **Operación Clínica (Citas):**
+  - `Box` y `Prestacion` están asociados a categorías para validar su idoneidad en las atenciones.
+- **Operación Clínica (Citas y Colaboración):**
   - `Cita` agrupa toda la operación: pertenece a un `Veterinario`, una `Mascota`, un `Box` y una `Prestacion` principal.
   - `CitaCargo` (Detalle de la cita): pertenece a una `Cita`, relacionando `Insumos` y `Prestaciones` adicionales utilizadas.
-- **Finanzas:**
+  - `EquipoMedico` (Soporte quirúrgico): vincula una `Cita` (tipo Cirugía) con múltiples usuarios (`User`) de apoyo y sus respectivos roles en la intervención.
+- **Finanzas y Honorarios:**
   - `Transaccion` pertenece a un `Cliente` y a una `Cita` (representa el pago del cliente).
-  - `PagoVeterinario` pertenece a un `Veterinario` (representa la liquidación al profesional).
+  - `PagoVeterinario` pertenece a un `User` (representa la liquidación de honorarios calculados sobre comisiones base o de equipo para el mes correspondiente).
 
 ## 🛠 Instalación y Configuración
 
@@ -117,8 +121,9 @@ El proyecto está dockerizado para un despliegue rápido y consistente.
 ## 📖 Arquitectura y Decisiones de Diseño
 
 - **Caché con Redis:** Implementación del trait `ClearsCache` junto con Model Observers para asegurar la invalidación automática del caché (por ejemplo, al actualizar catálogos como Sucursales o Veterinarios), reduciendo la carga en la base de datos para lectura de datos estables.
-- **Procesamiento Asíncrono:** Uso intensivo de colas con Redis para no bloquear el flujo del usuario al enviar correos transaccionales (confirmaciones de citas).
+- **Procesamiento Asíncrono:** Uso intensivo de colas con Redis para no bloquear el flujo del usuario al enviar correos transaccionales (confirmaciones de citas) y notificaciones masivas a clientes.
 - **Inertia.js:** Comunicación fluida sin recargas entre el backend (Laravel) y el frontend (Vue), pasando las propiedades dinámicamente según la lógica de controladores y los permisos del usuario actual.
+- **Asignación Colaborativa de Quirófanos:** Restricción inteligente para equipos médicos y boxes basada en la categorización de prestaciones, previniendo solapamiento de horarios en cirugías en tiempo real.
 
 ---
 **Nomenclatura y Convenciones:** Tablas en plural, columnas en `snake_case`, métodos y rutas en español, siguiendo los estándares de la comunidad de Laravel y Vue.

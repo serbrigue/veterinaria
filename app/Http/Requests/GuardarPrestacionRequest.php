@@ -20,6 +20,7 @@ class GuardarPrestacionRequest extends FormRequest
             'precio_base' => 'required|numeric|min:0',
             'especialidad_id' => 'nullable|exists:especialidades,id',
             'comision_vet' => 'nullable|numeric|min:0|max:100',
+            'categoria_prestacion_id' => 'nullable|exists:categorias_prestaciones,id',
         ];
     }
 

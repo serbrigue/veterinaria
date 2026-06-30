@@ -21,10 +21,16 @@
                                 <i class="bi bi-heart-pulse-fill" style="font-size: 6rem;"></i>
                             </div>
                             <div class="position-relative z-1">
-                                <span class="badge bg-white text-primary mb-3 rounded-pill px-3 py-2 fw-bold shadow-sm">
-                                    <i class="bi bi-star-fill text-warning me-1"></i>
-                                    {{ prestacion.especialidad?.nombre || 'Medicina General' }}
-                                </span>
+                                <div class="d-flex flex-wrap gap-2 mb-3">
+                                    <span class="badge bg-white text-primary rounded-pill px-3 py-2 fw-bold shadow-sm">
+                                        <i class="bi bi-star-fill text-warning me-1"></i>
+                                        {{ prestacion.especialidad?.nombre || 'Medicina General' }}
+                                    </span>
+                                    <span v-if="prestacion.categoria_prestacion" class="badge bg-white text-dark rounded-pill px-3 py-2 fw-bold shadow-sm">
+                                        <i class="bi bi-tags-fill text-secondary me-1"></i>
+                                        Categoría: {{ prestacion.categoria_prestacion.nombre }}
+                                    </span>
+                                </div>
                                 <h1 class="display-6 fw-bold mb-2">{{ prestacion.nombre }}</h1>
                                 <p class="mb-0 text-white-50 fs-5">Detalle del servicio veterinario</p>
                             </div>

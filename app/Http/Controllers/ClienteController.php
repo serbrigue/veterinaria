@@ -27,22 +27,28 @@ class ClienteController extends Controller
         }
 
         // Filtros usando when() para mantener consistencia con otros controladores
-        $query->when($request->filled('nombre'), fn($q) => 
+        $query->when(
+            $request->filled('nombre'),
+            fn($q) =>
             $q->whereHas('usuario', fn($u) => $u->where('name', 'like', '%' . $request->nombre . '%'))
         )
-        ->when($request->filled('mascota'), fn($q) => 
-            $q->whereHas('mascotas', fn($m) => $m->where('nombre', 'like', '%' . $request->mascota . '%'))
-        )
-        ->when($request->filled('sucursal_id'), fn($q) => 
-            $q->whereHas('mascotas.citas.box', fn($b) => $b->where('sucursal_id', $request->sucursal_id))
-        )
-        ->when($request->filled('estado_pago'), function($q) use ($request) {
-            if ($request->estado_pago === 'moroso') {
-                $q->whereHas('transacciones', fn($t) => $t->where('estado', 'pendiente'));
-            } elseif ($request->estado_pago === 'al_dia') {
-                $q->whereDoesntHave('transacciones', fn($t) => $t->where('estado', 'pendiente'));
-            }
-        });
+            ->when(
+                $request->filled('mascota'),
+                fn($q) =>
+                $q->whereHas('mascotas', fn($m) => $m->where('nombre', 'like', '%' . $request->mascota . '%'))
+            )
+            ->when(
+                $request->filled('sucursal_id'),
+                fn($q) =>
+                $q->whereHas('mascotas.citas.box', fn($b) => $b->where('sucursal_id', $request->sucursal_id))
+            )
+            ->when($request->filled('estado_pago'), function ($q) use ($request) {
+                if ($request->estado_pago === 'moroso') {
+                    $q->whereHas('transacciones', fn($t) => $t->where('estado', 'pendiente'));
+                } elseif ($request->estado_pago === 'al_dia') {
+                    $q->whereDoesntHave('transacciones', fn($t) => $t->where('estado', 'pendiente'));
+                }
+            });
 
         // Cargamos las transacciones pendientes explícitamente para mostrarlas rápido en el badge
         $query->with(['transacciones' => function ($q) {
@@ -128,5 +134,36 @@ class ClienteController extends Controller
         $cliente->delete();
 
         return response()->json(['mensaje' => 'Cliente eliminado correctamente']);
+    }
+
+    public function enviarCorreoMasivo(Request $request)
+    {
+        if (!auth()->user()->isAdmin() && !auth()->user()->isVeterinario()) {
+            return response()->json(['error' => 'No autorizado para realizar esta acción.'], 403);
+        }
+
+        $validated = $request->validate([
+            'clientes_ids' => 'required|array',
+            'clientes_ids.*' => 'exists:clientes,id',
+            'asunto' => 'required|string|max:255',
+            'mensaje' => 'required|string|max:2000',
+        ]);
+
+        $clientes = Cliente::whereIn('id', $validated['clientes_ids'])->with('usuario')->get();
+
+        foreach ($clientes as $cliente) {
+            $email = $cliente->usuario?->email;
+            if ($email) {
+                Mail::to($email)->send(
+                    new \App\Mail\NotificacionMasivaMail(
+                        $validated['asunto'],
+                        $validated['mensaje'],
+                        $cliente->usuario->name
+                    )
+                );
+            }
+        }
+
+        return response()->json(['mensaje' => 'Correos enviados correctamente a ' . $clientes->count() . ' clientes.']);
     }
 }

@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\Veterinario;
 use App\Models\PagoVeterinario;
 use App\Models\Cita;
+use App\Models\User;
+use App\Models\Rol;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 
@@ -16,109 +18,215 @@ class PagoVeterinarioController extends Controller
         $mes = $request->mes ?? Carbon::now()->month;
         $anio = $request->anio ?? Carbon::now()->year;
 
-        $veterinarios = Veterinario::with(['usuario', 'citas' => function ($q) use ($mes, $anio) {
-            $q->where('estado', 'completada')
-              ->whereHas('transaccion', function ($t) use ($mes, $anio) {
-                  $t->where('estado', 'pagado')
-                    ->whereMonth('fecha_pago', $mes)
-                    ->whereYear('fecha_pago', $anio);
-              })
-              ->with('prestacion');
-        }])->paginate(15);
+        // Obtener todos los roles liquidables (excluyendo admin y cliente)
+        $roles = Rol::whereNotIn('nombre_interno', ['admin', 'cliente'])->get();
 
-        // Transformar la colección subyacente para inyectar cálculos de comisiones
-        $veterinarios->getCollection()->transform(function ($vet) use ($mes, $anio) {
-            $totalComision = 0;
+        // Rol por defecto: veterinario
+        $rolVet = Rol::where('nombre_interno', 'veterinario')->first();
+        $rolId = $request->rol_id ?? ($rolVet ? $rolVet->id : null);
 
-            foreach ($vet->citas as $cita) {
-                if ($cita->prestacion) {
-                    $precio = $cita->prestacion->precio_base;
-                    $porcentaje = $cita->prestacion->comision_vet ?? 0;
-                    $totalComision += ($precio * $porcentaje) / 100;
+        $liquidaciones = collect();
+
+        if ($rolId) {
+            $rolSelected = Rol::find($rolId);
+
+            if ($rolSelected) {
+                // Obtener todos los usuarios con ese rol
+                $usuarios = User::where('rol_id', $rolId)->with(['rol'])->paginate(15);
+
+                $usuarios->getCollection()->transform(function ($user) use ($mes, $anio, $rolSelected) {
+                    $totalComision = 0;
+
+                    if ($rolSelected->nombre_interno === 'veterinario') {
+                        $vet = Veterinario::where('user_id', $user->id)->first();
+                        if ($vet) {
+                            $citas = Cita::where('veterinario_id', $vet->id)
+                                ->where('estado', 'completada')
+                                ->whereHas('transaccion', function ($t) use ($mes, $anio) {
+                                    $t->where('estado', 'pagado')
+                                      ->whereMonth('fecha_pago', $mes)
+                                      ->whereYear('fecha_pago', $anio);
+                                })
+                                ->with('prestacion')
+                                ->get();
+
+                            foreach ($citas as $cita) {
+                                if ($cita->prestacion) {
+                                    $precio = $cita->prestacion->precio_base;
+                                    $porcentaje = $cita->prestacion->comision_vet ?? 0;
+                                    $totalComision += ($precio * $porcentaje) / 100;
+                                }
+                            }
+                        }
+                    } else {
+                        // Personal de apoyo
+                        $citas = Cita::whereHas('equipoMedico', function ($em) use ($user) {
+                                $em->where('usuario_id', $user->id);
+                            })
+                            ->where('estado', 'completada')
+                            ->whereHas('transaccion', function ($t) use ($mes, $anio) {
+                                $t->where('estado', 'pagado')
+                                  ->whereMonth('fecha_pago', $mes)
+                                  ->whereYear('fecha_pago', $anio);
+                            })
+                            ->with('prestacion')
+                            ->get();
+
+                        foreach ($citas as $cita) {
+                            if ($cita->prestacion) {
+                                $precio = $cita->prestacion->precio_base;
+                                $porcentaje = $cita->prestacion->comision_equipo ?? 0;
+                                $totalComision += ($precio * $porcentaje) / 100;
+                            }
+                        }
+                    }
+
+                    $pagoRealizado = PagoVeterinario::where('usuario_id', $user->id)
+                        ->where('mes', $mes)
+                        ->where('anio', $anio)
+                        ->first();
+
+                    return [
+                        'id' => $user->id,
+                        'nombre' => $user->name,
+                        'rol' => $user->rol ? $user->rol->nombre_legible : 'Personal',
+                        'total_comision' => $totalComision,
+                        'estado' => $pagoRealizado ? 'Pagado' : 'Pendiente',
+                    ];
+                });
+
+                $liquidaciones = $usuarios;
+            }
+        }
+
+        // Calcular total general de todas las comisiones del periodo para el rol seleccionado
+        $totalGeneral = 0;
+        if ($rolId) {
+            $rolSelected = Rol::find($rolId);
+            if ($rolSelected) {
+                if ($rolSelected->nombre_interno === 'veterinario') {
+                    $citasMes = Cita::where('estado', 'completada')
+                        ->whereHas('transaccion', function ($t) use ($mes, $anio) {
+                            $t->where('estado', 'pagado')
+                              ->whereMonth('fecha_pago', $mes)
+                              ->whereYear('fecha_pago', $anio);
+                        })
+                        ->with('prestacion')->get();
+
+                    $totalGeneral = $citasMes->sum(function($cita) {
+                        $precio = $cita->prestacion->precio_base ?? 0;
+                        $porcentaje = $cita->prestacion->comision_vet ?? 0;
+                        return ($precio * $porcentaje) / 100;
+                    });
+                } else {
+                    $citasMes = Cita::whereHas('equipoMedico', function($em) use ($rolId) {
+                            $em->where('rol_id', $rolId);
+                        })
+                        ->where('estado', 'completada')
+                        ->whereHas('transaccion', function ($t) use ($mes, $anio) {
+                            $t->where('estado', 'pagado')
+                              ->whereMonth('fecha_pago', $mes)
+                              ->whereYear('fecha_pago', $anio);
+                        })
+                        ->with('prestacion')->get();
+
+                    $totalGeneral = $citasMes->sum(function($cita) {
+                        $precio = $cita->prestacion->precio_base ?? 0;
+                        $porcentaje = $cita->prestacion->comision_equipo ?? 0;
+                        return ($precio * $porcentaje) / 100;
+                    });
                 }
             }
-
-            $pagoRealizado = PagoVeterinario::where('veterinario_id', $vet->id)
-                ->where('mes', $mes)
-                ->where('anio', $anio)
-                ->first();
-
-            return [
-                'id' => $vet->id,
-                'nombre' => $vet->usuario ? $vet->usuario->name : 'Desconocido',
-                'total_comision' => $totalComision,
-                'estado' => $pagoRealizado ? 'Pagado' : 'Pendiente',
-            ];
-        });
-
-        // Calcular total general de todas las comisiones del periodo (sin importar paginación)
-        $citasMes = Cita::where('estado', 'completada')
-            ->whereHas('transaccion', function ($t) use ($mes, $anio) {
-                $t->where('estado', 'pagado')
-                  ->whereMonth('fecha_pago', $mes)
-                  ->whereYear('fecha_pago', $anio);
-            })
-            ->with('prestacion')->get();
-
-        $totalGeneral = $citasMes->sum(function($cita) {
-            $precio = $cita->prestacion->precio_base ?? 0;
-            $porcentaje = $cita->prestacion->comision_vet ?? 0;
-            return ($precio * $porcentaje) / 100;
-        });
+        }
 
         if ($request->wantsJson()) {
             return response()->json([
-                'liquidaciones' => $veterinarios,
+                'liquidaciones' => $liquidaciones,
                 'totalGeneral' => $totalGeneral
             ]);
         }
 
         return Inertia::render('Veterinario/Pagos', [
-            'liquidaciones_iniciales' => $veterinarios,
+            'liquidaciones_iniciales' => $liquidaciones,
             'total_general_inicial' => $totalGeneral,
-            'mes_inicial' => $mes,
-            'anio_inicial' => $anio
+            'roles' => $roles,
+            'rol_id_inicial' => (int)$rolId,
+            'mes_inicial' => (int)$mes,
+            'anio_inicial' => (int)$anio
         ]);
     }
 
-    public function detalle(Request $request, Veterinario $veterinario)
+    public function detalle(Request $request, User $usuario)
     {
         $mes = $request->mes ?? Carbon::now()->month;
         $anio = $request->anio ?? Carbon::now()->year;
 
-        $veterinario->load('usuario');
+        $usuario->load('rol');
 
-        $citas = Cita::with(['mascota.cliente.usuario', 'prestacion', 'transaccion'])
-            ->where('veterinario_id', $veterinario->id)
-            ->where('estado', 'completada')
-            ->whereHas('transaccion', function ($t) use ($mes, $anio) {
-                $t->where('estado', 'pagado')
-                  ->whereMonth('fecha_pago', $mes)
-                  ->whereYear('fecha_pago', $anio);
-            })
-            ->orderBy('fecha_hora', 'asc')
-            ->get();
+        if ($usuario->rol && $usuario->rol->nombre_interno === 'veterinario') {
+            $vet = Veterinario::where('user_id', $usuario->id)->first();
+            $citas = $vet ? Cita::with(['mascota.cliente.usuario', 'prestacion', 'transaccion'])
+                ->where('veterinario_id', $vet->id)
+                ->where('estado', 'completada')
+                ->whereHas('transaccion', function ($t) use ($mes, $anio) {
+                    $t->where('estado', 'pagado')
+                      ->whereMonth('fecha_pago', $mes)
+                      ->whereYear('fecha_pago', $anio);
+                })
+                ->orderBy('fecha_hora', 'asc')
+                ->get() : collect();
 
-        $desglose = $citas->map(function ($cita) {
-            $precio = $cita->prestacion ? $cita->prestacion->precio_base : 0;
-            $porcentaje = $cita->prestacion ? ($cita->prestacion->comision_vet ?? 0) : 0;
-            $ganancia = ($precio * $porcentaje) / 100;
+            $desglose = $citas->map(function ($cita) {
+                $precio = $cita->prestacion ? $cita->prestacion->precio_base : 0;
+                $porcentaje = $cita->prestacion ? ($cita->prestacion->comision_vet ?? 0) : 0;
+                $ganancia = ($precio * $porcentaje) / 100;
 
-            return [
-                'id' => $cita->id,
-                'fecha' => $cita->transaccion->fecha_pago ?? $cita->fecha_hora,
-                'mascota' => $cita->mascota ? $cita->mascota->nombre : 'N/A',
-                'cliente' => $cita->mascota && $cita->mascota->cliente && $cita->mascota->cliente->usuario ? $cita->mascota->cliente->usuario->name : 'N/A',
-                'servicio' => $cita->prestacion ? $cita->prestacion->nombre : 'Servicio Desconocido',
-                'ingreso_clinica' => $precio,
-                'comision_porcentaje' => $porcentaje,
-                'ganancia_vet' => $ganancia,
-            ];
-        });
+                return [
+                    'id' => $cita->id,
+                    'fecha' => $cita->transaccion->fecha_pago ?? $cita->fecha_hora,
+                    'mascota' => $cita->mascota ? $cita->mascota->nombre : 'N/A',
+                    'cliente' => $cita->mascota && $cita->mascota->cliente && $cita->mascota->cliente->usuario ? $cita->mascota->cliente->usuario->name : 'N/A',
+                    'servicio' => $cita->prestacion ? $cita->prestacion->nombre : 'Servicio Desconocido',
+                    'ingreso_clinica' => $precio,
+                    'comision_porcentaje' => $porcentaje,
+                    'ganancia_personal' => $ganancia,
+                ];
+            });
+        } else {
+            $citas = Cita::with(['mascota.cliente.usuario', 'prestacion', 'transaccion'])
+                ->whereHas('equipoMedico', function ($em) use ($usuario) {
+                    $em->where('usuario_id', $usuario->id);
+                })
+                ->where('estado', 'completada')
+                ->whereHas('transaccion', function ($t) use ($mes, $anio) {
+                    $t->where('estado', 'pagado')
+                      ->whereMonth('fecha_pago', $mes)
+                      ->whereYear('fecha_pago', $anio);
+                })
+                ->orderBy('fecha_hora', 'asc')
+                ->get();
 
-        $totalPagar = $desglose->sum('ganancia_vet');
+            $desglose = $citas->map(function ($cita) {
+                $precio = $cita->prestacion ? $cita->prestacion->precio_base : 0;
+                $porcentaje = $cita->prestacion ? ($cita->prestacion->comision_equipo ?? 0) : 0;
+                $ganancia = ($precio * $porcentaje) / 100;
 
-        $pagoRealizado = PagoVeterinario::where('veterinario_id', $veterinario->id)
+                return [
+                    'id' => $cita->id,
+                    'fecha' => $cita->transaccion->fecha_pago ?? $cita->fecha_hora,
+                    'mascota' => $cita->mascota ? $cita->mascota->nombre : 'N/A',
+                    'cliente' => $cita->mascota && $cita->mascota->cliente && $cita->mascota->cliente->usuario ? $cita->mascota->cliente->usuario->name : 'N/A',
+                    'servicio' => $cita->prestacion ? $cita->prestacion->nombre : 'Servicio Desconocido',
+                    'ingreso_clinica' => $precio,
+                    'comision_porcentaje' => $porcentaje,
+                    'ganancia_personal' => $ganancia,
+                ];
+            });
+        }
+
+        $totalPagar = $desglose->sum('ganancia_personal');
+
+        $pagoRealizado = PagoVeterinario::where('usuario_id', $usuario->id)
             ->where('mes', $mes)
             ->where('anio', $anio)
             ->first();
@@ -132,19 +240,20 @@ class PagoVeterinarioController extends Controller
         }
 
         return Inertia::render('Veterinario/PagoDetalle', [
-            'veterinario' => [
-                'id' => $veterinario->id,
-                'nombre' => $veterinario->usuario->name,
+            'personal' => [
+                'id' => $usuario->id,
+                'nombre' => $usuario->name,
+                'rol' => $usuario->rol ? $usuario->rol->nombre_legible : 'Personal',
             ],
             'desglose_inicial' => $desglose,
             'total_inicial' => $totalPagar,
             'estado_inicial' => $pagoRealizado ? 'Pagado' : 'Pendiente',
-            'mes_inicial' => $mes,
-            'anio_inicial' => $anio
+            'mes_inicial' => (int)$mes,
+            'anio_inicial' => (int)$anio
         ]);
     }
 
-    public function procesarPago(Request $request, Veterinario $veterinario)
+    public function procesarPago(Request $request, User $usuario)
     {
         $request->validate([
             'mes' => 'required|integer|min:1|max:12',
@@ -152,7 +261,7 @@ class PagoVeterinarioController extends Controller
             'monto_total' => 'required|numeric'
         ]);
 
-        $existe = PagoVeterinario::where('veterinario_id', $veterinario->id)
+        $existe = PagoVeterinario::where('usuario_id', $usuario->id)
             ->where('mes', $request->mes)
             ->where('anio', $request->anio)
             ->exists();
@@ -161,8 +270,11 @@ class PagoVeterinarioController extends Controller
             return response()->json(['error' => 'Ya se ha registrado un pago para este mes y año.'], 422);
         }
 
+        $vet = Veterinario::where('user_id', $usuario->id)->first();
+
         $pago = PagoVeterinario::create([
-            'veterinario_id' => $veterinario->id,
+            'usuario_id' => $usuario->id,
+            'veterinario_id' => $vet ? $vet->id : null,
             'mes' => $request->mes,
             'anio' => $request->anio,
             'monto_total' => $request->monto_total,
@@ -172,3 +284,4 @@ class PagoVeterinarioController extends Controller
         return response()->json(['mensaje' => 'Pago registrado exitosamente.', 'pago' => $pago]);
     }
 }
+

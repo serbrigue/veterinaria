@@ -1,5 +1,5 @@
 <template>
-    <Head title="Liquidación de Veterinarios" />
+    <Head title="Realizar Pagos" />
 
     <AuthenticatedLayout>
         <template #header>
@@ -17,34 +17,46 @@
             <!-- PANEL DE FILTROS -->
             <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white d-print-none">
                 <div class="card-body p-4">
-                    <h5 class="card-title fw-bold text-dark mb-3">Periodo de Liquidación</h5>
+                    <h5 class="card-title fw-bold text-dark mb-3">Periodo y Filtros de Liquidación</h5>
                     
                     <div class="row g-3">
-                        <div class="col-12 col-md-4">
+                        <div class="col-12 col-md-3">
+                            <label class="form-label text-muted small fw-semibold text-uppercase tracking-wide">Rol Personal</label>
+                            <select 
+                                class="form-select form-select-lg rounded-3 shadow-none border-light bg-light" 
+                                v-model="filtros.rol_id"
+                                @change="aplicarFiltros"
+                            >
+                                <option v-for="r in roles" :key="r.id" :value="r.id">
+                                    {{ r.nombre_legible }}
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-3">
                             <label class="form-label text-muted small fw-semibold text-uppercase tracking-wide">Mes</label>
                             <select 
                                 class="form-select form-select-lg rounded-3 shadow-none border-light bg-light" 
                                 v-model="filtros.mes"
                                 @change="aplicarFiltros"
                             >
-                                <option v-for="(nombre, num) in meses" :key="num" :value="num">
+                                <option v-for="(nombre, num) in meses" :key="num" :value="parseInt(num)">
                                     {{ nombre }}
                                 </option>
                             </select>
                         </div>
-                        <div class="col-12 col-md-4">
+                        <div class="col-12 col-md-3">
                             <label class="form-label text-muted small fw-semibold text-uppercase tracking-wide">Año</label>
                             <select 
                                 class="form-select form-select-lg rounded-3 shadow-none border-light bg-light" 
                                 v-model="filtros.anio"
                                 @change="aplicarFiltros"
                             >
-                                <option v-for="a in anios" :key="a" :value="a">
+                                <option v-for="a in anios" :key="a" :value="parseInt(a)">
                                     {{ a }}
                                 </option>
                             </select>
                         </div>
-                        <div class="col-12 col-md-4 d-flex align-items-end">
+                        <div class="col-12 col-md-3 d-flex align-items-end">
                             <button 
                                 class="btn btn-primary btn-lg rounded-3 w-100 shadow-sm"
                                 @click="imprimirReporte"
@@ -64,7 +76,7 @@
                 <div class="card-body p-4 position-relative z-1">
                     <p class="mb-1 fw-medium text-white-50 text-uppercase tracking-wide">Total a Pagar en Honorarios</p>
                     <h2 class="display-5 fw-bold mb-0">${{ totalGeneralComisionesFormatted }}</h2>
-                    <p class="mb-0 mt-2 text-white-50 small">Corresponde a la suma de todas las comisiones de los veterinarios en {{ nombreMesActual }} {{ filtros.anio }}.</p>
+                    <p class="mb-0 mt-2 text-white-50 small">Corresponde a la suma de todas las comisiones del rol seleccionado en {{ nombreMesActual }} {{ filtros.anio }}.</p>
                 </div>
             </div>
 
@@ -74,7 +86,7 @@
                     <table class="table table-hover table-borderless align-middle mb-0">
                         <thead class="bg-light">
                             <tr>
-                                <th class="text-uppercase text-muted small fw-bold py-3 ps-4 rounded-start">Veterinario</th>
+                                <th class="text-uppercase text-muted small fw-bold py-3 ps-4 rounded-start">Personal</th>
                                 <th class="text-uppercase text-muted small fw-bold py-3 text-center">Estado</th>
                                 <th class="text-uppercase text-muted small fw-bold py-3 text-end">Comisión Total</th>
                                 <th class="text-uppercase text-muted small fw-bold py-3 text-center pe-4 rounded-end">Acciones</th>
@@ -87,7 +99,15 @@
                                     <p class="text-muted mt-2 mb-0">Calculando honorarios...</p>
                                 </td>
                             </tr>
-                            <tr v-else-if="liquidaciones.length === 0 || totalGeneralComisiones === '0'">
+                            <tr v-else-if="liquidaciones.length === 0">
+                                <td colspan="4" class="text-center py-5">
+                                    <div class="text-muted">
+                                        <i class="bi bi-piggy-bank display-4 d-block mb-3 opacity-50"></i>
+                                        <p class="mb-0 fw-medium">No hay personal registrado para el rol seleccionado.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-else-if="liquidacionesFiltradas.length === 0">
                                 <td colspan="4" class="text-center py-5">
                                     <div class="text-muted">
                                         <i class="bi bi-piggy-bank display-4 d-block mb-3 opacity-50"></i>
@@ -103,7 +123,7 @@
                                         </div>
                                         <div>
                                             <span class="fw-bold d-block text-dark">{{ vet.nombre }}</span>
-                                            <span class="text-muted small">ID: VET-{{ String(vet.id).padStart(4, '0') }}</span>
+                                            <span class="text-muted small">{{ vet.rol }} (ID: {{ vet.id }})</span>
                                         </div>
                                     </div>
                                 </td>
@@ -134,7 +154,7 @@
                 <!-- Paginación -->
                 <div v-if="liquidacionesData && liquidacionesData.last_page > 1" class="d-flex justify-content-between align-items-center p-4 border-top">
                     <div class="text-muted small">
-                        Mostrando {{ liquidacionesData.from }} a {{ liquidacionesData.to }} de {{ liquidacionesData.total }} veterinarios
+                        Mostrando {{ liquidacionesData.from }} a {{ liquidacionesData.to }} de {{ liquidacionesData.total }} registros
                     </div>
                     <nav aria-label="Navegación de páginas">
                         <ul class="pagination pagination-sm mb-0">
@@ -179,8 +199,8 @@
                                         <span class="fw-medium text-dark">{{ nombreMesActual }} {{ filtros.anio }}</span>
                                     </div>
                                     <div class="d-flex justify-content-between mb-3">
-                                        <span class="text-muted small">Veterinario:</span>
-                                        <span class="fw-medium text-dark">{{ liquidacionSeleccionada.nombre }}</span>
+                                        <span class="text-muted small">Personal:</span>
+                                        <span class="fw-medium text-dark">{{ liquidacionSeleccionada.nombre }} ({{ liquidacionSeleccionada.rol }})</span>
                                     </div>
                                     <div class="d-flex justify-content-between mb-3">
                                         <span class="text-muted small">Estado:</span>
@@ -229,6 +249,14 @@ export default {
             type: Number,
             required: true
         },
+        roles: {
+            type: Array,
+            required: true
+        },
+        rol_id_inicial: {
+            type: Number,
+            required: true
+        },
         mes_inicial: {
             type: [String, Number],
             required: true
@@ -254,12 +282,13 @@ export default {
             filtros: {
                 mes: this.mes_inicial,
                 anio: this.anio_inicial,
+                rol_id: this.rol_id_inicial,
             }
         };
     },
     computed: {
         liquidacionesFiltradas() {
-            // Solo mostramos veterinarios que generaron comisiones
+            // Mostramos registros que tengan comisión generada > 0 para evitar filas vacías irrelevantes
             return this.liquidaciones.filter(v => parseFloat(v.total_comision) > 0);
         },
         totalGeneralComisionesFormatted() {
@@ -280,7 +309,7 @@ export default {
         async aplicarFiltros(url = null) {
             this.cargando = true;
             try {
-                const fetchUrl = typeof url === 'string' ? url : route('pagos.veterinarios');
+                const fetchUrl = typeof url === 'string' ? url : route('pagos.personal');
                 const response = await axios.get(fetchUrl, {
                     params: typeof url === 'string' ? {} : this.filtros,
                     headers: { 'Accept': 'application/json' }
@@ -308,7 +337,7 @@ export default {
             window.print();
         },
         irADetalle(vet) {
-            router.visit(route('pagos.veterinarios.detalle', { veterinario: vet.id, mes: this.filtros.mes, anio: this.filtros.anio }));
+            router.visit(route('pagos.personal.detalle', { usuario: vet.id, mes: this.filtros.mes, anio: this.filtros.anio }));
         }
     }
 }
@@ -376,3 +405,4 @@ export default {
     }
 }
 </style>
+

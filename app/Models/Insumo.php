@@ -18,10 +18,16 @@ class Insumo extends Model
         'stock_actual',
         'stock_minimo',
         'estado',
+        'categoria_insumo_id',
     ];
 
     public function sucursal()
     {
         return $this->belongsTo(Sucursal::class);
+    }
+
+    public function categoriaInsumo()
+    {
+        return $this->belongsTo(CategoriaInsumo::class, 'categoria_insumo_id');
     }
 }

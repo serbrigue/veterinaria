@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Insumo;
 use App\Models\Sucursal;
+use App\Models\CategoriaInsumo;
 use App\Http\Requests\GuardarInsumoRequest;
 use App\Http\Requests\ActualizarInsumoRequest;
 use Illuminate\Http\Request;
-
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Cache;
 
@@ -20,18 +20,23 @@ class InsumoController extends Controller
     public function listado(Request $request)
     {
         $insumosCached = Cache::remember('insumos_full', now()->addMinutes(30), function() {
-            return Insumo::with('sucursal')->orderBy('nombre')->get();
+            return Insumo::with('sucursal', 'categoriaInsumo')->orderBy('nombre')->get();
+        });
+        $categoriasInsumo = Cache::remember('categorias_insumos_full', now()->addMinutes(60), function() {
+            return CategoriaInsumo::orderBy('nombre')->get();
         });
 
         if (request()->wantsJson()) {
             return response()->json([
-                'insumos' => $insumosCached,
+                'insumos'         => $insumosCached,
+                'categoriasInsumo' => $categoriasInsumo,
             ]);
         }
 
         return Inertia::render('Insumo/Listado', [
-            'insumos' => $insumosCached,
-            'sucursales' => Cache::remember('sucursales_simple', now()->addMinutes(30), fn() => Sucursal::all()),
+            'insumos'         => $insumosCached,
+            'sucursales'      => Cache::remember('sucursales_simple', now()->addMinutes(30), fn() => Sucursal::all()),
+            'categoriasInsumo' => $categoriasInsumo,
         ]);
     }
 
@@ -67,7 +72,7 @@ class InsumoController extends Controller
 
     public function detalle(Insumo $insumo)
     {
-
+        $insumo->load('sucursal', 'categoriaInsumo');
         return Inertia::render('Insumo/Detalle', [
             'insumo' => $insumo,
         ]);

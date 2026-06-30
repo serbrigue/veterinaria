@@ -42,8 +42,25 @@
                                 </h4>
                                 <div class="bg-light bg-opacity-50 p-3 rounded-3 border border-light d-inline-block">
                                     <p class="text-secondary fs-6 mb-0 d-flex align-items-center gap-2">
-                                        <span class="badge bg-primary rounded-pill">ID Sucursal: {{ box.sucursal_id || 'No asignada' }}</span>
+                                        <span class="badge bg-primary rounded-pill">{{ box.sucursal?.nombre || 'No asignada' }}</span>
                                     </p>
+                                </div>
+                            </div>
+
+                            <!-- Tipo de Box (Categoría de Prestación) -->
+                            <div class="mb-4">
+                                <h4 class="h6 fw-bold text-dark d-flex align-items-center gap-2 mb-3">
+                                    <i class="bi bi-tag-fill text-primary"></i> Tipo de Atención
+                                </h4>
+                                <div v-if="box.categoria_prestacion" class="bg-light bg-opacity-50 p-3 rounded-3 border border-light d-inline-block">
+                                    <span class="badge rounded-pill px-3 py-2 fs-6" :class="badgeCategoria(box.categoria_prestacion.nombre)">
+                                        {{ box.categoria_prestacion.nombre }}
+                                    </span>
+                                    <p class="text-muted small mt-2 mb-0">{{ box.categoria_prestacion.descripcion }}</p>
+                                </div>
+                                <div v-else class="bg-light bg-opacity-50 p-3 rounded-3 border border-light d-inline-block">
+                                    <span class="badge bg-secondary bg-opacity-50 rounded-pill px-3 py-2">Sin restricción</span>
+                                    <p class="text-muted small mt-2 mb-0">Este box acepta cualquier tipo de prestación.</p>
                                 </div>
                             </div>
 
@@ -84,13 +101,13 @@ import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
 import { Head, Link } from '@inertiajs/vue3';
 
 export default {
-    components: {
-        AuthenticatedLayout,
-        Head,
-        Link 
-    },
-    props: {
-        box: Object,
+    components: { AuthenticatedLayout, Head, Link },
+    props: { box: Object },
+    methods: {
+        badgeCategoria(nombre) {
+            const mapa = { 'Consulta': 'bg-info text-dark', 'Cirugia': 'bg-danger', 'Urgencia': 'bg-warning text-dark', 'Estetica': 'bg-success' };
+            return mapa[nombre] || 'bg-secondary';
+        },
     },
 };
 </script>

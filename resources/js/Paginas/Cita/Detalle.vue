@@ -276,10 +276,86 @@
                             </div>
                         </div>
 
+                        <!-- EQUIPO MEDICO DE APOYO (SOLO CIRUGIAS) -->
+                        <div v-if="cita.prestacion?.categoria_prestacion?.nombre === 'Cirugia'" class="card border-0 shadow-sm border-top border-warning border-4">
+                            <div class="card-header bg-transparent border-0 pt-3 px-4 pb-0">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h3 class="h6 mb-0 fw-bold text-dark d-flex align-items-center gap-2">
+                                        <i class="bi bi-people-fill text-warning"></i> Equipo Médico de Apoyo
+                                    </h3>
+                                    <span v-if="tieneArsenalero" class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1 small">
+                                        <i class="bi bi-check-circle-fill me-1"></i> Arsenalero ok
+                                    </span>
+                                    <span v-else class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2 py-1 small animate-pulse">
+                                        <i class="bi bi-exclamation-triangle-fill me-1"></i> Falta Arsenalero
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="card-body p-4 pt-3">
+                                <!-- Lista de equipo médico asignado -->
+                                <div v-if="equipoList.length > 0" class="mb-3">
+                                    <div v-for="miembro in equipoList" :key="'miembro-' + miembro.id" class="d-flex justify-content-between align-items-center p-2 rounded mb-2 bg-light border">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="bg-warning bg-opacity-10 text-warning rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                                <i class="bi bi-person-fill"></i>
+                                            </div>
+                                            <div>
+                                                <span class="small fw-semibold text-dark d-block">{{ miembro.usuario?.name }}</span>
+                                                <span class="text-muted d-block" style="font-size: 0.75rem;">{{ miembro.rol?.nombre_legible }}</span>
+                                            </div>
+                                        </div>
+                                        <button v-if="puedeEditarCita && estadoActual !== 'completada' && estadoActual !== 'cancelada'" 
+                                                class="btn btn-sm btn-outline-danger p-1 rounded-circle d-flex align-items-center justify-content-center" 
+                                                style="width: 24px; height: 24px;" 
+                                                @click="eliminarMiembroEquipo(miembro.id)" 
+                                                :disabled="procesandoEquipo === miembro.id" 
+                                                title="Eliminar miembro">
+                                            <span v-if="procesandoEquipo === miembro.id" class="spinner-border spinner-border-sm"></span>
+                                            <i v-else class="bi bi-x"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <p v-else class="text-muted text-center py-2 small">
+                                    No hay personal de apoyo asignado aún.
+                                </p>
+
+                                <!-- Formulario para agregar personal de apoyo -->
+                                <div v-if="puedeEditarCita && estadoActual !== 'completada' && estadoActual !== 'cancelada'" class="border rounded-3 p-3 bg-white mt-3">
+                                    <h4 class="h6 fw-semibold text-dark mb-2"><i class="bi bi-plus-circle me-1 text-success"></i> Agregar Personal</h4>
+                                    <div class="d-flex flex-column gap-2">
+                                        <div>
+                                            <label class="form-label small fw-semibold text-secondary mb-1">Rol</label>
+                                            <select v-model="nuevoRolId" class="form-select form-select-sm">
+                                                <option value="">Seleccionar rol...</option>
+                                                <option v-for="rol in rolesMedicos" :key="rol.id" :value="rol.id">
+                                                    {{ rol.nombre_legible }}
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="form-label small fw-semibold text-secondary mb-1">Personal Disponible</label>
+                                            <select v-model="nuevoUsuarioId" class="form-select form-select-sm" :disabled="!nuevoRolId">
+                                                <option value="">Seleccionar persona...</option>
+                                                <option v-for="user in usuariosFiltradosMedicos" :key="user.id" :value="user.id">
+                                                    {{ user.name }}
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <button @click="agregarMiembroEquipo" class="btn btn-warning btn-sm w-100 mt-2 fw-semibold text-dark" :disabled="!nuevoUsuarioId || !nuevoRolId || guardandoEquipo">
+                                            <span v-if="guardandoEquipo" class="spinner-border spinner-border-sm me-1"></span>
+                                            <i v-else class="bi bi-plus-lg me-1"></i> Añadir al Equipo
+                                        </button>
+                                    </div>
+                                    <div v-if="errorEquipo" class="alert alert-danger alert-sm py-1 px-2 mt-2 small mb-0">{{ errorEquipo }}</div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="card border-0 shadow-sm border-top border-primary border-4">
                             <div class="card-header bg-transparent border-0 pt-3 px-4 pb-0">
                                 <h3 class="h6 mb-0 fw-bold text-dark d-flex align-items-center gap-2">
                                     <i class="bi bi-paw-fill text-primary"></i> Paciente
+
                                 </h3>
                             </div>
                             <div class="card-body p-4 pt-3">
@@ -426,6 +502,14 @@ export default {
         mascota: {
             type: Object,
             default: () => ({})
+        },
+        rolesMedicos: {
+            type: Array,
+            default: () => []
+        },
+        usuariosMedicos: {
+            type: Array,
+            default: () => []
         }
     },
     data() {
@@ -440,10 +524,25 @@ export default {
             errorCargo:     null,
             nuevoInsumoId:  '',
             nuevaCantidad:  1,
-            mostrarModalComprobante: false
+            mostrarModalComprobante: false,
+            equipoList:     this.cita.equipo_medico || this.cita.equipoMedico || [],
+            nuevoRolId:     '',
+            nuevoUsuarioId: '',
+            guardandoEquipo: false,
+            procesandoEquipo: null,
+            errorEquipo:     null,
         }
     },
     computed: {
+        tieneArsenalero() {
+            return this.equipoList.some(miembro => miembro.rol?.nombre_interno === 'arsenalero');
+        },
+
+        usuariosFiltradosMedicos() {
+            if (!this.nuevoRolId) return [];
+            return this.usuariosMedicos.filter(user => user.rol_id === this.nuevoRolId);
+        },
+
         totalCargos() {
             let total = 0;
             for (const cargo of this.cargosList) {
@@ -513,7 +612,11 @@ export default {
             this.procesando = true;
             axios.patch(`/api/citas/${this.cita.id}/estado`, { estado: 'en_curso' })
                 .then(() => { this.estadoActual = 'en_curso'; })
-                .catch(error => { console.error('Error al actualizar estado:', error); })
+                .catch(error => {
+                    console.error('Error al actualizar estado:', error);
+                    const mensaje = error.response?.data?.error || 'Ocurrió un error al actualizar el estado.';
+                    Swal.fire('Error', mensaje, 'error');
+                })
                 .finally(() => { this.procesando = false; });
         },
         guardarNotas(nuevaNota) {
@@ -559,7 +662,11 @@ export default {
                         this.procesando = true;
                         axios.patch(`/api/citas/${this.cita.id}/estado`, { estado: 'completada' })
                             .then(() => { this.estadoActual = 'completada'; })
-                            .catch(error => console.error(error))
+                            .catch(error => {
+                                console.error('Error al actualizar estado:', error);
+                                const mensaje = error.response?.data?.error || 'Ocurrió un error al actualizar el estado.';
+                                Swal.fire('Error', mensaje, 'error');
+                            })
                             .finally(() => { this.procesando = false; });
                     }
                 });
@@ -658,6 +765,41 @@ export default {
         formatearMetodo(metodo) {
             if (!metodo) return 'No registrado';
             return metodo.charAt(0).toUpperCase() + metodo.slice(1);
+        },
+        agregarMiembroEquipo() {
+            if (!this.nuevoUsuarioId || !this.nuevoRolId) return;
+            this.guardandoEquipo = true;
+            this.errorEquipo = null;
+            axios.post(`/api/citas/${this.cita.id}/equipo`, {
+                usuario_id: this.nuevoUsuarioId,
+                rol_id: this.nuevoRolId
+            })
+            .then(response => {
+                this.equipoList.push(response.data);
+                this.nuevoUsuarioId = '';
+                this.nuevoRolId = '';
+            })
+            .catch(error => {
+                this.errorEquipo = error.response?.data?.error || 'Error al añadir el miembro al equipo.';
+            })
+            .finally(() => {
+                this.guardandoEquipo = false;
+            });
+        },
+        eliminarMiembroEquipo(miembroId) {
+            this.procesandoEquipo = miembroId;
+            this.errorEquipo = null;
+            axios.delete(`/api/citas/${this.cita.id}/equipo/${miembroId}`)
+                .then(() => {
+                    this.equipoList = this.equipoList.filter(m => m.id !== miembroId);
+                })
+                .catch(error => {
+                    console.error('Error al eliminar miembro:', error);
+                    this.errorEquipo = error.response?.data?.error || 'Error al eliminar miembro del equipo.';
+                })
+                .finally(() => {
+                    this.procesandoEquipo = null;
+                });
         }
     }
 }
@@ -687,5 +829,12 @@ export default {
 }
 .hover-success:hover {
     color: var(--bs-success) !important;
+}
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 </style>

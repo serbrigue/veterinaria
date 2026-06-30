@@ -71,12 +71,32 @@
                         </button>
                     </div>
 
-                    <!-- Tabla de clientes -->
-                    <div v-else class="table-responsive">
-                        <table class="table table-hover align-middle border">
+                    <div v-else>
+                        <!-- MENU DE ACCION RAPIDA (CORREO MASIVO) -->
+                        <div v-if="esAdmin && selectedClientes.length > 0" class="alert alert-info d-flex justify-content-between align-items-center mb-4 shadow-sm border border-info rounded-3 p-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-people-fill fs-5"></i>
+                                <span>Hay <strong>{{ selectedClientes.length }}</strong> cliente(s) seleccionado(s).</span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-primary btn-sm fw-semibold shadow-sm" @click="abrirModalCorreos">
+                                    <i class="bi bi-envelope-fill me-1"></i> Enviar Correo Masivo
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm" @click="clearSelection">
+                                    Desmarcar todos
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de clientes -->
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle border">
                             <thead class="table-light">
                                 <tr>
-                                    <th class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7 ps-3">Cliente</th>
+                                    <th v-if="esAdmin" class="ps-3" style="width: 45px;">
+                                        <input type="checkbox" class="form-check-input" :checked="isAllSelected" @change="toggleSelectAll">
+                                    </th>
+                                    <th class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7" :class="{ 'ps-3': !esAdmin }">Cliente</th>
                                     <th class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7">Contacto</th>
                                     <th class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7">Mascotas</th>
                                     <th class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7">Estado Financiero</th>
@@ -84,8 +104,11 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="cliente in clientesArray" :key="cliente.id">
-                                    <td class="ps-3">
+                                <tr v-for="cliente in clientesArray" :key="cliente.id" :class="{ 'table-active': esAdmin && selectedClientes.includes(cliente.id) }">
+                                    <td v-if="esAdmin" class="ps-3">
+                                        <input type="checkbox" class="form-check-input" :value="cliente.id" v-model="selectedClientes">
+                                    </td>
+                                    <td :class="{ 'ps-3': !esAdmin }">
                                         <div class="d-flex align-items-center gap-2">
                                             <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
                                                 <img v-if="cliente.foto_perfil_url" :src="cliente.foto_perfil_url" class="rounded-circle object-fit-cover" style="width: 40px; height: 40px;">
@@ -136,6 +159,7 @@
                         </table>
                     </div>
 
+
                     <!-- Paginación cuando haya muchos clientes -->
                     <!-- Controles de Paginación -->
                     <div v-if="clientesData && clientesData.last_page > 1" class="d-flex justify-content-between align-items-center mt-4">
@@ -164,6 +188,111 @@
                 </div>
             </div>
         </div>
+            
+            <!-- ========================================== -->
+            <!-- MODAL: Crear / Editar Cliente              -->
+            <!-- ========================================== -->
+            <div v-if="mostrarModal" class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0, 0, 0, 0.5); z-index: 1050;">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content shadow border-0">
+                        <div class="modal-header border-bottom bg-light py-3 px-4">
+                            <h5 class="modal-title fw-bold text-dark">{{ modoEdicion ? 'Editar Cliente' : 'Nuevo Cliente' }}</h5>
+                            <button type="button" class="btn-close" @click="cerrarModal"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <div class="mb-3">
+                                <label for="nombre" class="form-label fw-semibold text-secondary">Nombre Completo</label>
+                                <input id="nombre" v-model="formulario.nombre" type="text" class="form-control" placeholder="Ej: Juan Pérez" :class="{ 'is-invalid': formulario.errors.nombre }" required />
+                                <div v-if="formulario.errors.nombre" class="invalid-feedback">{{ formulario.errors.nombre }}</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label fw-semibold text-secondary">Correo Electrónico</label>
+                                <input id="email" v-model="formulario.email" type="email" class="form-control" placeholder="juan@ejemplo.com" :class="{ 'is-invalid': formulario.errors.email }" required />
+                                <div v-if="formulario.errors.email" class="invalid-feedback">{{ formulario.errors.email }}</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="telefono" class="form-label fw-semibold text-secondary">Teléfono de Contacto</label>
+                                <input id="telefono" v-model="formulario.telefono" type="text" class="form-control" placeholder="+56912345678" :class="{ 'is-invalid': formulario.errors.telefono }" />
+                                <div v-if="formulario.errors.telefono" class="invalid-feedback">{{ formulario.errors.telefono }}</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="direccion" class="form-label fw-semibold text-secondary">Dirección</label>
+                                <input id="direccion" v-model="formulario.direccion" type="text" class="form-control" placeholder="Av. Siempre Viva 742" :class="{ 'is-invalid': formulario.errors.direccion }" />
+                                <div v-if="formulario.errors.direccion" class="invalid-feedback">{{ formulario.errors.direccion }}</div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" @click="cerrarModal">Cancelar</button>
+                            <button type="button" class="btn btn-primary" :disabled="formulario.processing" @click="guardar">
+                                <span v-if="formulario.processing" class="spinner-border spinner-border-sm me-2"></span>
+                                {{ modoEdicion ? 'Guardar cambios' : 'Crear cliente' }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- MODAL: Enviar Correo Masivo                -->
+            <!-- ========================================== -->
+            <div v-if="mostrarModalCorreo" class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0, 0, 0, 0.5); z-index: 1055;">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content shadow border-0">
+                        <div class="modal-header border-bottom bg-primary text-white py-3 px-4">
+                            <h5 class="modal-title fw-bold">
+                                <i class="bi bi-envelope-paper-fill me-2"></i>Enviar Correo Masivo
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" @click="cerrarModalCorreo"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <!-- Selected Clients Count and Pills -->
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-secondary">Destinatarios ({{ selectedClientes.length }})</label>
+                                <div class="border rounded bg-light p-2 d-flex flex-wrap gap-1 align-items-center" style="max-height: 100px; overflow-y: auto;">
+                                    <span v-for="cId in selectedClientes" :key="cId" class="badge bg-secondary rounded-pill px-2 py-1 small me-1 mb-1">
+                                        {{ getClienteNombre(cId) }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Templates / Presets Quick Menu -->
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-secondary">Seleccionar Plantilla / Tipo</label>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-sm" :class="emailType === 'deuda' ? 'btn-danger' : 'btn-outline-danger'" @click="setEmailPreset('deuda')">
+                                        <i class="bi bi-exclamation-circle-fill me-1"></i>Deudas
+                                    </button>
+                                    <button type="button" class="btn btn-sm" :class="emailType === 'promocion' ? 'btn-success' : 'btn-outline-success'" @click="setEmailPreset('promocion')">
+                                        <i class="bi bi-tag-fill me-1"></i>Promociones
+                                    </button>
+                                    <button type="button" class="btn btn-sm" :class="emailType === 'personalizado' ? 'btn-primary' : 'btn-outline-primary'" @click="setEmailPreset('personalizado')">
+                                        <i class="bi bi-pencil-fill me-1"></i>Personalizado
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Form fields -->
+                            <div class="mb-3">
+                                <label for="email_asunto" class="form-label fw-semibold text-secondary">Asunto del Correo</label>
+                                <input id="email_asunto" v-model="emailAsunto" type="text" class="form-control" placeholder="Ej: Novedades de la clínica" required />
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="email_mensaje" class="form-label fw-semibold text-secondary">Mensaje</label>
+                                <textarea id="email_mensaje" v-model="emailMensaje" class="form-control" rows="5" placeholder="Escribe el mensaje aquí..." required></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" @click="cerrarModalCorreo">Cancelar</button>
+                            <button type="button" class="btn btn-primary" :disabled="enviandoCorreos || !emailAsunto || !emailMensaje" @click="enviarCorreos">
+                                <span v-if="enviandoCorreos" class="spinner-border spinner-border-sm me-2"></span>
+                                <i class="bi bi-send me-1"></i> Enviar a {{ selectedClientes.length }} clientes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
     </AuthenticatedLayout>
 </template>
@@ -171,6 +300,7 @@
 <script>
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
 import { Head, Link } from '@inertiajs/vue3';
+import Swal from 'sweetalert2';
 
 export default {
     components: {
@@ -211,9 +341,27 @@ export default {
                 errors: {},
                 processing: false,
             },
+            // Selección y correo masivo
+            selectedClientes: [],
+            mostrarModalCorreo: false,
+            emailType: 'personalizado',
+            emailAsunto: '',
+            emailMensaje: '',
+            enviandoCorreos: false,
+        }
+    },
+    computed: {
+        isAllSelected() {
+            if (this.clientesArray.length === 0) return false;
+            return this.clientesArray.every(c => this.selectedClientes.includes(c.id));
+        },
+        esAdmin() {
+            const user = this.$page.props.auth.user;
+            return user && (user.rol_id === 1 || (user.rol && user.rol.nombre_interno === 'admin'));
         }
     },
     methods: {
+
         // TODO: Abrir modal para crear un nuevo cliente
         abrirModalCrear() {
             this.modoEdicion = false
@@ -339,6 +487,77 @@ export default {
             this.filtroSucursal = '';
             this.filtroEstadoPago = '';
             this.obtenerClientes();
+        },
+        toggleSelectAll(event) {
+            if (event.target.checked) {
+                this.clientesArray.forEach(c => {
+                    if (!this.selectedClientes.includes(c.id)) {
+                        this.selectedClientes.push(c.id);
+                    }
+                });
+            } else {
+                this.selectedClientes = [];
+            }
+        },
+        clearSelection() {
+            this.selectedClientes = [];
+        },
+        getClienteNombre(id) {
+            const found = this.clientesArray.find(c => c.id === id);
+            return found ? (found.usuario?.name || 'Cliente') : 'Cliente';
+        },
+        abrirModalCorreos() {
+            this.emailType = 'personalizado';
+            this.emailAsunto = '';
+            this.emailMensaje = '';
+            this.mostrarModalCorreo = true;
+        },
+        cerrarModalCorreo() {
+            this.mostrarModalCorreo = false;
+        },
+        setEmailPreset(type) {
+            this.emailType = type;
+            if (type === 'deuda') {
+                this.emailAsunto = 'Recordatorio de Pago Pendiente - Clínica Veterinaria';
+                this.emailMensaje = 'Estimado/a cliente,\n\nLe recordamos que presenta saldos pendientes en nuestra clínica. Agradecemos su pronto pago para poder seguir brindándole la mejor atención a sus mascotas.\n\nAtentamente,\nEl equipo de Clínica Veterinaria';
+            } else if (type === 'promocion') {
+                this.emailAsunto = '¡Promociones Especiales en Vacunas y Alimentos!';
+                this.emailMensaje = 'Estimado/a cliente,\n\n¡Tenemos excelentes noticias! Durante este mes contamos con un 20% de descuento en vacunas anuales y en alimentos seleccionados en todas nuestras sucursales.\n\n¡No dejes pasar esta oportunidad de cuidar a tu mascota!\n\nAtentamente,\nEl equipo de Clínica Veterinaria';
+            } else {
+                this.emailAsunto = '';
+                this.emailMensaje = '';
+            }
+        },
+        enviarCorreos() {
+            this.enviandoCorreos = true;
+            axios.post('/api/clientes/enviar-correo', {
+                clientes_ids: this.selectedClientes,
+                asunto: this.emailAsunto,
+                mensaje: this.emailMensaje
+            })
+            .then(response => {
+                this.cerrarModalCorreo();
+                this.selectedClientes = [];
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Correos enviados',
+                    text: response.data.mensaje || 'Se han enviado los correos correctamente.',
+                    confirmButtonColor: '#3085d6'
+                });
+            })
+            .catch(error => {
+                console.error('Error al enviar correos:', error);
+                const errMsg = error.response?.data?.error || 'No se pudieron enviar los correos.';
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: errMsg,
+                    confirmButtonColor: '#3085d6'
+                });
+            })
+            .finally(() => {
+                this.enviandoCorreos = false;
+            });
         }
     },
     mounted() {
