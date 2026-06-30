@@ -21,8 +21,7 @@ Thumbs.db
 
 # Docker
 docker/mysql/data/
-2026_06_24_212058_add_pagado_a_vet_to_citas_table
-
+database/migrations/2026_06_24_212058_add_pagado_a_vet_to_citas_table.php
 # Terraform
 **/terraform/.terraform/
 **/terraform/*.tfstate
@@ -34,3 +33,4 @@ docker/mysql/data/
 **/terraform/*_override.tf
 **/terraform/*_override.tf.json
 **/terraform/.terraform.lock.hcl
+
