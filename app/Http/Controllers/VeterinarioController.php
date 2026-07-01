@@ -15,32 +15,35 @@ use Illuminate\Support\Facades\Cache;
 
 class VeterinarioController extends Controller
 {
-    /**
-     * MÓDULO 4 — Backend de referencia (no modificar).
-     * Tu trabajo: migración, rutas web/api y Vue (axios).
-     */
     public function listado(Request $request)
     {
+        #Obtenemos todos los veterinarios con sus relaciones y filtramos
         $query = Veterinario::with(['usuario', 'sucursal', 'especialidad'])
             ->when($request->filled('nombre'), fn($q) => $q->whereHas('usuario', fn($u) => $u->where('name', 'like', '%' . $request->nombre . '%')))
             ->when($request->filled('especialidad_id'), fn($q) => $q->where('especialidad_id', $request->especialidad_id))
             ->when($request->filled('sucursal_id'), fn($q) => $q->where('sucursal_id', $request->sucursal_id));
 
+        #Obtenemos todos los veterinarios
         $veterinarios = $query->get();
-        $sucursales = Cache::remember('sucursales_simple', now()->addMinutes(30), function() {
+
+        #Obtenemos todas las sucursales
+        $sucursales = Cache::remember('sucursales_simple', now()->addMinutes(30), function () {
             return Sucursal::all();
         });
-        
-        $especialidades = Cache::remember('especialidades_simple', now()->addMinutes(30), function() {
+
+        #Obtenemos todas las especialidades
+        $especialidades = Cache::remember('especialidades_simple', now()->addMinutes(30), function () {
             return Especialidad::all();
         });
 
+        #Si la peticion es JSON
         if (request()->wantsJson()) {
             return response()->json([
                 'veterinarios' => $veterinarios,
             ]);
         }
 
+        #Devolvemos la vista con las sucursales, especialidades y veterinarios
         return Inertia::render('Veterinario/Listado', [
             'veterinarios' => $veterinarios,
             'sucursales' => $sucursales,
@@ -50,8 +53,10 @@ class VeterinarioController extends Controller
 
     public function detalle(Veterinario $veterinario)
     {
+        #Cargamos las relaciones necesarias para el detalle
         $veterinario->load(['usuario', 'sucursal', 'especialidad']);
 
+        #Devolvemos la vista con los datos
         return Inertia::render('Veterinario/Detalle', [
             'veterinario' => $veterinario,
         ]);
@@ -59,15 +64,18 @@ class VeterinarioController extends Controller
 
     public function obtenerTodas()
     {
-        return Cache::remember('veterinarios_full', now()->addMinutes(30), function() {
+        #Obtenemos todos los veterinarios
+        return Cache::remember('veterinarios_full', now()->addMinutes(30), function () {
             return Veterinario::with(['usuario', 'sucursal', 'especialidad'])->get();
         });
     }
 
     public function crear(GuardarVeterinarioRequest $solicitud)
     {
+        #Obtenemos los datos validados
         $data = $solicitud->validated();
 
+        #Creamos el usuario
         $usuario = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
@@ -75,6 +83,7 @@ class VeterinarioController extends Controller
             'rol_id' => 2,
         ]);
 
+        #Creamos el veterinario
         $veterinario = Veterinario::create([
             'user_id' => $usuario->id,
             'especialidad_id' => $data['especialidad_id'],
@@ -89,15 +98,22 @@ class VeterinarioController extends Controller
 
     public function actualizar(ActualizarVeterinarioRequest $solicitud, Veterinario $veterinario)
     {
+        #Obtenemos los datos validados
         $veterinario->update($solicitud->validated());
+
+        #Devolvemos el veterinario
         return response()->json($veterinario);
     }
 
     public function eliminar(Veterinario $veterinario)
     {
-        // Al eliminar al veterinario, también eliminamos su usuario asociado para no dejar registros huérfanos
+        #Obtenemos el usuario asociado al veterinario
         $usuario = $veterinario->usuario;
+
+        #Eliminamos el veterinario
         $veterinario->delete();
+
+        #Si existe el usuario, lo eliminamos
         if ($usuario) {
             $usuario->delete();
         }

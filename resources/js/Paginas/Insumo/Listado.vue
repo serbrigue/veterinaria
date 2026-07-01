@@ -27,29 +27,23 @@
                     <p v-show="!listaVacia" class="text-muted small mb-3">
                         {{ totalInsumos }} insumo{{ totalInsumos === 1 ? '' : 's' }} registrado{{ totalInsumos === 1 ? '' : 's' }}
                     </p>
-                    <div v-if="cargando" class="text-center py-4">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Cargando...</span>
-                        </div>
-                        <p class="mt-2 text-muted">Cargando insumos...</p>
-                    </div>
+                    <IndicadorCarga :cargando="cargando" mensaje="insumos" />
 
-                    <!-- Estado vacío -->
-                    <div v-else-if="listaVacia" class="text-center py-5">
-                        <p class="text-muted mb-3">No hay insumos registrados en el catálogo.</p>
-                        <button type="button" class="btn btn-primary" @click="abrirModalCrear">
-                            Registrar el primer insumo
-                        </button>
-                    </div>
+                    <EstadoVacio
+                        :visible="!cargando && listaVacia"
+                        mensaje="No hay insumos registrados en el catálogo."
+                        texto-boton="Registrar el primer insumo"
+                        icono="bi bi-box-seam"
+                        @accion="abrirModalCrear"
+                    />
 
-                    <div v-else-if="sinResultadosFiltro" class="text-center py-5">
-                        <p class="text-muted mb-3">Ningún insumo coincide con el filtro.</p>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" @click="filtroEstado = ''">
-                            Quitar filtro
-                        </button>
-                    </div>
+                    <SinResultados
+                        :visible="!cargando && sinResultadosFiltro"
+                        mensaje="Ningún insumo coincide con la búsqueda."
+                        @limpiar="limpiarFiltros()"
+                    />
 
-                    <div v-else class="table-responsive">
+                    <div v-if="!cargando && !listaVacia && !sinResultadosFiltro" class="table-responsive">
                         <table class="table table-bordered table-hover align-middle">
                             <thead class="table-light">
                                 <tr>
@@ -104,87 +98,77 @@
                 </div>
             </div>
 
-            <!-- MODAL: Crear / Editar Insumo -->
-            <div v-if="mostrarModal" class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0, 0, 0, 0.5);">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content shadow border-0">
-                        <div class="modal-header border-bottom bg-light py-3 px-4">
-                            <h5 class="modal-title fw-bold text-dark">{{ tituloModal }}</h5>
-                            <button type="button" class="btn-close" @click="cerrarModal"></button>
-                        </div>
-                        <div class="modal-body p-4">
-                            <div class="mb-3">
-                                <label for="categoria_insumo_id" class="form-label fw-semibold text-secondary">Categoría</label>
-                                <select id="categoria_insumo_id" v-model="formulario.categoria_insumo_id" class="form-select" :class="{ 'is-invalid': formulario.errors.categoria_insumo_id }">
-                                    <option :value="null">Sin categoría</option>
-                                    <option v-for="cat in categoriasInsumo" :key="cat.id" :value="cat.id">{{ cat.nombre }}</option>
-                                </select>
-                                <div v-if="formulario.errors.categoria_insumo_id" class="invalid-feedback">{{ formulario.errors.categoria_insumo_id }}</div>
-                            </div>
+            <ModalCrud
+                :visible="mostrarModal"
+                :titulo="tituloModal"
+                :modo-edicion="modoEdicion"
+                :processing="formulario.processing"
+                texto-guardar="Guardar Cambios"
+                texto-crear="Crear Insumo"
+                @cerrar="cerrarModal"
+                @guardar="guardar"
+            >
+                <div class="mb-3">
+                    <label for="categoria_insumo_id" class="form-label fw-semibold text-secondary small text-uppercase">Categoría</label>
+                    <select id="categoria_insumo_id" v-model="formulario.categoria_insumo_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.categoria_insumo_id }">
+                        <option :value="null">Sin categoría</option>
+                        <option v-for="cat in categoriasInsumo" :key="cat.id" :value="cat.id">{{ cat.nombre }}</option>
+                    </select>
+                    <div v-if="formulario.errors.categoria_insumo_id" class="invalid-feedback">{{ formulario.errors.categoria_insumo_id }}</div>
+                </div>
 
-                            <div class="mb-3">
-                                <label for="sucursal_id" class="form-label fw-semibold text-secondary">Sucursal</label>
-                                <select id="sucursal_id" v-model="formulario.sucursal_id" class="form-select" :class="{ 'is-invalid': formulario.errors.sucursal_id }" required>
-                                    <option :value="null" disabled>Seleccione una sucursal...</option>
-                                    <option v-for="suc in sucursales" :key="suc.id" :value="suc.id">
-                                        {{ suc.nombre }}
-                                    </option>
-                                </select>
-                                <div v-if="formulario.errors.sucursal_id" class="invalid-feedback">{{ formulario.errors.sucursal_id }}</div>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="nombre" class="form-label fw-semibold text-secondary">Nombre del Insumo</label>
-                                <input id="nombre" v-model="formulario.nombre" type="text" class="form-control" placeholder="Ej: Anestesia General" :class="{ 'is-invalid': formulario.errors.nombre }" required />
-                                <div v-if="formulario.errors.nombre" class="invalid-feedback">{{ formulario.errors.nombre }}</div>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="descripcion" class="form-label fw-semibold text-secondary">Descripción</label>
-                                <textarea id="descripcion" v-model="formulario.descripcion" class="form-control" rows="2" placeholder="Opcional" :class="{ 'is-invalid': formulario.errors.descripcion }"></textarea>
-                                <div v-if="formulario.errors.descripcion" class="invalid-feedback">{{ formulario.errors.descripcion }}</div>
-                            </div>
+                <div class="mb-3">
+                    <label for="sucursal_id" class="form-label fw-semibold text-secondary small text-uppercase">Sucursal</label>
+                    <select id="sucursal_id" v-model="formulario.sucursal_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.sucursal_id }" required>
+                        <option :value="null" disabled>Seleccione una sucursal...</option>
+                        <option v-for="suc in sucursales" :key="suc.id" :value="suc.id">
+                            {{ suc.nombre }}
+                        </option>
+                    </select>
+                    <div v-if="formulario.errors.sucursal_id" class="invalid-feedback">{{ formulario.errors.sucursal_id }}</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="nombre" class="form-label fw-semibold text-secondary small text-uppercase">Nombre del Insumo</label>
+                    <input id="nombre" v-model="formulario.nombre" type="text" class="form-control bg-light border-0 py-2" placeholder="Ej: Anestesia General" :class="{ 'is-invalid': formulario.errors.nombre }" required />
+                    <div v-if="formulario.errors.nombre" class="invalid-feedback">{{ formulario.errors.nombre }}</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="descripcion" class="form-label fw-semibold text-secondary small text-uppercase">Descripción</label>
+                    <textarea id="descripcion" v-model="formulario.descripcion" class="form-control bg-light border-0 py-2" rows="2" placeholder="Opcional" :class="{ 'is-invalid': formulario.errors.descripcion }"></textarea>
+                    <div v-if="formulario.errors.descripcion" class="invalid-feedback">{{ formulario.errors.descripcion }}</div>
+                </div>
 
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="precio_venta" class="form-label fw-semibold text-secondary">Precio de Venta ($)</label>
-                                    <input id="precio_venta" v-model="formulario.precio_venta" type="number" min="0" class="form-control" :class="{ 'is-invalid': formulario.errors.precio_venta }" required />
-                                    <div v-if="formulario.errors.precio_venta" class="invalid-feedback">{{ formulario.errors.precio_venta }}</div>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="estado" class="form-label fw-semibold text-secondary">Estado</label>
-                                    <select id="estado" v-model="formulario.estado" class="form-select" :class="{ 'is-invalid': formulario.errors.estado }" required>
-                                        <option value="activo">Activo</option>
-                                        <option value="inactivo">Inactivo</option>
-                                    </select>
-                                    <div v-if="formulario.errors.estado" class="invalid-feedback">{{ formulario.errors.estado }}</div>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="stock_actual" class="form-label fw-semibold text-secondary">Stock Actual</label>
-                                    <input id="stock_actual" v-model="formulario.stock_actual" type="number" min="0" class="form-control" :class="{ 'is-invalid': formulario.errors.stock_actual }" required />
-                                    <div v-if="formulario.errors.stock_actual" class="invalid-feedback">{{ formulario.errors.stock_actual }}</div>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="stock_minimo" class="form-label fw-semibold text-secondary">Stock Mínimo (Alerta)</label>
-                                    <input id="stock_minimo" v-model="formulario.stock_minimo" type="number" min="0" class="form-control" :class="{ 'is-invalid': formulario.errors.stock_minimo }" required />
-                                    <div v-if="formulario.errors.stock_minimo" class="invalid-feedback">{{ formulario.errors.stock_minimo }}</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" @click="cerrarModal">Cancelar</button>
-                            <button type="button" class="btn btn-primary" :disabled="formulario.processing" @click="guardar">
-                                <span v-if="formulario.processing" class="spinner-border spinner-border-sm me-2"></span>
-                                {{ textoBotonGuardar }}
-                            </button>
-                        </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="precio_venta" class="form-label fw-semibold text-secondary small text-uppercase">Precio de Venta ($)</label>
+                        <input id="precio_venta" v-model="formulario.precio_venta" type="number" min="0" class="form-control bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.precio_venta }" required />
+                        <div v-if="formulario.errors.precio_venta" class="invalid-feedback">{{ formulario.errors.precio_venta }}</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="estado" class="form-label fw-semibold text-secondary small text-uppercase">Estado</label>
+                        <select id="estado" v-model="formulario.estado" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.estado }" required>
+                            <option value="activo">Activo</option>
+                            <option value="inactivo">Inactivo</option>
+                        </select>
+                        <div v-if="formulario.errors.estado" class="invalid-feedback">{{ formulario.errors.estado }}</div>
                     </div>
                 </div>
-            </div>
-            <div v-if="mostrarModal" class="modal-backdrop fade show"></div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="stock_actual" class="form-label fw-semibold text-secondary small text-uppercase">Stock Actual</label>
+                        <input id="stock_actual" v-model="formulario.stock_actual" type="number" min="0" class="form-control bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.stock_actual }" required />
+                        <div v-if="formulario.errors.stock_actual" class="invalid-feedback">{{ formulario.errors.stock_actual }}</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="stock_minimo" class="form-label fw-semibold text-secondary small text-uppercase">Stock Mínimo (Alerta)</label>
+                        <input id="stock_minimo" v-model="formulario.stock_minimo" type="number" min="0" class="form-control bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.stock_minimo }" required />
+                        <div v-if="formulario.errors.stock_minimo" class="invalid-feedback">{{ formulario.errors.stock_minimo }}</div>
+                    </div>
+                </div>
+            </ModalCrud>
         </div>
     </AuthenticatedLayout>
 </template>
@@ -193,12 +177,20 @@
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import axios from 'axios';
+import IndicadorCarga from '@/Componentes/IndicadorCarga.vue';
+import EstadoVacio from '@/Componentes/EstadoVacio.vue';
+import SinResultados from '@/Componentes/SinResultados.vue';
+import ModalCrud from '@/Componentes/ModalCrud.vue';
 
 export default {
     components: {
         AuthenticatedLayout,
         Head,
         Link,
+        IndicadorCarga,
+        EstadoVacio,
+        SinResultados,
+        ModalCrud,
     },
     props: {
         insumos: { type: Array, default: () => [] },
@@ -254,6 +246,11 @@ export default {
         },
     },
     methods: {
+        limpiarFiltros() {
+            this.filtroEstado = '';
+            this.filtroSucursal = '';
+            this.filtroCategoria = '';
+        },
         abrirModalCrear() {
             this.modoEdicion = false;
             this.insumoEditando = null;

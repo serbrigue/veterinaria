@@ -17,14 +17,17 @@ class PanelController extends Controller
 {
     public function index()
     {
+        # Obtenemos el usuario logueado
         $user = Auth::user();
+        # Obtenemos los ingresos totales
         $ingresosTotales = Transaccion::where('estado', 'pagado')->sum('monto_total');
+        # Obtenemos los ingresos del mes actual
         $ingresosMes = Transaccion::where('estado', 'pagado')
             ->whereMonth('created_at', Carbon::now()->month)
             ->whereYear('created_at', Carbon::now()->year)
             ->sum('monto_total');
 
-        // MÉTRICAS OPERATIVAS
+        #METRICAS OPERATIVAS
         $citasTotales = Cita::count();
         $citasCompletadas = Cita::where('estado', 'completada')->count();
         $citasCanceladas = Cita::where('estado', 'cancelada')->count();
@@ -32,11 +35,11 @@ class PanelController extends Controller
         $clientesActivos = Cliente::count();
         $cantidadMascotas = Mascota::count();
 
-        // INVENTARIO
+        #INVENTARIO
         $insumosBajoStock = Insumo::whereColumn('stock_actual', '<=', 'stock_minimo')->count();
         $valorInventario = Insumo::select(DB::raw('SUM(stock_actual * precio_venta) as total'))->value('total') ?? 0;
 
-        // TOP PRESTACIONES (Últimos 30 días o total)
+        #TOP PRESTACIONES
         $topPrestaciones = Cita::whereNotNull('prestacion_id')
             ->select('prestacion_id', DB::raw('count(*) as total'))
             ->groupBy('prestacion_id')
@@ -49,13 +52,14 @@ class PanelController extends Controller
                 'cantidad' => $cita->total
             ]);
 
+        #PROXIMAS CITAS
         $proximasCitas = Cita::with(['mascota', 'veterinario.usuario'])
             ->where('estado', 'pendiente')
             ->orderBy('fecha_hora', 'asc')
             ->limit(5)
             ->get();
 
-
+        #ARRAY CON TODAS LAS ESTADISTICAS
         $estadisticas = [
             'financiero' => [
                 'total' => $ingresosTotales,
@@ -77,6 +81,7 @@ class PanelController extends Controller
             'proximas_citas' => $proximasCitas,
         ];
 
+        #DEVOLVEMOS LA VISTA CON LAS ESTADISTICAS
         return Inertia::render('App/Panel', [
             'estadisticas' => $estadisticas,
         ]);

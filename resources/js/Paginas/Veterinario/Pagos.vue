@@ -151,30 +151,7 @@
                     </table>
                 </div>
                 
-                <!-- Paginación -->
-                <div v-if="liquidacionesData && liquidacionesData.last_page > 1" class="d-flex justify-content-between align-items-center p-4 border-top">
-                    <div class="text-muted small">
-                        Mostrando {{ liquidacionesData.from }} a {{ liquidacionesData.to }} de {{ liquidacionesData.total }} registros
-                    </div>
-                    <nav aria-label="Navegación de páginas">
-                        <ul class="pagination pagination-sm mb-0">
-                            <li class="page-item" :class="{ disabled: !liquidacionesData.prev_page_url }">
-                                <button class="page-link" @click.prevent="aplicarFiltros(liquidacionesData.prev_page_url)">Anterior</button>
-                            </li>
-                            <li 
-                                v-for="link in liquidacionesData.links.slice(1, -1)" 
-                                :key="link.label" 
-                                class="page-item" 
-                                :class="{ active: link.active }"
-                            >
-                                <button class="page-link" @click.prevent="aplicarFiltros(link.url)" v-html="link.label"></button>
-                            </li>
-                            <li class="page-item" :class="{ disabled: !liquidacionesData.next_page_url }">
-                                <button class="page-link" @click.prevent="aplicarFiltros(liquidacionesData.next_page_url)">Siguiente</button>
-                            </li>
-                        </ul>
-                    </nav>
-                </div>
+                <Paginador :data="liquidacionesData" entidad="registros" @cambiar-pagina="aplicarFiltros" />
             </div>
 
             <!-- MODAL COMPROBANTE DE LIQUIDACION -->
@@ -233,12 +210,14 @@
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import axios from 'axios';
+import Paginador from '@/Componentes/Paginador.vue';
 
 export default {
     components: {
         AuthenticatedLayout,
         Head,
-        Link
+        Link,
+        Paginador
     },
     props: {
         liquidaciones_iniciales: {

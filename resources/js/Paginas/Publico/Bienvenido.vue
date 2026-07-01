@@ -1,38 +1,164 @@
 <template>
-    <Head title="Bienvenido" />
+    <Head title="Bienvenido — Cuidado Profesional para tu Mascota" />
 
-    <div class="no-scroll min-vh-100 d-flex flex-column">
-        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-            <div class="container-fluid">
-                <span class="navbar-brand mb-0 h1">Veterinaria Aprendizaje</span>
+    <div class="min-vh-100 d-flex flex-column bg-light-modern">
+        <!-- Barra de navegación -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm border-bottom sticky-top py-3">
+            <div class="container">
+                <span class="navbar-brand d-flex align-items-center fw-bold text-primary fs-4">
+                    <i class="bi bi-heart-pulse-fill me-2 text-danger animate-pulse"></i>
+                    Veterinaria Aprendizaje
+                </span>
+                
                 <div class="d-flex gap-2 ms-auto">
                     <template v-if="$page.props.auth.user">
-                        <Link :href="route('panel')" class="btn btn-link text-white text-decoration-none">Dashboard</Link>
+                        <Link :href="route('panel')" class="btn btn-primary btn-sm px-4 rounded-pill shadow-sm">
+                            <i class="bi bi-speedometer2 me-1"></i> Panel de Control
+                        </Link>
                     </template>
                     <template v-else-if="puedeIniciarSesion">
-                        <Link :href="route('iniciar-sesion')" class="btn btn-link text-white text-decoration-none">Iniciar sesión</Link>
-                        <Link v-if="puedeRegistrarse" :href="route('registrarse')" class="btn btn-outline-light">Registrarse</Link>
+                        <Link :href="route('iniciar-sesion')" class="btn btn-link text-secondary text-decoration-none fw-semibold">
+                            Iniciar sesión
+                        </Link>
+                        <Link v-if="puedeRegistrarse" :href="route('registrarse')" class="btn btn-primary btn-sm px-4 rounded-pill shadow-sm hover-grow">
+                            Registrarse
+                        </Link>
                     </template>
                 </div>
             </div>
         </nav>
 
-        <main class="no-scroll flex-grow-1">
-            <div class="bg-dots-darker d-flex align-items-center h-100">
-                <div class="container">
-                    <div class="row justify-content-center">
-                        <div class="col-12 col-md-10 col-lg-8">
-                            <div class="text-center">
-                                <div class="laravel-logo mb-4 text-primary display-1 fw-bold">V</div>
-                                <h1 class="display-4 fw-bold mb-4">Veterinaria Aprendizaje</h1>
-                                <p class="h5 text-muted mb-3">Proyecto de prueba con Laravel y Vue para una clínica veterinaria simple.</p>
-                                <p class="text-muted">Regístrate, prueba el CRUD de Mascotas y consulta <code>docs/MANUAL-PRUEBA.md</code>.</p>
+        <!-- Sección Hero -->
+        <main class="flex-grow-1">
+            <div class="container py-5">
+                <div class="row align-items-center g-5 py-3">
+                    <div class="col-lg-6 text-center text-lg-start">
+                        <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill fw-semibold mb-3 border border-primary border-opacity-25 shadow-sm">
+                            🐾 Tu clínica veterinaria digital
+                        </span>
+                        <h1 class="display-4 fw-black text-dark mb-4 lh-sm">
+                            Cuidamos a quienes <br class="d-none d-lg-block">
+                            <span class="text-gradient">más te importan</span>
+                        </h1>
+                        <p class="lead text-secondary mb-4 fs-5">
+                            Reserva citas en línea, gestiona el historial médico de tus mascotas, y accede al mejor equipo de veterinarios desde nuestra plataforma segura.
+                        </p>
+                        
+                        <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center justify-content-lg-start mb-5">
+                            <template v-if="$page.props.auth.user">
+                                <Link :href="route('panel')" class="btn btn-primary btn-lg px-5 py-3 rounded-pill shadow hover-grow">
+                                    Ir al Panel de Control <i class="bi bi-arrow-right ms-2"></i>
+                                </Link>
+                            </template>
+                            <template v-else>
+                                <Link v-if="puedeRegistrarse" :href="route('registrarse')" class="btn btn-primary btn-lg px-5 py-3 rounded-pill shadow hover-grow">
+                                    Comenzar ahora <i class="bi bi-arrow-right ms-2"></i>
+                                </Link>
+                                <Link :href="route('iniciar-sesion')" class="btn btn-outline-secondary btn-lg px-5 py-3 rounded-pill hover-grow">
+                                    Conocer más
+                                </Link>
+                            </template>
+                        </div>
+
+                        <!-- Estadísticas breves -->
+                        <div class="row g-4 text-center text-sm-start border-top pt-4">
+                            <div class="col-4 col-md-4">
+                                <h3 class="fw-bold text-dark mb-0 fs-2">98%</h3>
+                                <p class="text-muted small mb-0">Clientes felices</p>
+                            </div>
+                            <div class="col-4 col-md-4">
+                                <h3 class="fw-bold text-dark mb-0 fs-2">24/7</h3>
+                                <p class="text-muted small mb-0">Soporte médico</p>
+                            </div>
+                            <div class="col-4 col-md-4">
+                                <h3 class="fw-bold text-dark mb-0 fs-2">10+</h3>
+                                <p class="text-muted small mb-0">Especialidades</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="position-relative">
+                            <!-- Decoración de fondo de Hero -->
+                            <div class="hero-bg-glow position-absolute top-50 start-50 translate-middle bg-primary bg-opacity-10 rounded-circle filter-blur"></div>
+                            
+                            <!-- Imagen Hero Principal -->
+                            <img 
+                                src="/images/veterinary_hero.png" 
+                                alt="Veterinaria Aprendizaje" 
+                                class="img-fluid rounded-4 shadow-lg border border-white border-5 position-relative z-1 hero-image animate-float"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección de características/servicios -->
+            <div class="bg-white py-5 border-top border-bottom">
+                <div class="container py-4">
+                    <div class="text-center max-w-xl mx-auto mb-5">
+                        <h2 class="fw-bold text-dark fs-2 mb-3">Nuestros Servicios Integrales</h2>
+                        <p class="text-secondary">Diseñamos una plataforma pensada en la comodidad tuya y de tus mascotas.</p>
+                    </div>
+
+                    <div class="row g-4">
+                        <!-- Tarjeta 1 -->
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card h-100 border-0 shadow-sm p-4 text-center hover-card transition-all">
+                                <div class="icon-box bg-primary bg-opacity-10 text-primary rounded-circle mx-auto mb-4 d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-calendar2-check fs-4"></i>
+                                </div>
+                                <h5 class="fw-bold mb-2">Citas Online</h5>
+                                <p class="text-muted small mb-0">Agenda consultas médicas escogiendo el día, sucursal, box y profesional que prefieras.</p>
+                            </div>
+                        </div>
+
+                        <!-- Tarjeta 2 -->
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card h-100 border-0 shadow-sm p-4 text-center hover-card transition-all">
+                                <div class="icon-box bg-success bg-opacity-10 text-success rounded-circle mx-auto mb-4 d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-file-earmark-medical fs-4"></i>
+                                </div>
+                                <h5 class="fw-bold mb-2">Fichas Clínicas</h5>
+                                <p class="text-muted small mb-0">Historial médico completo de tus mascotas, incluyendo diagnósticos, recetas e insumos.</p>
+                            </div>
+                        </div>
+
+                        <!-- Tarjeta 3 -->
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card h-100 border-0 shadow-sm p-4 text-center hover-card transition-all">
+                                <div class="icon-box bg-warning bg-opacity-10 text-warning rounded-circle mx-auto mb-4 d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-credit-card fs-4"></i>
+                                </div>
+                                <h5 class="fw-bold mb-2">Pago en Línea</h5>
+                                <p class="text-muted small mb-0">Paga las consultas directamente en la plataforma de forma segura con tarjetas de crédito o débito.</p>
+                            </div>
+                        </div>
+
+                        <!-- Tarjeta 4 -->
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card h-100 border-0 shadow-sm p-4 text-center hover-card transition-all">
+                                <div class="icon-box bg-info bg-opacity-10 text-info rounded-circle mx-auto mb-4 d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-shield-heart fs-4"></i>
+                                </div>
+                                <h5 class="fw-bold mb-2">Cuidado Integral</h5>
+                                <p class="text-muted small mb-0">Médicos calificados por especialidad listos para dar el trato que tu compañero merece.</p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </main>
+
+        <!-- Pie de página -->
+        <footer class="bg-dark text-light py-4 border-top border-secondary border-opacity-25 mt-auto">
+            <div class="container text-center">
+                <p class="mb-1 fw-semibold text-white-50">Veterinaria Aprendizaje &copy; {{ new Date().getFullYear() }}</p>
+                <p class="small text-muted mb-0">
+                    Desarrollado con Laravel v{{ laravelVersion }} &bull; PHP v{{ phpVersion }}
+                </p>
+            </div>
+        </footer>
     </div>
 </template>
 
@@ -64,21 +190,85 @@ export default {
 </script>
 
 <style scoped>
-.bg-dots-darker {
-    background-image: url("data:image/svg+xml,%3Csvg width='30' height='30' viewBox='0 0 30 30' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1.22676 0C1.91374 0 2.45351 0.539773 2.45351 1.22676C2.45351 1.91374 1.91374 2.45351 1.22676 2.45351C0.539773 2.45351 0 1.91374 0 1.22676C0 0.539773 0.539773 0 1.22676 0Z' fill='rgba(0,0,0,0.07)'/%3E%3C/svg%3E");
-    min-height: 100%;
+/* Colores de fondo modernos */
+.bg-light-modern {
+    background: linear-gradient(135deg, #f3f4f6 0%, #f9fafb 100%);
 }
-.laravel-logo {
-    height: 80px;
-    width: auto;
-    display: block;
-    margin: 0 auto;
-}
-</style>
 
-<style>
-html, body, .no-scroll {
-    overflow: hidden !important;
-    height: 100vh !important;
+/* Efectos de texto gradiente */
+.text-gradient {
+    background: linear-gradient(45deg, #0d6efd, #0dcaf0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.fw-black {
+    font-weight: 800;
+}
+
+/* Animaciones */
+.animate-pulse {
+    animation: pulse 2s infinite;
+}
+
+.animate-float {
+    animation: float 6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+}
+
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-12px); }
+    100% { transform: translateY(0px); }
+}
+
+/* Imagen Hero */
+.hero-image {
+    max-height: 480px;
+    width: 100%;
+    object-fit: cover;
+}
+
+.hero-bg-glow {
+    width: 350px;
+    height: 350px;
+    filter: blur(80px);
+    z-index: 0;
+}
+
+/* Cajas de iconos en las tarjetas */
+.icon-box {
+    width: 60px;
+    height: 60px;
+}
+
+/* Efectos de hover interactivos */
+.hover-grow {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+.hover-grow:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(13, 110, 253, 0.15) !important;
+}
+
+.hover-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.hover-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 1rem 3rem rgba(0,0,0,.08) !important;
+}
+
+.max-w-xl {
+    max-width: 36rem;
+}
+.mx-auto {
+    margin-left: auto;
+    margin-right: auto;
 }
 </style>

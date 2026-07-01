@@ -11,32 +11,28 @@ use Inertia\Inertia;
 
 class EspecieController extends Controller
 {
-    /**
-     * MÓDULO 2: Completa este controlador usando MascotaController como referencia.
-     */
-
     public function listado(Request $request)
     {
-        /**
-         * Intención de negocio:
-         * Proveer una respuesta dinámica de especies que permita a los usuarios
-         * buscar especies específicas de forma rápida y optimizada,
-         * soportando tanto peticiones HTTP tradicionales (Inertia) como llamadas Axios asíncronas (JSON).
-         */
+
+        # Iniciamos la consulta
         $query = Especie::query();
 
+        # Filtramos por texto
         if ($request->filled('texto')) {
             $query->where('nombre', 'like', '%' . $request->texto . '%');
         }
 
+        # Las ordenamos por nombre
         $especies = $query->orderBy('nombre')->get();
 
+        # Si la petición es JSON
         if ($request->wantsJson()) {
             return response()->json([
                 'especies' => $especies,
             ]);
         }
 
+        # Devolvemos la vista con las especies
         return Inertia::render('Especie/Listado', [
             'especies' => $especies,
         ]);
@@ -44,27 +40,29 @@ class EspecieController extends Controller
 
     public function obtenerTodas()
     {
+        # Obtenemos todas las especies ordenadas por nombre
         $especies = Especie::orderBy('nombre')->get();
 
+        # Si la petición es JSON
         if (request()->wantsJson()) {
             return response()->json([
                 'especies' => $especies,
             ]);
         }
 
+        # Devolvemos las especies
         return $especies;
     }
 
     public function crear(GuardarEspecieRequest $solicitud)
     {
-        /**
-         * Intención de negocio:
-         * Guardar el ID del usuario logueado en 'creado_por' para mantener la auditoría
-         * de quién registró la especie en el sistema.
-         */
+        # Validamos la solicitud
         $data = $solicitud->validated();
+
+        # Guardamos el ID del usuario logueado en creado_por
         $data['creado_por'] = auth()->id();
 
+        # Creamos la especie
         $especie = Especie::create($data);
 
         return response()->json($especie, 201);
@@ -72,18 +70,25 @@ class EspecieController extends Controller
 
     public function actualizar(ActualizarEspecieRequest $solicitud, Especie $especie)
     {
+        # Actualizamos la especie
         $especie->update($solicitud->validated());
+
+        # Devolvemos la especie
         return response()->json($especie);
     }
 
     public function eliminar(Especie $especie)
     {
+        # Eliminamos la especie
         $especie->delete();
+
+        # Devolvemos un mensaje de éxito
         return response()->json(['mensaje' => 'Especie eliminada correctamente']);
     }
 
     public function detalle(Especie $especie)
     {
+        # Cargamos las razas de la especie y devolvemos la vista
         return Inertia::render('Especie/Detalle', [
             'especie' => $especie,
             'razas' => $especie->razas,

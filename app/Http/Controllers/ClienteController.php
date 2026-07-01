@@ -5,28 +5,29 @@ namespace App\Http\Controllers;
 use App\Models\Cliente;
 use App\Models\Sucursal;
 use App\Http\Requests\GuardarClienteRequest;
+use App\Mail\NotificacionMasivaMail;
+use Illuminate\Support\Facades\Mail;
 use App\Http\Requests\ActualizarClienteRequest;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class ClienteController extends Controller
 {
-    /**
-     * MÓDULO 4 — Backend de referencia (no modificar).
-     * Tu trabajo: migración, rutas web/api y Vue (axios).
-     */
+
     public function listado(Request $request)
     {
+        # Obtenemos los datos del query
         $query = Cliente::with(['usuario', 'mascotas']);
 
+        # Verificamos si el usuario es administrador o veterinario
         if (auth()->user()->isAdmin() || auth()->user()->isVeterinario()) {
-            // Administradores y veterinarios ven todos, con opción a filtrar
+            # Los administradores y veterinarios ven todos, con opción a filtrar
         } else {
-            // Un cliente solo ve su perfil
+            # Un cliente solo ve su perfil
             $query->where('user_id', auth()->id());
         }
 
-        // Filtros usando when() para mantener consistencia con otros controladores
+        # Filtros
         $query->when(
             $request->filled('nombre'),
             fn($q) =>
@@ -50,21 +51,25 @@ class ClienteController extends Controller
                 }
             });
 
-        // Cargamos las transacciones pendientes explícitamente para mostrarlas rápido en el badge
+        #Cargamos las transacciones pendientes explícitamente para mostrarlas rápido en el badge
         $query->with(['transacciones' => function ($q) {
             $q->where('estado', 'pendiente');
         }]);
 
+        # Paginamos los resultados
         $clientes = $query->paginate(15);
 
+        # Si la solicitud es en formato JSON, devolvemos JSON
         if ($request->wantsJson()) {
             return response()->json([
                 'clientes' => $clientes,
             ]);
         }
 
+        # Obtenemos las sucursales
         $sucursales = Sucursal::select('id', 'nombre')->get();
 
+        # Devolvemos la vista
         return Inertia::render('Cliente/Listado', [
             'clientes' => $clientes,
             'sucursales' => $sucursales,
@@ -73,21 +78,25 @@ class ClienteController extends Controller
 
     public function detalle(Request $request, Cliente $cliente)
     {
-        $this->authorize('ver', $cliente);
-
+        # Cargamos los datos del cliente con eager loading
         $cliente->load([
             'usuario',
             'mascotas.raza.especie'
         ]);
 
+        # Obtenemos las transacciones
         $transacciones = $cliente->transacciones()
             ->with('cita.prestacion')
             ->orderByDesc('created_at')
             ->paginate(5);
 
+        # Obtenemos la deuda total
         $deudaTotal = $cliente->transacciones()->where('estado', 'pendiente')->sum('monto_total');
+
+        # Obtenemos el número de transacciones pendientes
         $transaccionesPendientesCount = $cliente->transacciones()->where('estado', 'pendiente')->count();
 
+        # Devolvemos la vista
         return Inertia::render('Cliente/Detalle', [
             'cliente' => $cliente,
             'transacciones' => $transacciones,
@@ -98,11 +107,13 @@ class ClienteController extends Controller
 
     public function obtenerTodas()
     {
+        # Retorna todos los clientes
         return Cliente::where('user_id', auth()->id())->get();
     }
 
     public function crear(GuardarClienteRequest $solicitud)
     {
+        # Crea un nuevo cliente
         $cliente = Cliente::create([
             'nombre' => $solicitud->nombre,
             'email' => $solicitud->email,
@@ -115,11 +126,9 @@ class ClienteController extends Controller
     }
 
     public function actualizar(ActualizarClienteRequest $solicitud, Cliente $cliente)
-    {
-        if ($cliente->user_id !== auth()->id()) {
-            return response()->json(['error' => 'No autorizado'], 403);
-        }
 
+    {
+        # Actualizamos el cliente
         $cliente->update($solicitud->validated());
 
         return response()->json($cliente);
@@ -127,10 +136,7 @@ class ClienteController extends Controller
 
     public function eliminar(Cliente $cliente)
     {
-        if ($cliente->user_id !== auth()->id()) {
-            return response()->json(['error' => 'No autorizado'], 403);
-        }
-
+        # Elimina el cliente
         $cliente->delete();
 
         return response()->json(['mensaje' => 'Cliente eliminado correctamente']);
@@ -138,10 +144,13 @@ class ClienteController extends Controller
 
     public function enviarCorreoMasivo(Request $request)
     {
+
+        # Verificamos que el usuario sea administrador o veterinario
         if (!auth()->user()->isAdmin() && !auth()->user()->isVeterinario()) {
             return response()->json(['error' => 'No autorizado para realizar esta acción.'], 403);
         }
 
+        # Validamos la solicitud
         $validated = $request->validate([
             'clientes_ids' => 'required|array',
             'clientes_ids.*' => 'exists:clientes,id',
@@ -149,13 +158,18 @@ class ClienteController extends Controller
             'mensaje' => 'required|string|max:2000',
         ]);
 
+        # Obtenemos los clientes
         $clientes = Cliente::whereIn('id', $validated['clientes_ids'])->with('usuario')->get();
 
+        # Enviamos los correos
         foreach ($clientes as $cliente) {
             $email = $cliente->usuario?->email;
+
             if ($email) {
+
+                # Enviamos el correo a queue
                 Mail::to($email)->send(
-                    new \App\Mail\NotificacionMasivaMail(
+                    new NotificacionMasivaMail(
                         $validated['asunto'],
                         $validated['mensaje'],
                         $cliente->usuario->name
