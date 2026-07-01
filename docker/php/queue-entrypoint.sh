@@ -1,6 +1,6 @@
 #!/bin/sh
 # ============================================================
-# Entrypoint: Worker de colas Laravel
+# Script para ejecutar el Queue Worker de Laravel
 # ============================================================
 set -e
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# Script de arranque inicial del proyecto Veterinaria
+# Script para arrancar el proyecto Veterinaria
 # Ejecutar desde la raíz del proyecto: bash docker/arrancar.sh
 # ============================================================
 
