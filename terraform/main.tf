@@ -89,7 +89,9 @@ resource "aws_instance" "vet_server" {
     cd veterinaria
 
     # Crear el archivo .env necesario para Docker Compose
-    cp .env.example .env
+    cat <<'INNER_EOF' > .env
+    ${file("${path.module}/../.env")}
+    INNER_EOF
 
     # Obtener la IP pública desde el IMDS de AWS con reintentos
     # El IMDS puede no estar listo inmediatamente al boot (race condition)
