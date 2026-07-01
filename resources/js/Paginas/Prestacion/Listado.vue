@@ -15,65 +15,61 @@
 
                 <div class="card-body">
                     <!-- Barra de búsqueda y filtros -->
-                    <div class="bg-light p-3 rounded-3 border mb-4 shadow-sm">
-                        <div class="row g-3 align-items-end">
-                            <div class="col-12 col-md-4 col-lg-3">
-                                <label class="form-label small fw-bold text-secondary mb-1">Especialidad</label>
-                                <select class="form-select form-select-sm" v-model="filtros.especialidad_id" @change="obtenerPrestaciones()">
-                                    <option value="">Todas</option>
-                                    <option value="general">Medicina General</option>
-                                    <option v-for="esp in especialidades" :key="esp.id" :value="esp.id">{{ esp.nombre }}</option>
-                                </select>
-                            </div>
-                            <div class="col-12 col-md-4 col-lg-3">
-                                <label class="form-label small fw-bold text-secondary mb-1">Sucursal</label>
-                                <select class="form-select form-select-sm" v-model="filtros.sucursal_id" @change="obtenerPrestaciones()">
-                                    <option value="">Todas</option>
-                                    <option v-for="suc in sucursales" :key="suc.id" :value="suc.id">{{ suc.nombre }}</option>
-                                </select>
-                            </div>
-                            <div class="col-12 col-md-4 col-lg-3">
-                                <label class="form-label small fw-bold text-secondary mb-1">Orden Precio</label>
-                                <select class="form-select form-select-sm" v-model="filtros.orden_precio" @change="obtenerPrestaciones()">
-                                    <option value="">Sin orden</option>
-                                    <option value="desc">Mayor a menor</option>
-                                    <option value="asc">Menor a mayor</option>
-                                </select>
-                            </div>
-                            <div class="col-12 col-lg-3 d-flex gap-2 justify-content-lg-end">
-                                <button class="btn btn-outline-secondary btn-sm w-100" @click="limpiarFiltros()">
-                                    Limpiar
-                                </button>
-                            </div>
+                    <BarraFiltros
+                        :deshabilitar-limpiar="!filtros.especialidad_id && !filtros.sucursal_id && !filtros.orden_precio"
+                        clase-boton-contenedor="col-12 col-lg-3 d-flex gap-2 justify-content-lg-end"
+                        @limpiar="limpiarFiltros"
+                    >
+                        <div class="col-12 col-md-4 col-lg-3">
+                            <label class="form-label small fw-bold text-secondary mb-1">Especialidad</label>
+                            <select class="form-select form-select-sm" v-model="filtros.especialidad_id" @change="obtenerPrestaciones()">
+                                <option value="">Todas</option>
+                                <option value="general">Medicina General</option>
+                                <option v-for="esp in especialidades" :key="esp.id" :value="esp.id">{{ esp.nombre }}</option>
+                            </select>
                         </div>
-                    </div>
+                        <div class="col-12 col-md-4 col-lg-3">
+                            <label class="form-label small fw-bold text-secondary mb-1">Sucursal</label>
+                            <select class="form-select form-select-sm" v-model="filtros.sucursal_id" @change="obtenerPrestaciones()">
+                                <option value="">Todas</option>
+                                <option v-for="suc in sucursales" :key="suc.id" :value="suc.id">{{ suc.nombre }}</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-4 col-lg-3">
+                            <label class="form-label small fw-bold text-secondary mb-1">Orden Precio</label>
+                            <select class="form-select form-select-sm" v-model="filtros.orden_precio" @change="obtenerPrestaciones()">
+                                <option value="">Sin orden</option>
+                                <option value="desc">Mayor a menor</option>
+                                <option value="asc">Menor a mayor</option>
+                            </select>
+                        </div>
 
-                    <p v-show="!listaVacia" class="text-muted small mb-3">
+                        <template #texto-limpiar>
+                            Limpiar
+                        </template>
+                    </BarraFiltros>
+
+                    <p v-show="totalPrestaciones > 0" class="text-muted small mb-3">
                         {{ totalPrestaciones }} prestación{{ totalPrestaciones === 1 ? '' : 'es' }} encontrada{{ totalPrestaciones === 1 ? '' : 's' }}
                     </p>
-                    <div v-if="cargando" class="text-center py-4">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Cargando...</span>
-                        </div>
-                        <p class="mt-2 text-muted">Cargando prestaciones...</p>
-                    </div>
 
-                    <!-- Estado vacío -->
-                    <div v-else-if="listaVacia" class="text-center py-5">
-                        <p class="text-muted mb-3">No hay prestaciones registradas en el catálogo.</p>
-                        <button type="button" class="btn btn-primary" @click="abrirModalCrear">
-                            Registrar la primera prestación
-                        </button>
-                    </div>
+                    <IndicadorCarga :cargando="cargando" mensaje="prestaciones" />
 
-                    <div v-else-if="sinResultadosFiltro" class="text-center py-5">
-                        <p class="text-muted mb-3">Ninguna prestación coincide con el filtro.</p>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" @click="limpiarFiltros()">
-                            Quitar filtro
-                        </button>
-                    </div>
+                    <EstadoVacio
+                        :visible="!cargando && listaVacia"
+                        mensaje="No hay prestaciones registradas en el catálogo."
+                        :texto-boton="isAdmin() ? 'Registrar la primera prestación' : ''"
+                        icono="bi bi-box-seam"
+                        @accion="abrirModalCrear"
+                    />
 
-                    <div v-else class="row g-4">
+                    <SinResultados
+                        :visible="!cargando && sinResultadosFiltro"
+                        mensaje="Ninguna prestación coincide con la búsqueda."
+                        @limpiar="limpiarFiltros()"
+                    />
+
+                    <div v-if="!cargando && !listaVacia && !sinResultadosFiltro" class="row g-4">
                         <div v-for="prestacion in prestacionesVisibles" :key="prestacion.id" class="col-md-6 col-lg-4">
                             <Link :href="route('prestaciones.detalle', prestacion.id)" class="text-decoration-none">
                             <div class="card h-100 shadow-sm border-0 border-top border-primary border-4" style="transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 .5rem 1rem rgba(0,0,0,.15)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 .125rem .25rem rgba(0,0,0,.075)';">
@@ -214,12 +210,20 @@
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import axios from 'axios';
+import BarraFiltros from '@/Componentes/BarraFiltros.vue';
+import IndicadorCarga from '@/Componentes/IndicadorCarga.vue';
+import EstadoVacio from '@/Componentes/EstadoVacio.vue';
+import SinResultados from '@/Componentes/SinResultados.vue';
 
 export default {
     components: {
         AuthenticatedLayout,
         Head,
         Link,
+        BarraFiltros,
+        IndicadorCarga,
+        EstadoVacio,
+        SinResultados,
     },
     props: {
         prestaciones: {
@@ -272,10 +276,17 @@ export default {
             return this.prestacionesVisibles.length;
         },
         listaVacia() {
-            return this.listaPrestaciones.length === 0;
+            return this.listaPrestaciones.length === 0 && !this.hayFiltrosActivos;
         },
         sinResultadosFiltro() {
-            return !this.listaVacia && this.prestacionesVisibles.length === 0 && (this.filtros.especialidad_id || this.filtros.sucursal_id || this.filtros.orden_precio);
+            return this.listaPrestaciones.length === 0 && this.hayFiltrosActivos;
+        },
+        hayFiltrosActivos() {
+            return !!(
+                this.filtros.especialidad_id ||
+                this.filtros.sucursal_id ||
+                this.filtros.orden_precio
+            );
         },
         tituloModal() {
             return this.modoEdicion ? 'Editar Prestación' : 'Nueva Prestación';

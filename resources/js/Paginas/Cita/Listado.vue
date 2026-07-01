@@ -13,110 +13,113 @@
 
                 <div class="card-body">
                     <!-- Barra de búsqueda y filtros -->
-                    <div class="bg-light p-3 rounded-3 border mb-4 shadow-sm">
-                        <div class="row g-3 align-items-end">
-                            <div class="col-12 col-md-6 col-lg-3">
-                                <label class="form-label small fw-bold text-secondary mb-1" for="filtroTitulo">Buscar por Título</label>
-                                <input type="text" class="form-control form-control-sm" id="filtroTitulo" placeholder="Buscar por título" v-model="filtroTitulo" @keyup.enter="obtenerCitas">
-                            </div>
-                            <!-- Buscar por Sucursal -->
-                            <div class="col-12 col-md-4 col-lg-2">
-                                <label class="form-label small fw-bold text-secondary mb-1" for="filtroSucursal">Sucursal</label>
-                                <select 
-                                    class="form-select form-select-sm" 
-                                    id="filtroSucursal"
-                                    v-model="filtroSucursal"
-                                    @change="obtenerCitas()"
-                                >
-                                    <option value="">Todas</option>
-                                    <option 
-                                        v-for="sucursal in sucursales" 
-                                        :key="sucursal.id" 
-                                        :value="sucursal.id"
-                                    >
-                                        {{ sucursal.nombre }}
-                                    </option>
-                                </select>
-                            </div>
-                            <!-- Buscar por Mascota -->
-                            <div class="col-12 col-md-4 col-lg-2">
-                                <label class="form-label small fw-bold text-secondary mb-1" for="filtroMascota">Buscar por Mascota</label>
-                                <select 
-                                    class="form-select form-select-sm" 
-                                    id="filtroMascota"
-                                    v-model="filtroMascota"
-                                    @change="obtenerCitas()"
-                                >
-                                    <option value="">Todas las mascotas</option>
-                                    <option 
-                                        v-for="mascota in mascotas" 
-                                        :key="mascota.id" 
-                                        :value="mascota.id"
-                                    >
-                                        {{ mascota.nombre }}
-                                    </option>
-                                </select>
-                            </div>
-                            <!-- Buscar por Veterinario -->
-                            <div class="col-12 col-md-4 col-lg-2">
-                                <label class="form-label small fw-bold text-secondary mb-1" for="filtroVeterinario">Buscar por Veterinario</label>
-                                <select 
-                                    class="form-select form-select-sm"
-                                    id="filtroVeterinario"
-                                    v-model="filtroVeterinario"
-                                    @change="obtenerCitas()"
-                                >
-                                    <option value="">Todos los veterinarios</option>
-                                    <option 
-                                        v-for="veterinario in veterinarios" 
-                                        :key="veterinario.id" 
-                                        :value="veterinario.id"
-                                    >
-                                        {{ veterinario.nombre }}
-                                    </option>
-                                </select>
-                            </div>
-
-                            <!-- Buscar por Estado -->
-                            <div class="col-12 col-md-4 col-lg-1">
-                                <label class="form-label small fw-bold text-secondary mb-1" for="filtroEstado">Estado</label>
-                                <select 
-                                    class="form-select form-select-sm"
-                                    id="filtroEstado"
-                                    v-model="filtroEstado"
-                                    @change="obtenerCitas()"
-                                >
-                                    <option value="">Todos</option>
-                                    <option value="pendiente">Pendiente</option>
-                                    <option value="en_curso">En curso</option>
-                                    <option value="completada">Completada</option>
-                                    <option value="cancelada">Cancelada</option>
-                                </select>
-                            </div>
-
-                            <!-- Limpiar Filtros -->
-                            <div class="col-12 col-lg-2 d-flex gap-2 justify-content-lg-end">
-                                <button class="btn btn-outline-secondary btn-sm w-100" @click="limpiarFiltros()">
-                                    Limpiar
-                                </button>
-                            </div>
+                    <BarraFiltros
+                        :deshabilitar-limpiar="!filtroTitulo && !filtroSucursal && !filtroMascota && !filtroVeterinario && !filtroEstado"
+                        clase-boton-contenedor="col-12 col-lg-2 d-flex gap-2 justify-content-lg-end"
+                        @limpiar="limpiarFiltros"
+                    >
+                        <!-- Buscar por Título -->
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label class="form-label small fw-bold text-secondary mb-1" for="filtroTitulo">Buscar por Título</label>
+                            <input type="text" class="form-control form-control-sm" id="filtroTitulo" placeholder="Ej: Control mensual" v-model="filtroTitulo" @keyup.enter="obtenerCitas">
                         </div>
-                    </div>
-                    <div v-if="cargando" class="text-center py-4">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Cargando...</span>
+                        <!-- Buscar por Sucursal -->
+                        <div class="col-12 col-md-4 col-lg-2">
+                            <label class="form-label small fw-bold text-secondary mb-1" for="filtroSucursal">Sucursal</label>
+                            <select 
+                                class="form-select form-select-sm" 
+                                id="filtroSucursal"
+                                v-model="filtroSucursal"
+                                @change="obtenerCitas()"
+                            >
+                                <option value="">Todas</option>
+                                <option 
+                                    v-for="sucursal in sucursales" 
+                                    :key="sucursal.id" 
+                                    :value="sucursal.id"
+                                >
+                                    {{ sucursal.nombre }}
+                                </option>
+                            </select>
                         </div>
-                        <p class="mt-2 text-muted">Cargando citas...</p>
-                    </div>
+                        <!-- Buscar por Mascota -->
+                        <div class="col-12 col-md-4 col-lg-2">
+                            <label class="form-label small fw-bold text-secondary mb-1" for="filtroMascota">Buscar por Mascota</label>
+                            <select 
+                                class="form-select form-select-sm" 
+                                id="filtroMascota"
+                                v-model="filtroMascota"
+                                @change="obtenerCitas()"
+                            >
+                                <option value="">Todas las mascotas</option>
+                                <option 
+                                    v-for="mascota in mascotas" 
+                                    :key="mascota.id" 
+                                    :value="mascota.id"
+                                >
+                                    {{ mascota.nombre }}
+                                </option>
+                            </select>
+                        </div>
+                        <!-- Buscar por Veterinario -->
+                        <div class="col-12 col-md-4 col-lg-2">
+                            <label class="form-label small fw-bold text-secondary mb-1" for="filtroVeterinario">Buscar por Veterinario</label>
+                            <select 
+                                class="form-select form-select-sm"
+                                id="filtroVeterinario"
+                                v-model="filtroVeterinario"
+                                @change="obtenerCitas()"
+                            >
+                                <option value="">Todos los veterinarios</option>
+                                <option 
+                                    v-for="veterinario in veterinarios" 
+                                    :key="veterinario.id" 
+                                    :value="veterinario.id"
+                                >
+                                    {{ veterinario.nombre }}
+                                </option>
+                            </select>
+                        </div>
 
-                    <div v-else-if="citas.length === 0" class="text-center py-5">
-                        <p class="text-muted mb-3">No tienes citas registradas aún.</p>
-                        <button type="button" class="btn btn-primary" @click="abrirModalCrear">
-                            Registrar tu primera cita
-                        </button>
-                    </div>
+                        <!-- Buscar por Estado -->
+                        <div class="col-12 col-md-4 col-lg-1">
+                            <label class="form-label small fw-bold text-secondary mb-1" for="filtroEstado">Estado</label>
+                            <select 
+                                class="form-select form-select-sm"
+                                id="filtroEstado"
+                                v-model="filtroEstado"
+                                @change="obtenerCitas()"
+                            >
+                                <option value="">Todos</option>
+                                <option value="pendiente">Pendiente</option>
+                                <option value="en_curso">En curso</option>
+                                <option value="completada">Completada</option>
+                                <option value="cancelada">Cancelada</option>
+                            </select>
+                        </div>
 
-                    <div v-else class="table-responsive">
+                        <template #texto-limpiar>
+                            Limpiar
+                        </template>
+                    </BarraFiltros>
+
+                    <IndicadorCarga :cargando="cargando" mensaje="citas" />
+
+                    <EstadoVacio
+                        :visible="!cargando && listaVacia"
+                        mensaje="No tienes citas registradas aún."
+                        :texto-boton="esCliente() ? 'Registrar tu primera cita' : ''"
+                        icono="bi bi-calendar-x"
+                        @accion="abrirModalCrear"
+                    />
+
+                    <SinResultados
+                        :visible="!cargando && sinResultadosFiltro"
+                        mensaje="Ninguna cita coincide con la búsqueda."
+                        @limpiar="limpiarFiltros()"
+                    />
+
+                    <div v-if="!cargando && !listaVacia && !sinResultadosFiltro" class="table-responsive">
                         <table class="table table-hover align-middle border">
                             <thead class="table-light">
                                 <tr>
@@ -197,30 +200,7 @@
                         </table>
                     </div>
 
-                    <!-- Controles de Paginación -->
-                    <div v-if="citasData && citasData.last_page > 1" class="d-flex justify-content-between align-items-center mt-4">
-                        <div class="text-muted small">
-                            Mostrando {{ citasData.from }} a {{ citasData.to }} de {{ citasData.total }} citas
-                        </div>
-                        <nav aria-label="Navegación de páginas">
-                            <ul class="pagination pagination-sm mb-0">
-                                <li class="page-item" :class="{ disabled: !citasData.prev_page_url }">
-                                    <button class="page-link" @click.prevent="obtenerCitas(citasData.prev_page_url)">Anterior</button>
-                                </li>
-                                <li 
-                                    v-for="link in citasData.links.slice(1, -1)" 
-                                    :key="link.label" 
-                                    class="page-item" 
-                                    :class="{ active: link.active }"
-                                >
-                                    <button class="page-link" @click.prevent="obtenerCitas(link.url)" v-html="link.label"></button>
-                                </li>
-                                <li class="page-item" :class="{ disabled: !citasData.next_page_url }">
-                                    <button class="page-link" @click.prevent="obtenerCitas(citasData.next_page_url)">Siguiente</button>
-                                </li>
-                            </ul>
-                        </nav>
-                    </div>
+                    <Paginador :data="citasData" entidad="citas" @cambiar-pagina="obtenerCitas" />
                 </div>
             </div>
 
@@ -512,13 +492,23 @@
 
 <script>
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
-import { Head,Link } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
+import Paginador from '@/Componentes/Paginador.vue';
+import BarraFiltros from '@/Componentes/BarraFiltros.vue';
+import IndicadorCarga from '@/Componentes/IndicadorCarga.vue';
+import EstadoVacio from '@/Componentes/EstadoVacio.vue';
+import SinResultados from '@/Componentes/SinResultados.vue';
 
 export default {
     components: {
         AuthenticatedLayout,
         Head,
-        Link
+        Link,
+        Paginador,
+        BarraFiltros,
+        IndicadorCarga,
+        EstadoVacio,
+        SinResultados,
     },
     props: {
         mascotas: {
@@ -616,6 +606,21 @@ export default {
                 // Box con restricción: solo coincide si la categoría es la misma
                 return box.categoria_prestacion_id === catPrestId;
             });
+        },
+        hayFiltrosActivos() {
+            return !!(
+                this.filtroMascota ||
+                this.filtroVeterinario ||
+                this.filtroTitulo ||
+                this.filtroEstado ||
+                this.filtroSucursal
+            );
+        },
+        listaVacia() {
+            return this.citas.length === 0 && !this.hayFiltrosActivos;
+        },
+        sinResultadosFiltro() {
+            return this.citas.length === 0 && this.hayFiltrosActivos;
         },
     },
     watch: {

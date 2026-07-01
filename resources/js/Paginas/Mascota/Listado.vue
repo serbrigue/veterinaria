@@ -14,63 +14,61 @@
 
                 <div class="card-body">
                     <!-- Barra de búsqueda y filtros -->
-                    <div class="bg-light p-3 rounded-3 border mb-4 shadow-sm">
-                        <div class="row g-3 align-items-end">
-                            <!-- Buscar por Nombre -->
-                            <div class="col-12 col-md-6 col-lg-3">
-                                <label class="form-label small fw-bold text-secondary mb-1" for="filtroNombre">Buscar por Nombre</label>
-                                <input type="text" class="form-control form-control-sm" id="filtroNombre" placeholder="Ej: Toby" v-model="filtros.nombre" @keyup.enter="obtenerMascotas">
-                            </div>
-                            
-                            <!-- Buscar por Especie -->
-                            <div class="col-12 col-md-4 col-lg-2">
-                                <label class="form-label small fw-bold text-secondary mb-1" for="filtroEspecie">Especie</label>
-                                <select class="form-select form-select-sm" id="filtroEspecie" v-model="filtros.especie_id" @change="alCambiarFiltroEspecie">
-                                    <option value="">Todas</option>
-                                    <option v-for="especie in especies" :key="especie.id" :value="especie.id">
-                                        {{ especie.nombre }}
-                                    </option>
-                                </select>
-                            </div>
-
-                            <!-- Buscar por Raza -->
-                            <div class="col-12 col-md-4 col-lg-2">
-                                <label class="form-label small fw-bold text-secondary mb-1" for="filtroRaza">Raza</label>
-                                <select class="form-select form-select-sm" id="filtroRaza" v-model="filtros.raza_id" :disabled="!filtros.especie_id" @change="obtenerMascotas()">
-                                    <option value="">Todas</option>
-                                    <option v-for="raza in razasFiltro" :key="raza.id" :value="raza.id">
-                                        {{ raza.nombre }}
-                                    </option>
-                                </select>
-                            </div>
-
-                            <!-- Buscar por Sexo -->
-                            <div class="col-12 col-md-4 col-lg-1">
-                                <label class="form-label small fw-bold text-secondary mb-1" for="filtroSexo">Sexo</label>
-                                <select class="form-select form-select-sm" id="filtroSexo" v-model="filtros.sexo" @change="obtenerMascotas()">
-                                    <option value="">Todos</option>
-                                    <option v-for="op in opcionesSexo" :key="op.value" :value="op.value">{{ op.label }}</option>
-                                </select>
-                            </div>
-
-                            <!-- Buscar por Esterilizado -->
-                            <div class="col-12 col-md-4 col-lg-2">
-                                <label class="form-label small fw-bold text-secondary mb-1" for="filtroEsterilizado">Esterilizado</label>
-                                <select class="form-select form-select-sm" id="filtroEsterilizado" v-model="filtros.esterilizado" @change="obtenerMascotas()">
-                                    <option value="">Todos</option>
-                                    <option value="1">Sí</option>
-                                    <option value="0">No</option>
-                                </select>
-                            </div>
-
-                            <!-- Limpiar Filtros -->
-                            <div class="col-12 col-lg-2 d-flex gap-2 justify-content-lg-end">
-                                <button class="btn btn-outline-secondary btn-sm w-100" @click="limpiarFiltros()">
-                                    Limpiar
-                                </button>
-                            </div>
+                    <BarraFiltros 
+                        :deshabilitar-limpiar="!filtros.nombre && !filtros.especie_id && !filtros.raza_id && !filtros.sexo && !filtros.esterilizado" 
+                        clase-boton-contenedor="col-12 col-lg-2 d-flex gap-2 justify-content-lg-end"
+                        @limpiar="limpiarFiltros"
+                    >
+                        <!-- Buscar por Nombre -->
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label class="form-label small fw-bold text-secondary mb-1" for="filtroNombre">Buscar por Nombre</label>
+                            <input type="text" class="form-control form-control-sm" id="filtroNombre" placeholder="Ej: Toby" v-model="filtros.nombre" @keyup.enter="obtenerMascotas">
                         </div>
-                    </div>
+                        
+                        <!-- Buscar por Especie -->
+                        <div class="col-12 col-md-4 col-lg-2">
+                            <label class="form-label small fw-bold text-secondary mb-1" for="filtroEspecie">Especie</label>
+                            <select class="form-select form-select-sm" id="filtroEspecie" v-model="filtros.especie_id" @change="alCambiarFiltroEspecie">
+                                <option value="">Todas</option>
+                                <option v-for="especie in especies" :key="especie.id" :value="especie.id">
+                                    {{ especie.nombre }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Buscar por Raza -->
+                        <div class="col-12 col-md-4 col-lg-2">
+                            <label class="form-label small fw-bold text-secondary mb-1" for="filtroRaza">Raza</label>
+                            <select class="form-select form-select-sm" id="filtroRaza" v-model="filtros.raza_id" :disabled="!filtros.especie_id" @change="obtenerMascotas()">
+                                <option value="">Todas</option>
+                                <option v-for="raza in razasFiltro" :key="raza.id" :value="raza.id">
+                                    {{ raza.nombre }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Buscar por Sexo -->
+                        <div class="col-12 col-md-4 col-lg-1">
+                            <label class="form-label small fw-bold text-secondary mb-1" for="filtroSexo">Sexo</label>
+                            <select class="form-select form-select-sm" id="filtroSexo" v-model="filtros.sexo" @change="obtenerMascotas()">
+                                <option value="">Todos</option>
+                                <option v-for="op in opcionesSexo" :key="op.value" :value="op.value">{{ op.label }}</option>
+                            </select>
+                        </div>
+
+                        <!-- Buscar por Esterilizado -->
+                        <div class="col-12 col-md-4 col-lg-2">
+                            <label class="form-label small fw-bold text-secondary mb-1" for="filtroEsterilizado">Esterilizado</label>
+                            <select class="form-select form-select-sm" id="filtroEsterilizado" v-model="filtros.esterilizado" @change="obtenerMascotas()">
+                                <option value="">Todos</option>
+                                <option value="1">Sí</option>
+                                <option value="0">No</option>
+                            </select>
+                        </div>
+                        <template #texto-limpiar>
+                            Limpiar
+                        </template>
+                    </BarraFiltros>
 
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <p v-show="consultadoEn" class="text-muted small mb-0">Actualizado: {{ consultadoEn }}</p>
@@ -79,29 +77,23 @@
                             <span v-show="mascotasEsterilizadas > 0"> · {{ mascotasEsterilizadas }} esterilizada{{ mascotasEsterilizadas === 1 ? '' : 's' }}</span>
                         </p>
                     </div>
-                    <div v-if="cargando" class="text-center py-4">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Cargando...</span>
-                        </div>
-                        <p class="mt-2 text-muted">Cargando mascotas...</p>
-                    </div>
+                    <IndicadorCarga :cargando="cargando" mensaje="mascotas" />
 
-                    <!-- Estado vacío -->
-                    <div v-else-if="listaVacia" class="text-center py-5">
-                        <p class="text-muted mb-3">No tienes mascotas registradas aún.</p>
-                        <button type="button" class="btn btn-primary" @click="abrirModalCrear">
-                            Registrar tu primera mascota
-                        </button>
-                    </div>
+                    <EstadoVacio
+                        :visible="!cargando && listaVacia"
+                        mensaje="No tienes mascotas registradas aún."
+                        texto-boton="Registrar tu primera mascota"
+                        icono="bi bi-heart-pulse"
+                        @accion="abrirModalCrear"
+                    />
 
-                    <div v-else-if="sinResultadosFiltro" class="text-center py-5">
-                        <p class="text-muted mb-3">Ninguna mascota coincide con el filtro.</p>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" @click="limpiarFiltros()">
-                            Quitar filtro
-                        </button>
-                    </div>
+                    <SinResultados
+                        :visible="!cargando && sinResultadosFiltro"
+                        mensaje="Ninguna mascota coincide con la búsqueda."
+                        @limpiar="limpiarFiltros()"
+                    />
 
-                    <div v-else class="table-responsive">
+                    <div v-if="!cargando && !listaVacia && !sinResultadosFiltro" class="table-responsive">
                         <table class="table table-bordered table-hover">
                             <thead class="table-light">
                                 <tr>
@@ -161,279 +153,241 @@
                         </table>
                     </div>
 
-                    <!-- Controles de Paginación -->
-                    <div v-if="mascotasData && mascotasData.last_page > 1" class="d-flex justify-content-between align-items-center mt-4">
-                        <div class="text-muted small">
-                            Mostrando {{ mascotasData.from }} a {{ mascotasData.to }} de {{ mascotasData.total }} mascotas
+                    <Paginador :data="mascotasData" entidad="mascotas" @cambiar-pagina="obtenerMascotas" />
+                </div>
+            </div>
+
+            <ModalCrud
+                :visible="mostrarModal"
+                :titulo="tituloModal"
+                :modo-edicion="modoEdicion"
+                :processing="formulario.processing"
+                tamanio="lg"
+                texto-guardar="Guardar Cambios"
+                texto-crear="Registrar Mascota"
+                @cerrar="cerrarModal"
+                @guardar="guardar"
+            >
+                <div class="row g-4">
+                    <!-- Columna Izquierda: Identificación y Clasificación -->
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="nombre" class="form-label fw-semibold text-secondary small text-uppercase">Nombre de la Mascota</label>
+                            <input
+                                id="nombre"
+                                v-model="formulario.nombre"
+                                type="text"
+                                class="form-control bg-light border-0 py-2"
+                                placeholder="Ej: Garfield"
+                                :class="{ 'is-invalid': formulario.errors.nombre }"
+                                required
+                            />
+                            <div v-if="formulario.errors.nombre" class="invalid-feedback">
+                                {{ formulario.errors.nombre }}
+                            </div>
                         </div>
-                        <nav aria-label="Navegación de páginas">
-                            <ul class="pagination pagination-sm mb-0">
-                                <li class="page-item" :class="{ disabled: !mascotasData.prev_page_url }">
-                                    <button class="page-link" @click.prevent="obtenerMascotas(mascotasData.prev_page_url)">Anterior</button>
-                                </li>
-                                <li 
-                                    v-for="link in mascotasData.links.slice(1, -1)" 
-                                    :key="link.label" 
-                                    class="page-item" 
-                                    :class="{ active: link.active }"
+
+                        <div class="mb-3">
+                            <label for="cliente_id" class="form-label fw-semibold text-secondary small text-uppercase">Propietario / Cliente</label>
+                            <select
+                                id="cliente_id"
+                                v-model="formulario.cliente_id"
+                                class="form-select bg-light border-0 py-2"
+                                :class="{ 'is-invalid': formulario.errors.cliente_id }"
+                                required
+                            >
+                                <option value="" disabled>Seleccione un propietario</option>
+                                <option
+                                    v-for="cliente in clientes"
+                                    :key="cliente.id"
+                                    :value="cliente.id"
                                 >
-                                    <button class="page-link" @click.prevent="obtenerMascotas(link.url)" v-html="link.label"></button>
-                                </li>
-                                <li class="page-item" :class="{ disabled: !mascotasData.next_page_url }">
-                                    <button class="page-link" @click.prevent="obtenerMascotas(mascotasData.next_page_url)">Siguiente</button>
-                                </li>
-                            </ul>
-                        </nav>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ========================================== -->
-            <!-- MODAL: Crear / Editar Mascota              -->
-            <!-- ========================================== -->
-            <div v-if="mostrarModal" class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0, 0, 0, 0.5);">
-                <div class="modal-dialog modal-lg modal-dialog-centered">
-                    <div class="modal-content shadow border-0">
-                        <div class="modal-header border-bottom bg-light py-3 px-4">
-                            <h5 class="modal-title fw-bold text-dark">{{ tituloModal }}</h5>
-                            <button type="button" class="btn-close" @click="cerrarModal"></button>
+                                    {{ cliente.usuario?.name || 'Cliente sin nombre' }}
+                                </option>
+                            </select>
+                            <div v-if="formulario.errors.cliente_id" class="invalid-feedback">
+                                {{ formulario.errors.cliente_id }}
+                            </div>
                         </div>
-                        <div>
-                            <div class="modal-body p-4">
-                                <div class="row g-4">
-                                    <!-- Columna Izquierda: Identificación y Clasificación -->
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="nombre" class="form-label fw-semibold text-secondary">Nombre de la Mascota</label>
-                                            <input
-                                                id="nombre"
-                                                v-model="formulario.nombre"
-                                                type="text"
-                                                class="form-control form-control-lg"
-                                                placeholder="Ej: Garfield"
-                                                :class="{ 'is-invalid': formulario.errors.nombre }"
-                                                required
-                                            />
-                                            <div v-if="formulario.errors.nombre" class="invalid-feedback">
-                                                {{ formulario.errors.nombre }}
-                                            </div>
-                                        </div>
 
-                                        <div class="mb-3">
-                                            <label for="cliente_id" class="form-label fw-semibold text-secondary">Propietario / Cliente</label>
-                                            <select
-                                                id="cliente_id"
-                                                v-model="formulario.cliente_id"
-                                                class="form-select"
-                                                :class="{ 'is-invalid': formulario.errors.cliente_id }"
-                                                required
-                                            >
-                                                <option value="" disabled>Seleccione un propietario</option>
-                                                <option
-                                                    v-for="cliente in clientes"
-                                                    :key="cliente.id"
-                                                    :value="cliente.id"
-                                                >
-                                                    {{ cliente.usuario?.name || 'Cliente sin nombre' }}
-                                                </option>
-                                            </select>
-                                            <div v-if="formulario.errors.cliente_id" class="invalid-feedback">
-                                                {{ formulario.errors.cliente_id }}
-                                            </div>
-                                        </div>
+                        <div class="mb-3">
+                            <label for="especie_id" class="form-label fw-semibold text-secondary small text-uppercase">Especie</label>
+                            <select
+                                id="especie_id"
+                                v-model="formulario.especie_id"
+                                class="form-select bg-light border-0 py-2"
+                                :class="{ 'is-invalid': formulario.errors.especie_id }"
+                                required
+                                @change="obtenerRazasPorEspecie(formulario.especie_id)"
+                            >
+                                <option value="" disabled>Seleccione una especie</option>
+                                <option
+                                    v-for="especie in especies"
+                                    :key="especie.id"
+                                    :value="especie.id"
+                                >
+                                    {{ especie.nombre }}
+                                </option>
+                            </select>
+                            <div v-if="formulario.errors.especie_id" class="invalid-feedback">
+                                {{ formulario.errors.especie_id }}
+                            </div>
+                        </div>
 
-                                        <div class="mb-3">
-                                            <label for="especie_id" class="form-label fw-semibold text-secondary">Especie</label>
-                                            <select
-                                                id="especie_id"
-                                                v-model="formulario.especie_id"
-                                                class="form-select"
-                                                :class="{ 'is-invalid': formulario.errors.especie_id }"
-                                                required
-                                                @change="obtenerRazasPorEspecie(formulario.especie_id)"
-                                            >
-                                                <option value="" disabled>Seleccione una especie</option>
-                                                <option
-                                                    v-for="especie in especies"
-                                                    :key="especie.id"
-                                                    :value="especie.id"
-                                                >
-                                                    {{ especie.nombre }}
-                                                </option>
-                                            </select>
-                                            <div v-if="formulario.errors.especie_id" class="invalid-feedback">
-                                                {{ formulario.errors.especie_id }}
-                                            </div>
-                                        </div>
+                        <div class="mb-3" v-if="formulario.especie_id && razas.length > 0">
+                            <label for="raza_id" class="form-label fw-semibold text-secondary small text-uppercase">Raza</label>
+                            <select
+                                id="raza_id"
+                                v-model="formulario.raza_id"
+                                class="form-select bg-light border-0 py-2"
+                                :class="{ 'is-invalid': formulario.errors.raza_id }"
+                                required
+                            >
+                                <option value="" disabled>Seleccione una raza</option>
+                                <option
+                                    v-for="raza in razas"
+                                    :key="raza.id"
+                                    :value="raza.id"
+                                >
+                                    {{ raza.nombre }}
+                                </option>
+                            </select>
+                            <div v-if="formulario.errors.raza_id" class="invalid-feedback">
+                                {{ formulario.errors.raza_id }}
+                            </div>
+                        </div>
 
-                                        <div class="mb-3" v-if="formulario.especie_id && razas.length > 0">
-                                            <label for="raza_id" class="form-label fw-semibold text-secondary">Raza</label>
-                                            <select
-                                                id="raza_id"
-                                                v-model="formulario.raza_id"
-                                                class="form-select"
-                                                :class="{ 'is-invalid': formulario.errors.raza_id }"
-                                                required
-                                            >
-                                                <option value="" disabled>Seleccione una raza</option>
-                                                <option
-                                                    v-for="raza in razas"
-                                                    :key="raza.id"
-                                                    :value="raza.id"
-                                                >
-                                                    {{ raza.nombre }}
-                                                </option>
-                                            </select>
-                                            <div v-if="formulario.errors.raza_id" class="invalid-feedback">
-                                                {{ formulario.errors.raza_id }}
-                                            </div>
-                                        </div>
+                        <div class="mb-3">
+                            <label for="sexo" class="form-label fw-semibold text-secondary small text-uppercase">Sexo</label>
+                            <select
+                                id="sexo"
+                                v-model="formulario.sexo"
+                                class="form-select bg-light border-0 py-2"
+                                :class="{ 'is-invalid': formulario.errors.sexo }"
+                                required
+                            >
+                                <option value="" disabled>Seleccione el sexo</option>
+                                <option
+                                    v-for="op in opcionesSexo"
+                                    :key="op.value"
+                                    :value="op.value"
+                                >
+                                    {{ op.label }}
+                                </option>
+                            </select>
+                            <div v-if="formulario.errors.sexo" class="invalid-feedback">
+                                {{ formulario.errors.sexo }}
+                            </div>
+                        </div>
+                    </div>
 
-                                        <div class="mb-3">
-                                            <label for="sexo" class="form-label fw-semibold text-secondary">Sexo</label>
-                                            <select
-                                                id="sexo"
-                                                v-model="formulario.sexo"
-                                                class="form-select"
-                                                :class="{ 'is-invalid': formulario.errors.sexo }"
-                                                required
-                                            >
-                                                <option value="" disabled>Seleccione el sexo</option>
-                                                <option
-                                                    v-for="op in opcionesSexo"
-                                                    :key="op.value"
-                                                    :value="op.value"
-                                                >
-                                                    {{ op.label }}
-                                                </option>
-                                            </select>
-                                            <div v-if="formulario.errors.sexo" class="invalid-feedback">
-                                                {{ formulario.errors.sexo }}
-                                            </div>
-                                        </div>
-                                    </div>
+                    <!-- Columna Derecha: Información Física y Médica -->
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="fecha_nacimiento" class="form-label fw-semibold text-secondary small text-uppercase">Fecha de Nacimiento</label>
+                            <input
+                                id="fecha_nacimiento"
+                                v-model="formulario.fecha_nacimiento"
+                                type="date"
+                                class="form-control bg-light border-0 py-2"
+                                :class="{ 'is-invalid': formulario.errors.fecha_nacimiento }"
+                            />
+                            <div v-if="formulario.errors.fecha_nacimiento" class="invalid-feedback">
+                                {{ formulario.errors.fecha_nacimiento }}
+                            </div>
+                        </div>
 
-                                    <!-- Columna Derecha: Información Física y Médica -->
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="fecha_nacimiento" class="form-label fw-semibold text-secondary">Fecha de Nacimiento</label>
-                                            <input
-                                                id="fecha_nacimiento"
-                                                v-model="formulario.fecha_nacimiento"
-                                                type="date"
-                                                class="form-control"
-                                                :class="{ 'is-invalid': formulario.errors.fecha_nacimiento }"
-                                            />
-                                            <div v-if="formulario.errors.fecha_nacimiento" class="invalid-feedback">
-                                                {{ formulario.errors.fecha_nacimiento }}
-                                            </div>
-                                        </div>
+                        <div class="mb-3">
+                            <label for="peso_kg" class="form-label fw-semibold text-secondary small text-uppercase">Peso (kg)</label>
+                            <input
+                                id="peso_kg"
+                                v-model="formulario.peso_kg"
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                class="form-control bg-light border-0 py-2"
+                                placeholder="Ej: 5.40"
+                                :class="{ 'is-invalid': formulario.errors.peso_kg }"
+                            />
+                            <div v-if="formulario.errors.peso_kg" class="invalid-feedback">
+                                {{ formulario.errors.peso_kg }}
+                            </div>
+                        </div>
 
-                                        <div class="mb-3">
-                                            <label for="peso_kg" class="form-label fw-semibold text-secondary">Peso (kg)</label>
-                                            <input
-                                                id="peso_kg"
-                                                v-model="formulario.peso_kg"
-                                                type="number"
-                                                step="0.01"
-                                                min="0"
-                                                class="form-control"
-                                                placeholder="Ej: 5.40"
-                                                :class="{ 'is-invalid': formulario.errors.peso_kg }"
-                                            />
-                                            <div v-if="formulario.errors.peso_kg" class="invalid-feedback">
-                                                {{ formulario.errors.peso_kg }}
-                                            </div>
-                                        </div>
+                        <div class="mb-3">
+                            <label for="color" class="form-label fw-semibold text-secondary small text-uppercase">Color / Pelaje</label>
+                            <input
+                                id="color"
+                                v-model="formulario.color"
+                                type="text"
+                                class="form-control bg-light border-0 py-2"
+                                placeholder="Ej: Blanco con manchas negras"
+                                :class="{ 'is-invalid': formulario.errors.color }"
+                            />
+                            <div v-if="formulario.errors.color" class="invalid-feedback">
+                                {{ formulario.errors.color }}
+                            </div>
+                        </div>
 
-                                        <div class="mb-3">
-                                            <label for="color" class="form-label fw-semibold text-secondary">Color / Pelaje</label>
-                                            <input
-                                                id="color"
-                                                v-model="formulario.color"
-                                                type="text"
-                                                class="form-control"
-                                                placeholder="Ej: Blanco con manchas negras"
-                                                :class="{ 'is-invalid': formulario.errors.color }"
-                                            />
-                                            <div v-if="formulario.errors.color" class="invalid-feedback">
-                                                {{ formulario.errors.color }}
-                                            </div>
-                                        </div>
+                        <div class="mb-3">
+                            <label for="imagen_url" class="form-label fw-semibold text-secondary small text-uppercase">Imagen (URL)</label>
+                            <input
+                                id="imagen_url"
+                                type="text"
+                                name="imagen_url"
+                                v-model="formulario.imagen_url"
+                                class="form-control bg-light border-0 py-2"
+                                placeholder="https://ejemplo.com/foto.jpg"
+                                :class="{ 'is-invalid': formulario.errors.imagen_url }"
+                            />
+                            <div v-if="formulario.errors.imagen_url" class="invalid-feedback">
+                                {{ formulario.errors.imagen_url }}
+                            </div>
+                        </div>
 
-                                        <div class="mb-3">
-                                            <label for="imagen_url" class="form-label fw-semibold text-secondary">Imagen de la Mascota (URL)</label>
-                                            <input
-                                                id="imagen_url"
-                                                type="text"
-                                                name="imagen_url"
-                                                v-model="formulario.imagen_url"
-                                                class="form-control"
-                                                placeholder="https://ejemplo.com/foto.jpg"
-                                                :class="{ 'is-invalid': formulario.errors.imagen_url }"
-                                            />
-                                            <div v-if="formulario.errors.imagen_url" class="invalid-feedback">
-                                                {{ formulario.errors.imagen_url }}
-                                            </div>
-                                        </div>
-
-                                        <div class="mb-3 pt-2">
-                                            <div class="form-check form-switch card p-3 border-light shadow-sm d-flex flex-row align-items-center justify-content-between">
-                                                <div class="ms-1">
-                                                    <label class="form-check-label fw-semibold text-secondary" for="esterilizado">Esterilizado / Castrado</label>
-                                                    <span class="d-block text-muted small mt-1">¿Ha sido sometido a cirugía de esterilización?</span>
-                                                </div>
-                                                <input
-                                                    id="esterilizado"
-                                                    v-model="formulario.esterilizado"
-                                                    type="checkbox"
-                                                    class="form-check-input ms-0 float-none"
-                                                    role="switch"
-                                                    style="width: 2.8em; height: 1.5em; cursor: pointer;"
-                                                    :class="{ 'is-invalid': formulario.errors.esterilizado }"
-                                                />
-                                            </div>
-                                            <div v-if="formulario.errors.esterilizado" class="invalid-feedback d-block mt-1">
-                                                {{ formulario.errors.esterilizado }}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Sección de Ancho Completo al Final: Descripción/Notas Médicas -->
-                                    <div class="col-12 mt-2">
-                                        <hr class="text-muted opacity-25 my-3">
-                                        <div class="mb-2">
-                                            <label for="descripcion" class="form-label fw-semibold text-secondary">Descripción / Antecedentes Médicos</label>
-                                            <textarea
-                                                id="descripcion"
-                                                v-model="formulario.descripcion"
-                                                class="form-control"
-                                                :class="{ 'is-invalid': formulario.errors.descripcion }"
-                                                rows="3"
-                                                placeholder="Registra condiciones previas, alergias, comportamiento o detalles relevantes de la mascota."
-                                                required
-                                            ></textarea>
-                                            <div v-if="formulario.errors.descripcion" class="invalid-feedback">
-                                                {{ formulario.errors.descripcion }}
-                                            </div>
-                                        </div>
-                                    </div>
+                        <div class="mb-3 pt-2">
+                            <div class="form-check form-switch card p-3 border-light shadow-sm d-flex flex-row align-items-center justify-content-between bg-light border-0">
+                                <div class="ms-1">
+                                    <label class="form-check-label fw-semibold text-secondary small text-uppercase" for="esterilizado">Esterilizado / Castrado</label>
+                                    <span class="d-block text-muted small mt-1" style="font-size: 0.75rem;">¿Ha sido sometido a cirugía de esterilización?</span>
                                 </div>
+                                <input
+                                    id="esterilizado"
+                                    v-model="formulario.esterilizado"
+                                    type="checkbox"
+                                    class="form-check-input ms-0 float-none"
+                                    role="switch"
+                                    style="width: 2.8em; height: 1.5em; cursor: pointer;"
+                                    :class="{ 'is-invalid': formulario.errors.esterilizado }"
+                                />
                             </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" @click="cerrarModal">
-                                    Cancelar
-                                </button>
-                                <button type="button" class="btn btn-primary" :disabled="formulario.processing" @click="guardar">
-                                    <span v-if="formulario.processing" class="spinner-border spinner-border-sm me-2"></span>
-                                    {{ textoBotonGuardar }}
-                                </button>
+                            <div v-if="formulario.errors.esterilizado" class="invalid-feedback d-block mt-1">
+                                {{ formulario.errors.esterilizado }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección de Ancho Completo al Final: Descripción/Notas Médicas -->
+                    <div class="col-12 mt-2">
+                        <hr class="text-muted opacity-25 my-3">
+                        <div class="mb-2">
+                            <label for="descripcion" class="form-label fw-semibold text-secondary small text-uppercase">Descripción / Antecedentes Médicos</label>
+                            <textarea
+                                id="descripcion"
+                                v-model="formulario.descripcion"
+                                class="form-control bg-light border-0 py-2"
+                                :class="{ 'is-invalid': formulario.errors.descripcion }"
+                                rows="3"
+                                placeholder="Registra condiciones previas, alergias, comportamiento o detalles relevantes de la mascota."
+                                required
+                            ></textarea>
+                            <div v-if="formulario.errors.descripcion" class="invalid-feedback">
+                                {{ formulario.errors.descripcion }}
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div v-if="mostrarModal" class="modal-backdrop fade show"></div>
+            </ModalCrud>
         </div>
     </AuthenticatedLayout>
 </template>
@@ -441,12 +395,24 @@
 <script>
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
 import { Head, Link } from '@inertiajs/vue3';
+import IndicadorCarga from '@/Componentes/IndicadorCarga.vue';
+import EstadoVacio from '@/Componentes/EstadoVacio.vue';
+import SinResultados from '@/Componentes/SinResultados.vue';
+import Paginador from '@/Componentes/Paginador.vue';
+import ModalCrud from '@/Componentes/ModalCrud.vue';
+import BarraFiltros from '@/Componentes/BarraFiltros.vue';
 
 export default {
     components: {
         AuthenticatedLayout,
         Head,
         Link,
+        IndicadorCarga,
+        EstadoVacio,
+        SinResultados,
+        Paginador,
+        ModalCrud,
+        BarraFiltros,
     },
     props: {
         clientes: {
@@ -505,10 +471,10 @@ export default {
             return this.mascotasVisibles.length
         },
         listaVacia() {
-            return this.mascotas.length === 0
+            return !this.filtros.nombre && !this.filtros.especie_id && !this.filtros.raza_id && !this.filtros.sexo && this.filtros.esterilizado === '' && this.mascotas.length === 0
         },
         sinResultadosFiltro() {
-            return this.mascotasVisibles.length === 0 && (this.filtros.nombre || this.filtros.especie_id || this.filtros.sexo || this.filtros.esterilizado !== '')
+            return (this.filtros.nombre || this.filtros.especie_id || this.filtros.raza_id || this.filtros.sexo || this.filtros.esterilizado !== '') && this.mascotas.length === 0
         },
         mascotasEsterilizadas() {
             return this.mascotasVisibles.filter((m) => m.esterilizado).length

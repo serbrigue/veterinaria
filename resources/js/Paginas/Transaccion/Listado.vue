@@ -154,30 +154,7 @@
                     </table>
                 </div>
 
-                <!-- Paginación -->
-                <div v-if="transaccionesData && transaccionesData.last_page > 1" class="d-flex justify-content-between align-items-center p-4 border-top">
-                    <div class="text-muted small">
-                        Mostrando {{ transaccionesData.from }} a {{ transaccionesData.to }} de {{ transaccionesData.total }} transacciones
-                    </div>
-                    <nav aria-label="Navegación de páginas">
-                        <ul class="pagination pagination-sm mb-0">
-                            <li class="page-item" :class="{ disabled: !transaccionesData.prev_page_url }">
-                                <button class="page-link" @click.prevent="aplicarFiltros(transaccionesData.prev_page_url)">Anterior</button>
-                            </li>
-                            <li 
-                                v-for="link in transaccionesData.links.slice(1, -1)" 
-                                :key="link.label" 
-                                class="page-item" 
-                                :class="{ active: link.active }"
-                            >
-                                <button class="page-link" @click.prevent="aplicarFiltros(link.url)" v-html="link.label"></button>
-                            </li>
-                            <li class="page-item" :class="{ disabled: !transaccionesData.next_page_url }">
-                                <button class="page-link" @click.prevent="aplicarFiltros(transaccionesData.next_page_url)">Siguiente</button>
-                            </li>
-                        </ul>
-                    </nav>
-                </div>
+                <Paginador :data="transaccionesData" entidad="transacciones" @cambiar-pagina="aplicarFiltros" />
             </div>
 
             <!-- MODAL COMPROBANTE DE PAGO -->
@@ -244,12 +221,14 @@
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import axios from 'axios';
+import Paginador from '@/Componentes/Paginador.vue';
 
 export default {
     components: {
         AuthenticatedLayout,
         Head,
-        Link
+        Link,
+        Paginador
     },
     props: {
         transacciones_iniciales: {

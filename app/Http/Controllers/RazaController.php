@@ -96,8 +96,6 @@ class RazaController extends Controller
     public function detalle(Raza $raza)
     {
 
-        #Obtenemos las citas de la raza
-        $citas = $raza->citas();
 
         #Devolvemos la vista con la raza y la especie
         return Inertia::render('Raza/Detalle', [
