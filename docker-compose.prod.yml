@@ -26,6 +26,7 @@ services:
       redis:
         condition: service_healthy
     volumes:
+      - ./.env:/var/www/.env
       # Compartimos la carpeta public generada en la imagen con Nginx
       - public_assets:/var/www/public
     networks:
@@ -120,6 +121,8 @@ services:
       - app
       - mysql
       - redis
+    volumes:
+      - ./.env:/var/www/.env
     networks:
       - vet_network
 
