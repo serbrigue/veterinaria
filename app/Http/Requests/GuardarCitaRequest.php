@@ -19,7 +19,6 @@ class GuardarCitaRequest extends FormRequest
             'fecha_hora' => 'required|date',
             'mascota_id' => 'required|integer|exists:mascotas,id',
             'veterinario_id' => 'required|integer|exists:veterinarios,id',
-            'box_id' => 'required|integer|exists:boxes,id',
             'prestacion_id' => 'required|integer|exists:prestaciones,id',
         ];
     }
@@ -37,8 +36,6 @@ class GuardarCitaRequest extends FormRequest
             'mascota_id.exists' => 'La mascota seleccionada no existe.',
             'veterinario_id.required' => 'El veterinario es obligatorio.',
             'veterinario_id.exists' => 'El veterinario seleccionado no existe.',
-            'box_id.required' => 'El box es obligatorio.',
-            'box_id.exists' => 'El box seleccionado no existe.',
             'prestacion_id.required' => 'La prestacion es obligatoria.',
             'prestacion_id.exists' => 'La prestacion seleccionada no existe.',
         ];

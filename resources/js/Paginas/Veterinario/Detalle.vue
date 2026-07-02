@@ -134,6 +134,114 @@
                 </div>
             </div>
 
+            <!-- Bloqueos de Emergencia (Solo Admin) -->
+            <div v-if="veterinario && isAdmin" class="card border-0 shadow-sm rounded-4 mt-4">
+                <div class="card-header bg-white border-bottom-0 p-4 pb-0 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="h5 mb-1 text-danger fw-bold">Bloqueos de Emergencia / Ausencias</h3>
+                        <p class="text-muted small mb-0">Registre suspensiones temporales de horarios para este veterinario.</p>
+                    </div>
+                    <button @click="abrirModalBloqueo" class="btn btn-danger rounded-pill px-4 fw-medium shadow-sm">
+                        <i class="bi bi-shield-slash me-1"></i> Registrar Bloqueo
+                    </button>
+                </div>
+                <div class="card-body p-4">
+                    <div v-if="bloqueos.length === 0" class="text-center py-5 bg-light rounded-4">
+                        <i class="bi bi-calendar-x text-muted display-4 d-block mb-3 opacity-50"></i>
+                        <p class="text-muted mb-0">No hay bloqueos de horario registrados para este veterinario.</p>
+                    </div>
+                    <div v-else class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="px-4 py-3">Fecha Inicio</th>
+                                    <th class="px-4 py-3">Fecha Fin</th>
+                                    <th class="px-4 py-3">Horario</th>
+                                    <th class="px-4 py-3">Motivo</th>
+                                    <th class="px-4 py-3 text-end">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="bloqueo in bloqueos" :key="bloqueo.id" class="border-bottom border-light">
+                                    <td class="px-4 py-3 fw-semibold text-dark">{{ formatearFechaString(bloqueo.fecha_inicio) }}</td>
+                                    <td class="px-4 py-3 fw-semibold text-dark">{{ formatearFechaString(bloqueo.fecha_fin) }}</td>
+                                    <td class="px-4 py-3">
+                                        <span v-if="!bloqueo.hora_inicio && !bloqueo.hora_fin" class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3 py-1.5 fw-medium">
+                                            Todo el día
+                                        </span>
+                                        <span v-else class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3 py-1.5 fw-medium">
+                                            {{ bloqueo.hora_inicio.slice(0, 5) }} - {{ bloqueo.hora_fin.slice(0, 5) }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 text-muted">{{ bloqueo.motivo }}</td>
+                                    <td class="px-4 py-3 text-end">
+                                        <button @click="confirmarEliminarBloqueo(bloqueo.id)" class="btn btn-outline-danger btn-sm rounded-circle p-1 d-inline-flex align-items-center justify-content-center hover-scale transition-all" style="width: 32px; height: 32px;" title="Eliminar Bloqueo">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal para Registrar Bloqueo de Horario -->
+            <div v-if="mostrarModalBloqueo" class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 1055;">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                        <div class="modal-header border-bottom-0 bg-danger text-white p-4">
+                            <h5 class="modal-title fw-bold">Registrar Bloqueo de Horario</h5>
+                            <button type="button" class="btn-close btn-close-white" @click="mostrarModalBloqueo = false"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <form @submit.prevent="guardarBloqueo">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-bold text-muted text-uppercase">Fecha Inicio</label>
+                                        <input type="date" v-model="bloqueoForm.fecha_inicio" class="form-control rounded-pill border-light bg-light px-3" required />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-bold text-muted text-uppercase">Fecha Fin</label>
+                                        <input type="date" v-model="bloqueoForm.fecha_fin" class="form-control rounded-pill border-light bg-light px-3" required />
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label class="form-label small fw-bold text-muted text-uppercase">Tipo de Bloqueo</label>
+                                        <select v-model="bloqueoForm.tipo_bloqueo" class="form-select rounded-pill border-light bg-light px-3">
+                                            <option value="completo">Todo el día</option>
+                                            <option value="horas">Rango de horas específico</option>
+                                        </select>
+                                    </div>
+
+                                    <div v-if="bloqueoForm.tipo_bloqueo === 'horas'" class="col-md-6">
+                                        <label class="form-label small fw-bold text-muted text-uppercase">Hora Inicio</label>
+                                        <input type="time" v-model="bloqueoForm.hora_inicio" class="form-control rounded-pill border-light bg-light px-3" required />
+                                    </div>
+                                    <div v-if="bloqueoForm.tipo_bloqueo === 'horas'" class="col-md-6">
+                                        <label class="form-label small fw-bold text-muted text-uppercase">Hora Fin</label>
+                                        <input type="time" v-model="bloqueoForm.hora_fin" class="form-control rounded-pill border-light bg-light px-3" required />
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label class="form-label small fw-bold text-muted text-uppercase">Motivo del Bloqueo</label>
+                                        <textarea v-model="bloqueoForm.motivo" class="form-control rounded-4 border-light bg-light px-3 py-2" rows="3" placeholder="Ej. Retiro por urgencia familiar, Licencia médica, etc." required></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-end gap-2 mt-4">
+                                    <button type="button" class="btn btn-light rounded-pill px-4 fw-semibold" @click="mostrarModalBloqueo = false" :disabled="cargandoBloqueo">Cancelar</button>
+                                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-semibold" :disabled="cargandoBloqueo">
+                                        <span v-if="cargandoBloqueo" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                        Registrar Bloqueo
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Manejo de Error / No Encontrado -->
             <div v-else class="text-center py-5 bg-white rounded-4 shadow-sm border border-light mt-4">
                 <i class="bi bi-exclamation-circle text-danger display-1 d-block mb-4 opacity-50"></i>
@@ -162,13 +270,95 @@ export default {
             type: Object,
             default: null,
         },
+        bloqueos: {
+            type: Array,
+            default: () => [],
+        },
+    },
+    data() {
+        return {
+            mostrarModalBloqueo: false,
+            cargandoBloqueo: false,
+            bloqueoForm: {
+                fecha_inicio: '',
+                fecha_fin: '',
+                tipo_bloqueo: 'completo',
+                hora_inicio: '',
+                hora_fin: '',
+                motivo: ''
+            }
+        };
     },
     computed: {
         esVeterinarioOAdmin() {
             const user = this.$page.props.auth.user;
             return user && user.rol && (user.rol.nombre_interno === 'veterinario' || user.rol.nombre_interno === 'admin');
+        },
+        isAdmin() {
+            const user = this.$page.props.auth.user;
+            return user && user.rol && user.rol.nombre_interno === 'admin';
         }
     },
+    methods: {
+        abrirModalBloqueo() {
+            this.bloqueoForm = {
+                fecha_inicio: new Date().toISOString().split('T')[0],
+                fecha_fin: new Date().toISOString().split('T')[0],
+                tipo_bloqueo: 'completo',
+                hora_inicio: '',
+                hora_fin: '',
+                motivo: ''
+            };
+            this.mostrarModalBloqueo = true;
+        },
+        formatearFechaString(fechaStr) {
+            if (!fechaStr) return '';
+            const parts = fechaStr.split('-');
+            if (parts.length !== 3) return fechaStr;
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        },
+        guardarBloqueo() {
+            this.cargandoBloqueo = true;
+            const payload = {
+                fecha_inicio: this.bloqueoForm.fecha_inicio,
+                fecha_fin: this.bloqueoForm.fecha_fin,
+                hora_inicio: this.bloqueoForm.tipo_bloqueo === 'completo' ? null : this.bloqueoForm.hora_inicio,
+                hora_fin: this.bloqueoForm.tipo_bloqueo === 'completo' ? null : this.bloqueoForm.hora_fin,
+                motivo: this.bloqueoForm.motivo
+            };
+
+            axios.post(`/api/veterinarios/${this.veterinario.id}/bloqueos`, payload)
+                .then(() => {
+                    this.$inertia.reload({
+                        only: ['bloqueos'],
+                        onSuccess: () => {
+                            this.mostrarModalBloqueo = false;
+                        }
+                    });
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert(err.response?.data?.message || 'Error al registrar el bloqueo.');
+                })
+                .finally(() => {
+                    this.cargandoBloqueo = false;
+                });
+        },
+        confirmarEliminarBloqueo(bloqueoId) {
+            if (confirm('¿Está seguro de que desea eliminar este bloqueo de horario?')) {
+                axios.delete(`/api/bloqueos/${bloqueoId}`)
+                    .then(() => {
+                        this.$inertia.reload({
+                            only: ['bloqueos']
+                        });
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert(err.response?.data?.message || 'Error al eliminar el bloqueo.');
+                    });
+            }
+        }
+    }
 }
 </script>
 

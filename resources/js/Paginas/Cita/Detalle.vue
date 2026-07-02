@@ -10,7 +10,7 @@
                     </Link>
                     <h1 class="h3 mb-0">Detalle de la Cita</h1>
                 </div>
-                <div class="d-flex gap-2">
+                <div v-if="estadoActual === 'pendiente' " class="d-flex gap-2">
                     <button class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1" @click="confirmarEliminar" :disabled="procesando">
                         <i class="bi bi-trash"></i> Eliminar Cita
                     </button>
@@ -276,6 +276,51 @@
                             </div>
                         </div>
 
+                        <!-- UBICACIÓN / BOX -->
+                        <div class="card border-0 shadow-sm border-top border-secondary border-4">
+                            <div class="card-header bg-transparent border-0 pt-3 px-4 pb-0">
+                                <h3 class="h6 mb-0 fw-bold text-dark d-flex align-items-center gap-2">
+                                    <i class="bi bi-door-open-fill text-secondary"></i> Ubicación / Box
+                                </h3>
+                            </div>
+                            <div class="card-body p-4 pt-3">
+                                <div v-if="cita.box" class="d-flex align-items-center gap-3 mb-3">
+                                    <div class="bg-secondary bg-opacity-10 text-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                        <i class="bi bi-door-open fs-4"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="h6 mb-1 fw-bold text-dark">
+                                            {{ cita.box.nombre }}
+                                        </h4>
+                                        <p class="text-muted small mb-0">Sucursal: {{ cita.box.sucursal?.nombre || 'N/A' }}</p>
+                                    </div>
+                                </div>
+                                <div v-else class="text-muted text-center py-2 small mb-3">
+                                    No hay box asignado para esta cita.
+                                </div>
+
+                                <!-- Formulario de asignación/cambio de box SOLO para veterinarios -->
+                                <div v-if="$page.props.auth.user?.rol?.nombre_interno === 'veterinario' && estadoActual !== 'completada' && estadoActual !== 'cancelada'" class="border rounded-3 p-3 bg-white mt-2">
+                                    <h4 class="h6 fw-semibold text-dark mb-2"><i class="bi bi-pencil-square me-1 text-primary"></i> Asignar Box</h4>
+                                    <div class="d-flex flex-column gap-2">
+                                        <div>
+                                            <select v-model="boxAsignadoId" class="form-select form-select-sm" :disabled="guardandoBox">
+                                                <option value="">Seleccionar box...</option>
+                                                <option v-for="b in boxes" :key="b.id" :value="b.id">
+                                                    {{ b.nombre }}
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <button @click="guardarBox" class="btn btn-primary btn-sm w-100 mt-1 fw-semibold" :disabled="guardandoBox || boxAsignadoId === (cita.box_id || '')">
+                                            <span v-if="guardandoBox" class="spinner-border spinner-border-sm me-1"></span>
+                                            <i v-else class="bi bi-save me-1"></i> Guardar Box
+                                        </button>
+                                    </div>
+                                    <div v-if="errorBox" class="alert alert-danger alert-sm py-1 px-2 mt-2 small mb-0">{{ errorBox }}</div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- EQUIPO MEDICO DE APOYO (SOLO CIRUGIAS) -->
                         <div v-if="cita.prestacion?.categoria_prestacion?.nombre === 'Cirugia'" class="card border-0 shadow-sm border-top border-warning border-4">
                             <div class="card-header bg-transparent border-0 pt-3 px-4 pb-0">
@@ -510,6 +555,10 @@ export default {
         usuariosMedicos: {
             type: Array,
             default: () => []
+        },
+        boxes: {
+            type: Array,
+            default: () => []
         }
     },
     data() {
@@ -531,6 +580,9 @@ export default {
             guardandoEquipo: false,
             procesandoEquipo: null,
             errorEquipo:     null,
+            boxAsignadoId:   this.cita.box_id || '',
+            guardandoBox:    false,
+            errorBox:        null,
         }
     },
     computed: {
@@ -587,11 +639,18 @@ export default {
         },
     },
     watch: {
+        'cita.notes'(nuevaNota) {
+            // Support 'cita.notes' or 'cita.notas' just in case, but keep 'cita.notas'
+            this.notasConsulta = nuevaNota || '';
+        },
         'cita.notas'(nuevaNota) {
             this.notasConsulta = nuevaNota || '';
         },
         'cita.estado'(nuevoEstado) {
             this.estadoActual = nuevoEstado || 'pendiente';
+        },
+        'cita.box_id'(nuevoBoxId) {
+            this.boxAsignadoId = nuevoBoxId || '';
         },
     },
     methods: {
@@ -608,10 +667,22 @@ export default {
             });
         },
         marcarEnCurso() {
+            if (!this.cita.box_id) {
+                Swal.fire({
+                    title: 'Atención',
+                    text: 'Debe asignar y guardar un box para la cita antes de iniciarla.',
+                    icon: 'warning',
+                    confirmButtonColor: '#0d6efd'
+                });
+                return;
+            }
             // Sin confirmación: pasar a "en curso" es reversible
             this.procesando = true;
             axios.patch(`/api/citas/${this.cita.id}/estado`, { estado: 'en_curso' })
-                .then(() => { this.estadoActual = 'en_curso'; })
+                .then(() => {
+                    this.estadoActual = 'en_curso';
+                    this.$inertia.reload({ only: ['cita'] });
+                })
                 .catch(error => {
                     console.error('Error al actualizar estado:', error);
                     const mensaje = error.response?.data?.error || 'Ocurrió un error al actualizar el estado.';
@@ -649,6 +720,7 @@ export default {
                         .then(() => { 
                             this.estadoActual = 'cancelada'; 
                             this.notasConsulta = motivo;
+                            this.$inertia.reload({ only: ['cita'] });
                         })
                         .catch(error => console.error(error))
                         .finally(() => { this.procesando = false; });
@@ -656,12 +728,24 @@ export default {
             });
         },
         confirmarCompletar() {
+            if (!this.cita.box_id) {
+                Swal.fire({
+                    title: 'Atención',
+                    text: 'Debe asignar y guardar un box para la cita antes de completarla.',
+                    icon: 'warning',
+                    confirmButtonColor: '#198754'
+                });
+                return;
+            }
             this.$confirmar('¿Completar cita?', 'El registro se conservará con estado Completada.')
                 .then(resultado => {
                     if (resultado.isConfirmed) {
                         this.procesando = true;
                         axios.patch(`/api/citas/${this.cita.id}/estado`, { estado: 'completada' })
-                            .then(() => { this.estadoActual = 'completada'; })
+                            .then(() => { 
+                                this.estadoActual = 'completada'; 
+                                this.$inertia.reload({ only: ['cita'] });
+                            })
                             .catch(error => {
                                 console.error('Error al actualizar estado:', error);
                                 const mensaje = error.response?.data?.error || 'Ocurrió un error al actualizar el estado.';
@@ -800,6 +884,34 @@ export default {
                 .finally(() => {
                     this.procesandoEquipo = null;
                 });
+        },
+        guardarBox() {
+            this.guardandoBox = true;
+            this.errorBox = null;
+            axios.put(`/api/citas/${this.cita.id}`, {
+                titulo: this.cita.titulo,
+                descripcion: this.cita.descripcion,
+                fecha_hora: this.cita.fecha_hora,
+                mascota_id: this.cita.mascota_id,
+                veterinario_id: this.cita.veterinario_id,
+                prestacion_id: this.cita.prestacion_id,
+                box_id: this.boxAsignadoId || null,
+            })
+            .then(response => {
+                this.cita.box_id = response.data.box_id;
+                this.$inertia.reload({
+                    only: ['cita'],
+                    onSuccess: () => {
+                        Swal.fire('¡Éxito!', 'Box asignado correctamente.', 'success');
+                    }
+                });
+            })
+            .catch(error => {
+                this.errorBox = error.response?.data?.error || 'Error al asignar el box.';
+            })
+            .finally(() => {
+                this.guardandoBox = false;
+            });
         }
     }
 }

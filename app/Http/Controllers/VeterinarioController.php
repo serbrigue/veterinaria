@@ -9,6 +9,7 @@ use App\Models\Sucursal;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\GuardarVeterinarioRequest;
 use App\Http\Requests\ActualizarVeterinarioRequest;
+use App\Http\Requests\ActualizarHorarioVeterinarioRequest;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Cache;
@@ -56,9 +57,16 @@ class VeterinarioController extends Controller
         #Cargamos las relaciones necesarias para el detalle
         $veterinario->load(['usuario', 'sucursal', 'especialidad']);
 
+        # Obtenemos los bloqueos del veterinario ordenados por fecha de inicio descendente
+        $bloqueos = $veterinario->bloqueos()
+            ->orderBy('fecha_inicio', 'desc')
+            ->orderBy('hora_inicio', 'desc')
+            ->get();
+
         #Devolvemos la vista con los datos
         return Inertia::render('Veterinario/Detalle', [
             'veterinario' => $veterinario,
+            'bloqueos' => $bloqueos,
         ]);
     }
 
@@ -119,5 +127,23 @@ class VeterinarioController extends Controller
         }
 
         return response()->json(['mensaje' => 'Veterinario eliminado correctamente']);
+    }
+
+    public function actualizarHorario(ActualizarHorarioVeterinarioRequest $request, Veterinario $veterinario)
+    {
+        # Verificar que el usuario sea Admin o el propio veterinario
+        if (auth()->user()->rol->nombre_interno !== 'admin' && auth()->user()->id !== $veterinario->user_id) {
+            abort(403, 'No autorizado');
+        }
+
+        $veterinario->update([
+            'horario' => $request->validated()['horario']
+        ]);
+
+        # Limpiamos la caché relacionada con veterinarios
+        Cache::forget('veterinarios_full');
+        Cache::forget('veterinarios_simple');
+
+        return response()->json(['mensaje' => 'Horario actualizado correctamente.']);
     }
 }

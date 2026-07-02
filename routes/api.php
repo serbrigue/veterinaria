@@ -14,6 +14,7 @@ use App\Http\Controllers\InsumoController;
 use App\Http\Controllers\PrestacionController;
 use App\Http\Controllers\CitaCargoController;
 use App\Http\Controllers\EquipoMedicoController;
+use App\Http\Controllers\BloqueoHorarioController;
 use App\Models\Rol;
 use App\Models\User;
 
@@ -140,6 +141,9 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('can:editar,veterinario');
     Route::delete('/veterinarios/{veterinario}', [VeterinarioController::class, 'eliminar'])
         ->middleware('can:eliminar,veterinario');
+    Route::patch('/veterinarios/{veterinario}/horario', [VeterinarioController::class, 'actualizarHorario']);
+    Route::post('/veterinarios/{veterinario}/bloqueos', [BloqueoHorarioController::class, 'crear']);
+    Route::delete('/bloqueos/{bloqueo}', [BloqueoHorarioController::class, 'eliminar']);
 
     //Insumos
     Route::get('/insumos', [InsumoController::class, 'obtenerTodas'])

@@ -24,6 +24,12 @@ class Veterinario extends Model
         'user_id',
         'sucursal_id',
         'especialidad_id',
+        'horario',
+    ];
+
+    #Casts para parsear JSON
+    protected $casts = [
+        'horario' => 'array',
     ];
 
     #Append para que se muestre el nombre del usuario
@@ -36,6 +42,8 @@ class Veterinario extends Model
         return $this->usuario?->name;
     }
 
+
+
     #Accessor virtual 'foto_perfil_url'.
     #Extrae la foto de perfil del usuario asociado para facilitar el renderizado en frontend.
     public function foto_perfil_url()
@@ -44,6 +52,12 @@ class Veterinario extends Model
     }
 
     #Relaciones
+
+    #Un veterinario tiene muchos bloqueos de horario
+    public function bloqueos()
+    {
+        return $this->hasMany(BloqueoHorario::class, 'veterinario_id');
+    }
 
     #Un veterinario pertenece a un usuario
     public function usuario()
