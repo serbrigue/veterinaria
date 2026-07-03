@@ -5,10 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Mascota;
 use App\Models\Cliente;
 use App\Models\Cita;
+use App\Models\Sucursal;
+use App\Models\Prestacion;
 use App\Http\Requests\GuardarMascotaRequest;
 use App\Http\Requests\ActualizarMascotaRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 
 class MascotaController extends Controller
@@ -95,15 +98,29 @@ class MascotaController extends Controller
 
     public function detalle(Mascota $mascota)
     {
-        # Obtenemos las próximas citas (pendientes)
-        $proximasCitas = Cita::with('veterinario.usuario', 'box.sucursal')->where('mascota_id', $mascota->id)->where('fecha_hora', '>=', Carbon::now())->where('estado', '=', 'pendiente')->get();
+        # Obtenemos las próximas citas (pendientes) ordenadas de forma ascendente
+        $proximasCitas = Cita::with('veterinario.usuario', 'box.sucursal')
+            ->where('mascota_id', $mascota->id)
+            ->where('estado', '=', 'pendiente')
+            ->orderBy('fecha_hora', 'asc')
+            ->paginate(2);
         # Obtenemos el historial clínico (citas pasadas)
-        $historialClinico = Cita::with('veterinario.usuario', 'box.sucursal')->where('mascota_id', $mascota->id)->where('estado', '=', 'completada')->orderBy('fecha_hora', 'desc')->paginate(5);
+        $historialClinico = Cita::with('veterinario.usuario', 'box.sucursal')->where('mascota_id', $mascota->id)->where('estado', '=', 'completada')->orderBy('fecha_hora', 'desc')->paginate(2);
 
 
 
         # Obtenemos la mascota
         $mascota = Mascota::with('cliente.usuario', 'raza.especie')->find($mascota->id);
+
+        # Traemos las sucursales con eager loading
+        $sucursales = Cache::remember('sucursales_full', now()->addMinutes(30), function () {
+            return Sucursal::with(['veterinarios.usuario', 'boxes'])->orderBy('nombre')->get();
+        });
+
+        # Traemos las prestaciones con eager loading
+        $prestaciones = Cache::remember('prestaciones_full', now()->addMinutes(30), function () {
+            return Prestacion::with(['sucursal', 'especialidad'])->orderBy('nombre')->get();
+        });
 
         # Devolvemos la vista
         return Inertia::render('Mascota/Detalle', [
@@ -113,6 +130,8 @@ class MascotaController extends Controller
             'cliente' => $mascota->cliente->usuario,
             'especie' => $mascota->raza->especie,
             'raza' => $mascota->raza,
+            'sucursales' => $sucursales,
+            'prestaciones' => $prestaciones,
         ]);
     }
 }
