@@ -259,16 +259,18 @@
             <!-- ========================================== -->
             <!-- MODAL: Crear / Editar Cita                 -->
             <!-- ========================================== -->
-            <div v-if="mostrarModal" class="modal fade show d-block" tabindex="-1">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">{{ modoEdicion ? 'Editar Cita' : 'Nueva Cita' }}</h5>
-                            <button type="button" class="btn-close" @click="cerrarModal"></button>
-                        </div>
-                        <div>
-                            <div class="modal-body">
-                                <div class="row g-0">
+            <ModalCrud
+                :visible="mostrarModal"
+                :titulo="modoEdicion ? 'Editar Cita' : 'Nueva Cita'"
+                :modo-edicion="modoEdicion"
+                :processing="formulario.processing"
+                tamanio="lg"
+                texto-crear="Crear cita"
+                texto-guardar="Guardar cambios"
+                @cerrar="cerrarModal"
+                @guardar="guardar"
+            >
+                <div class="row g-0">
 
                                     <!-- Columna izquierda: datos de la cita -->
                                     <div class="col-md-5 p-3 border-end">
@@ -435,7 +437,7 @@
                                                                         {{ vet.usuario.name }}
                                                                     </span>
                                                                     <span class="badge rounded-pill bg-light text-secondary border border-light small px-2 py-1">
-                                                                        {{ obtenerCantSlotsDisponibles(vet.id) }} slots
+                                                                        {{ obtenerCantSlotsDisponibles(vet.id) }} horarios disponibles
                                                                         <i class="bi ms-1" :class="vetAcordeonAbiertoId === vet.id ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
                                                                     </span>
                                                                 </button>
@@ -524,22 +526,8 @@
                                     </div>
 
                                 </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" @click="cerrarModal">
-                                    Cancelar
-                                </button>
-                                <button type="button" class="btn btn-primary" :disabled="formulario.processing" @click="guardar">
-                                    <span v-if="formulario.processing" class="spinner-border spinner-border-sm me-2"></span>
-                                    {{ modoEdicion ? 'Guardar cambios' : 'Crear cita' }}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            </ModalCrud>
             </div>
-            <div v-if="mostrarModal" class="modal-backdrop fade show"></div>
 
             <!-- ========================================== -->
             <!-- MODAL: Confirmar Eliminación                -->
@@ -581,6 +569,7 @@ import BarraFiltros from '@/Componentes/BarraFiltros.vue';
 import IndicadorCarga from '@/Componentes/IndicadorCarga.vue';
 import EstadoVacio from '@/Componentes/EstadoVacio.vue';
 import SinResultados from '@/Componentes/SinResultados.vue';
+import ModalCrud from '@/Componentes/ModalCrud.vue';
 
 export default {
     components: {
@@ -592,6 +581,7 @@ export default {
         IndicadorCarga,
         EstadoVacio,
         SinResultados,
+        ModalCrud,
     },
     props: {
         mascotas: {

@@ -33,8 +33,8 @@ class SucursalController extends Controller
     public function obtenerTodas()
     {
 
-        #Obtenemos todas las sucursales ordenadas por nombre
-        $sucursales = Sucursal::orderBy('nombre')->get();
+        #Obtenemos todas las sucursales ordenadas por nombre con veterinarios y boxes
+        $sucursales = Sucursal::with(['veterinarios.usuario', 'boxes'])->orderBy('nombre')->get();
 
         #Si la petición es JSON
         if (request()->wantsJson()) {

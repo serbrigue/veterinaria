@@ -88,18 +88,18 @@
                             <h3 class="h6 mb-0 fw-bold text-dark d-flex align-items-center gap-2">
                                 <i class="bi bi-calendar-event text-primary"></i> Citas Próximas
                             </h3>
-                            <button class="btn btn-sm btn-primary d-flex align-items-center gap-1">
+                            <button @click="abrirModalCita" class="btn btn-sm btn-primary d-flex align-items-center gap-1">
                                 <i class="bi bi-plus-lg"></i> Nueva Cita
                             </button>
                         </div>
                         <div class="card-body p-3">
-                            <div v-if="!proximasCitas || proximasCitas.length === 0" class="py-4 text-center text-muted">
+                            <div v-if="!proximasCitas || !proximasCitas.data || proximasCitas.data.length === 0" class="py-4 text-center text-muted">
                                 <i class="bi bi-calendar-x fs-1 mb-3 d-block" style="color: #dee2e6;"></i>
                                 <p class="mb-0">No hay citas programadas próximamente.</p>
                             </div>
                             <div v-else class="d-flex flex-column gap-3">
                                 <div
-                                    v-for="cita in proximasCitas"
+                                    v-for="cita in proximasCitas.data"
                                     :key="cita.id"
                                     class="border rounded-3 p-3 bg-white shadow-sm cita-card"
                                 >
@@ -143,6 +143,7 @@
                                         </div>
                                     </Link>
                                 </div>
+                                <Paginador :data="proximasCitas" entidad="citas" @cambiar-pagina="cambiarPagina" />
                             </div>
                         </div>
                     </div>
@@ -203,32 +204,9 @@
                                     </Link>
                                 </div>
                                 
-                                <!-- Controles de Paginación -->
-                                <div v-if="historialClinico.last_page > 1" class="d-flex justify-content-between align-items-center mt-3 border-top pt-3">
-                                    <div class="text-muted small">
-                                        Mostrando {{ historialClinico.from }} a {{ historialClinico.to }} de {{ historialClinico.total }} citas
-                                    </div>
-                                    <nav aria-label="Navegación de páginas">
-                                        <ul class="pagination pagination-sm mb-0">
-                                            <li class="page-item" :class="{ disabled: !historialClinico.prev_page_url }">
-                                                <Link class="page-link" :href="historialClinico.prev_page_url || '#'">Anterior</Link>
-                                            </li>
-                                            <li 
-                                                v-for="link in historialClinico.links.slice(1, -1)" 
-                                                :key="link.label" 
-                                                class="page-item" 
-                                                :class="{ active: link.active }"
-                                            >
-                                                <Link class="page-link" :href="link.url || '#'" v-html="link.label"></Link>
-                                            </li>
-                                            <li class="page-item" :class="{ disabled: !historialClinico.next_page_url }">
-                                                <Link class="page-link" :href="historialClinico.next_page_url || '#'">Siguiente</Link>
-                                            </li>
-                                        </ul>
-                                    </nav>
-                                </div>
+                                <Paginador :data="historialClinico" entidad="historial clínico" @cambiar-pagina="cambiarPagina" />
                             </div>
-                      </div>
+                         </div>
 
                         </div>
                     </div>
@@ -465,6 +443,275 @@
                     </div>
                 </div>
             </ModalCrud>
+
+            <!-- ========================================== -->
+            <!-- MODAL: Nueva Cita                          -->
+            <!-- ========================================== -->
+            <ModalCrud
+                :visible="mostrarModalCita"
+                titulo="Nueva Cita"
+                :processing="formularioCita.processing"
+                tamanio="lg"
+                texto-crear="Crear cita"
+                @cerrar="cerrarModalCita"
+                @guardar="crearCita"
+            >
+                <div class="row g-0">
+
+                                    <!-- Columna izquierda: datos de la cita -->
+                                    <div class="col-md-5 p-3 border-end">
+                                        <div class="row g-3">
+                                            <div v-if="errorGeneral" class="col-12">
+                                                <div class="alert alert-danger d-flex align-items-center mb-0 border-0 shadow-sm" role="alert">
+                                                    <i class="bi bi-exclamation-triangle-fill flex-shrink-0 me-2"></i>
+                                                    <div>{{ errorGeneral }}</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-12">
+                                                <label for="titulo" class="form-label fw-semibold text-secondary small text-uppercase">Título</label>
+                                                <input id="titulo" v-model="formularioCita.titulo" type="text" class="form-control bg-light border-0 py-2" :class="{ 'is-invalid': formularioCita.errors.titulo }" required placeholder="Ej: Control general" />
+                                                <div v-if="formularioCita.errors.titulo" class="invalid-feedback">{{ formularioCita.errors.titulo }}</div>
+                                            </div>
+                                            <div class="col-12">
+                                                <label for="descripcion" class="form-label fw-semibold text-secondary small text-uppercase">Descripción</label>
+                                                <textarea id="descripcion" v-model="formularioCita.descripcion" class="form-control bg-light border-0 py-2" :class="{ 'is-invalid': formularioCita.errors.descripcion }" rows="2" required placeholder="Motivo de la cita..."></textarea>
+                                                <div v-if="formularioCita.errors.descripcion" class="invalid-feedback">{{ formularioCita.errors.descripcion }}</div>
+                                            </div>
+                                            <div class="col-12">
+                                                <label for="mascota_id" class="form-label fw-semibold text-secondary small text-uppercase">Mascota</label>
+                                                <select id="mascota_id" v-model="formularioCita.mascota_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formularioCita.errors.mascota_id }" required disabled>
+                                                    <option :value="mascota.id">
+                                                        {{ mascota.nombre }} {{ mascota.sexo ? `(${mascota.sexo})` : '' }}
+                                                    </option>
+                                                </select>
+                                                <div v-if="formularioCita.errors.mascota_id" class="invalid-feedback">{{ formularioCita.errors.mascota_id }}</div>
+                                            </div>
+                                            <div class="col-12">
+                                                <label for="prestacion_id" class="form-label fw-semibold text-secondary small text-uppercase">Prestación o Servicio</label>
+                                                <select id="prestacion_id" v-model="formularioCita.prestacion_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formularioCita.errors.prestacion_id }" required>
+                                                    <option value="" disabled>Selecciona una prestación</option>
+                                                    <option v-for="prestacion in prestaciones" :key="prestacion.id" :value="prestacion.id">
+                                                        {{ prestacion.nombre }} ({{ prestacion.sucursal?.nombre }})
+                                                    </option>
+                                                </select>
+                                                <div v-if="formularioCita.errors.prestacion_id" class="invalid-feedback">{{ formularioCita.errors.prestacion_id }}</div>
+                                            </div>
+
+                                            <div v-if="formularioCita.prestacion_id" class="col-12">
+                                                <label class="form-label fw-semibold text-secondary small text-uppercase">Sucursal</label>
+                                                <select id="sucursal_id" v-model="formularioCita.sucursal_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formularioCita.errors.sucursal_id }" required disabled>
+                                                    <option value="" disabled>Selecciona una sucursal</option>
+                                                    <option v-for="sucursal in sucursalesFiltradas" :key="sucursal.id" :value="sucursal.id">
+                                                        {{ sucursal.nombre }}
+                                                    </option>
+                                                </select>
+                                                <div v-if="formularioCita.errors.sucursal_id" class="invalid-feedback">{{ formularioCita.errors.sucursal_id }}</div>
+                                            </div>
+
+                                            <template v-if="formularioCita.sucursal_id">
+                                                <div class="col-12">
+                                                    <label class="form-label fw-semibold text-secondary small text-uppercase">Veterinario (Aptos)</label>
+                                                    <select id="veterinario_id" v-model="formularioCita.veterinario_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formularioCita.errors.veterinario_id }">
+                                                        <option value="">Cualquier veterinario (opcional)</option>
+                                                        <option v-for="vet in veterinariosFiltrados" :key="vet.id" :value="vet.id">
+                                                            {{ vet.usuario?.name }}
+                                                        </option>
+                                                    </select>
+                                                    <div v-if="formularioCita.errors.veterinario_id" class="invalid-feedback">{{ formularioCita.errors.veterinario_id }}</div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+
+                                    <!-- Columna derecha: fecha y horarios -->
+                                    <div class="col-md-7 p-3 bg-light bg-opacity-50">
+                                        <template v-if="formularioCita.sucursal_id">
+                                            <div class="mb-3">
+                                                <label for="fecha_seleccionada" class="form-label fw-semibold text-secondary small text-uppercase">Fecha</label>
+                                                <input
+                                                    id="fecha_seleccionada"
+                                                    type="date"
+                                                    v-model="formularioCita.fecha_seleccionada"
+                                                    class="form-control bg-white border-0 py-2 shadow-sm"
+                                                    :class="{ 'is-invalid': formularioCita.errors.fecha_hora }"
+                                                    :min="hoy"
+                                                    @change="cargarHorarios"
+                                                />
+                                                <div v-if="formularioCita.errors.fecha_hora" class="invalid-feedback">{{ formularioCita.errors.fecha_hora }}</div>
+                                            </div>
+
+                                            <div v-if="cargandoHorarios" class="text-center py-4">
+                                                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                                <span class="ms-2 text-muted small">Consultando disponibilidad...</span>
+                                            </div>
+
+                                            <template v-else-if="formularioCita.fecha_seleccionada">
+
+                                                <!-- CASO 1: Veterinario seleccionado -->
+                                                <template v-if="formularioCita.veterinario_id">
+                                                    <!-- Horarios normales -->
+                                                    <div class="mb-3">
+                                                        <label class="form-label fw-semibold text-secondary small text-uppercase">Horarios disponibles</label>
+                                                        <div class="d-flex flex-wrap gap-2">
+                                                            <template v-for="slot in horariosNormales" :key="slot.hora">
+                                                                <button
+                                                                    v-if="slot.disponible"
+                                                                    type="button"
+                                                                    :class="[
+                                                                        'btn btn-sm rounded-pill px-3',
+                                                                        formularioCita.fecha_hora === slot.fecha_hora
+                                                                            ? 'btn-primary'
+                                                                            : 'btn-outline-primary'
+                                                                    ]"
+                                                                    @click="seleccionarHorario(slot)"
+                                                                >
+                                                                    {{ slot.hora }}
+                                                                </button>
+                                                            </template>
+                                                            <div v-if="horariosNormales.filter(s => s.disponible).length === 0" class="text-muted small">
+                                                                No hay horarios normales disponibles.
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Horarios de urgencia -->
+                                                    <div>
+                                                        <label class="form-label fw-semibold text-warning small text-uppercase">
+                                                            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                                            Urgencia (fuera de horario)
+                                                        </label>
+                                                        <div class="d-flex flex-wrap gap-2">
+                                                            <template v-for="slot in horariosUrgencia" :key="slot.hora">
+                                                                <button
+                                                                    v-if="slot.disponible"
+                                                                    type="button"
+                                                                    :class="[
+                                                                        'btn btn-sm rounded-pill px-3',
+                                                                        formularioCita.fecha_hora === slot.fecha_hora
+                                                                            ? 'btn-warning text-dark'
+                                                                            : 'btn-outline-warning'
+                                                                    ]"
+                                                                    @click="seleccionarHorario(slot)"
+                                                                >
+                                                                    {{ slot.hora }}
+                                                                </button>
+                                                            </template>
+                                                            <div v-if="horariosUrgencia.filter(s => s.disponible).length === 0" class="text-muted small">
+                                                                No hay horarios de urgencia disponibles.
+                                                            </div>
+                                                        </div>
+                                                        <small class="text-muted mt-2 d-block">Las atenciones fuera de horario tienen un costo adicional.</small>
+                                                    </div>
+                                                </template>
+
+                                                <!-- CASO 2: Veterinario no seleccionado (Cualquier veterinario) -> Acordeón -->
+                                                <template v-else>
+                                                    <div class="mb-2 text-secondary small fw-semibold text-uppercase">Selecciona un veterinario y horario</div>
+
+                                                    <div class="accordion border border-light rounded-3 overflow-hidden shadow-sm" id="vetSchedulesAccordion">
+                                                        <div v-for="vet in veterinariosFiltrados" :key="vet.id" class="accordion-item border-0 border-bottom border-light">
+                                                            <h4 class="accordion-header mb-0">
+                                                                <button 
+                                                                    class="accordion-button d-flex align-items-center justify-content-between w-100 py-3 px-4 text-start border-0 fw-semibold"
+                                                                    :class="vetAcordeonAbiertoId === vet.id ? 'bg-primary bg-opacity-10 text-primary' : 'bg-white text-dark'"
+                                                                    type="button" 
+                                                                    @click="toggleAcordeon(vet.id)"
+                                                                >
+                                                                    <span class="d-flex align-items-center gap-2">
+                                                                        <i class="bi bi-person-badge-fill" :class="vetAcordeonAbiertoId === vet.id ? 'text-primary' : 'text-secondary'"></i>
+                                                                        {{ vet.usuario?.name }}
+                                                                    </span>
+                                                                    <span class="badge rounded-pill bg-light text-secondary border border-light small px-2 py-1">
+                                                                        {{ obtenerCantSlotsDisponibles(vet.id) }} horarios disponibles
+                                                                        <i class="bi ms-1" :class="vetAcordeonAbiertoId === vet.id ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                                                                    </span>
+                                                                </button>
+                                                            </h4>
+                                                            <div 
+                                                                v-if="vetAcordeonAbiertoId === vet.id" 
+                                                                class="accordion-body p-4 bg-light bg-opacity-25"
+                                                            >
+                                                                <!-- Horarios del veterinario -->
+                                                                <div v-if="horariosPorVeterinario[vet.id]">
+                                                                    <!-- Horarios normales -->
+                                                                    <div class="mb-3">
+                                                                        <label class="form-label fw-semibold text-secondary small text-uppercase">Horarios disponibles</label>
+                                                                        <div class="d-flex flex-wrap gap-2">
+                                                                            <template v-for="slot in horariosPorVeterinario[vet.id].normal" :key="slot.hora">
+                                                                                <button
+                                                                                    v-if="slot.disponible"
+                                                                                    type="button"
+                                                                                    :class="[
+                                                                                        'btn btn-sm rounded-pill px-3',
+                                                                                        formularioCita.fecha_hora === slot.fecha_hora
+                                                                                            ? 'btn-primary'
+                                                                                            : 'btn-outline-primary'
+                                                                                    ]"
+                                                                                    @click="seleccionarHorarioAcordeon(slot, vet.id)"
+                                                                                >
+                                                                                    {{ slot.hora }}
+                                                                                </button>
+                                                                            </template>
+                                                                            <div v-if="horariosPorVeterinario[vet.id].normal.filter(s => s.disponible).length === 0" class="text-muted small">
+                                                                                No hay horarios normales disponibles.
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <!-- Horarios de urgencia -->
+                                                                    <div>
+                                                                        <label class="form-label fw-semibold text-warning small text-uppercase">
+                                                                            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                                                            Urgencia (fuera de horario)
+                                                                        </label>
+                                                                        <div class="d-flex flex-wrap gap-2">
+                                                                            <template v-for="slot in horariosPorVeterinario[vet.id].urgencia" :key="slot.hora">
+                                                                                <button
+                                                                                    v-if="slot.disponible"
+                                                                                    type="button"
+                                                                                    :class="[
+                                                                                        'btn btn-sm rounded-pill px-3',
+                                                                                        formularioCita.fecha_hora === slot.fecha_hora
+                                                                                            ? 'btn-warning text-dark'
+                                                                                            : 'btn-outline-warning'
+                                                                                    ]"
+                                                                                    @click="seleccionarHorarioAcordeon(slot, vet.id)"
+                                                                                >
+                                                                                    {{ slot.hora }}
+                                                                                </button>
+                                                                            </template>
+                                                                            <div v-if="horariosPorVeterinario[vet.id].urgencia.filter(s => s.disponible).length === 0" class="text-muted small">
+                                                                                No hay horarios de urgencia disponibles.
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div v-else class="text-center py-3">
+                                                                    <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </template>
+
+                                            </template>
+
+                                            <!-- Placeholder cuando aún no se elige fecha -->
+                                            <div v-else class="text-center text-muted py-5">
+                                                <i class="bi bi-calendar2-week fs-1 d-block mb-2" style="color: #dee2e6;"></i>
+                                                <small>Selecciona una fecha para ver los horarios disponibles</small>
+                                            </div>
+                                        </template>
+
+                                        <!-- Placeholder cuando aún no se elige sucursal -->
+                                        <div v-else class="text-center text-muted py-5">
+                                            <i class="bi bi-clock-history fs-1 d-block mb-2" style="color: #dee2e6;"></i>
+                                            <small>Selecciona una prestación para ver la disponibilidad</small>
+                                        </div>
+                                    </div>
+
+                                </div>
+            </ModalCrud>
         </div>
     </AuthenticatedLayout>
 </template>
@@ -473,6 +720,7 @@
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import ModalCrud from '@/Componentes/ModalCrud.vue';
+import Paginador from '@/Componentes/Paginador.vue';
 
 export default {
     name: 'MascotaDetalle',
@@ -480,11 +728,12 @@ export default {
         AuthenticatedLayout,
         Head,
         Link,
-        ModalCrud
+        ModalCrud,
+        Paginador
     },
     props: {
         proximasCitas: {
-            type: Array,
+            type: Object,
             required: true
         },
         historialClinico: {
@@ -507,14 +756,96 @@ export default {
         raza:{
             type: Object,
             required: true
+        },
+        sucursales: {
+            type: Array,
+            default: () => [],
+        },
+        prestaciones: {
+            type: Array,
+            default: () => [],
         }
     },
     computed: {
         tituloModal() {
             return this.modoEdicion ? 'Editar Mascota' : 'Nueva Mascota'
-        }
+        },
+        hoy() {
+            return new Date().toISOString().split('T')[0];
+        },
+        sucursalesFiltradas() {
+            if (!this.formularioCita.prestacion_id) return [];
+            const prestacion = this.prestaciones.find(p => p.id === this.formularioCita.prestacion_id);
+            if (!prestacion) return [];
+            return this.sucursales.filter(s => s.id === prestacion.sucursal_id);
+        },
+        veterinariosFiltrados() {
+            if (!this.formularioCita.sucursal_id || !this.formularioCita.prestacion_id) return [];
+            const sucursal = this.sucursales.find(s => s.id === this.formularioCita.sucursal_id);
+            if (!sucursal) return [];
+            const prestacion = this.prestaciones.find(p => p.id === this.formularioCita.prestacion_id);
+            
+            return sucursal.veterinarios.filter(vet => {
+                if (!prestacion.especialidad_id) return true;
+                return vet.especialidad_id === prestacion.especialidad_id;
+            });
+        },
+    },
+    watch: {
+        'formularioCita.prestacion_id'(newVal, oldVal) {
+            if (newVal) {
+                const prestacion = this.prestaciones.find(p => p.id === newVal);
+                if (prestacion && this.formularioCita.sucursal_id !== prestacion.sucursal_id) {
+                    this.formularioCita.sucursal_id = prestacion.sucursal_id;
+                }
+                if (oldVal && newVal !== oldVal) {
+                    this.formularioCita.box_id = '';
+                    this.formularioCita.veterinario_id = '';
+                    this.formularioCita.fecha_seleccionada = '';
+                    this.formularioCita.fecha_hora = '';
+                }
+            } else {
+                this.formularioCita.sucursal_id = '';
+                this.formularioCita.box_id = '';
+                this.formularioCita.veterinario_id = '';
+            }
+        },
+        'formularioCita.sucursal_id'(newVal, oldVal) {
+            if (oldVal && newVal !== oldVal) {
+                this.formularioCita.veterinario_id = '';
+                this.formularioCita.box_id = '';
+            }
+        },
+        'formularioCita.veterinario_id'(newVal, oldVal) { 
+            if (oldVal && newVal !== oldVal && !this.evitarResetHorario) {
+                this.formularioCita.fecha_seleccionada = '';
+                this.formularioCita.fecha_hora = '';
+            }
+            this.cargarHorarios(); 
+        },
     },
     methods: {
+        abrirModalCita() {
+            this.formularioCita.titulo = '';
+            this.formularioCita.descripcion = '';
+            this.formularioCita.fecha_hora = '';
+            this.formularioCita.fecha_seleccionada = '';
+            this.formularioCita.tipo = 'normal';
+            this.formularioCita.prestacion_id = '';
+            this.formularioCita.sucursal_id = '';
+            this.formularioCita.veterinario_id = '';
+            this.formularioCita.box_id = '';
+            this.formularioCita.mascota_id = this.mascota.id;
+            this.formularioCita.errors = {};
+            this.horariosNormales = [];
+            this.horariosUrgencia = [];
+            this.horariosPorVeterinario = {};
+            this.vetAcordeonAbiertoId = null;
+            this.evitarResetHorario = false;
+            this.errorGeneral = null;
+
+            this.mostrarModalCita = true;
+        },
         abrirEditar() {
             this.modoEdicion = true;
             this.mascotaEditando = this.mascota;
@@ -636,7 +967,129 @@ export default {
                 month: 'long',
                 day: 'numeric'
             });
-        }
+        },
+        cerrarModalCita() {
+            this.mostrarModalCita = false;
+            this.formularioCita.errors = {};
+            this.errorGeneral = null;
+        },
+        crearCita() {
+            this.formularioCita.processing = true;
+            this.formularioCita.errors = {};
+            this.errorGeneral = null;
+
+            const datos = {
+                titulo: this.formularioCita.titulo,
+                descripcion: this.formularioCita.descripcion,
+                fecha_hora: this.formularioCita.fecha_hora,
+                tipo: this.formularioCita.tipo,
+                mascota_id: this.formularioCita.mascota_id,
+                prestacion_id: this.formularioCita.prestacion_id,
+                veterinario_id: this.formularioCita.veterinario_id || null,
+            };
+
+            axios.post('/api/citas', datos)
+                .then(() => {
+                    this.cerrarModalCita();
+                    this.$alertaExito('Cita Agendada', 'La cita se ha registrado con éxito.');
+                    this.$inertia.reload();
+                })
+                .catch((error) => {
+                    if (error.response?.status === 422) {
+                        this.formularioCita.errors = error.response.data.errors;
+                        this.$alertaValidacion(error.response.data.errors);
+                    } else if (error.response?.status === 409) {
+                        this.errorGeneral = error.response.data.error || error.response.data.message;
+                        this.$alertaError('Conflicto', this.errorGeneral);
+                    } else {
+                        this.$alertaError('Error', 'No se pudo crear la cita.');
+                    }
+                })
+                .finally(() => {
+                    this.formularioCita.processing = false;
+                });
+        },
+        cambiarPagina(url) {
+            if (!url) return;
+            this.$inertia.visit(url, {
+                preserveState: true,
+                preserveScroll: true
+            });
+        },
+        cargarHorarios() {
+            if (!this.formularioCita.fecha_seleccionada) return;
+
+            this.cargandoHorarios = true;
+            if (!this.evitarResetHorario) {
+                this.formularioCita.fecha_hora = '';
+                this.formularioCita.tipo = 'normal';
+            }
+
+            if (this.formularioCita.veterinario_id) {
+                axios.get('/api/citas/horarios-disponibles', {
+                    params: {
+                        fecha:           this.formularioCita.fecha_seleccionada,
+                        veterinario_id:  this.formularioCita.veterinario_id,
+                    }
+                }).then(r => {
+                    this.horariosNormales  = r.data.normal;
+                    this.horariosUrgencia  = r.data.urgencia;
+                }).catch(error => {
+                    console.error('Error al cargar horarios:', error);
+                }).finally(() => {
+                    this.cargandoHorarios = false;
+                });
+            } else {
+                this.horariosPorVeterinario = {};
+                
+                const promesas = this.veterinariosFiltrados.map(vet => {
+                    return axios.get('/api/citas/horarios-disponibles', {
+                        params: {
+                            fecha:           this.formularioCita.fecha_seleccionada,
+                            veterinario_id:  vet.id,
+                        }
+                    }).then(r => {
+                        this.horariosPorVeterinario[vet.id] = {
+                            veterinario: vet,
+                            normal: r.data.normal,
+                            urgencia: r.data.urgencia
+                        };
+                    }).catch(error => {
+                        console.error(`Error al cargar horarios para veterinario ${vet.id}:`, error);
+                    });
+                });
+
+                Promise.all(promesas).finally(() => {
+                    this.cargandoHorarios = false;
+                    if (this.veterinariosFiltrados.length > 0 && !this.vetAcordeonAbiertoId) {
+                        this.vetAcordeonAbiertoId = this.veterinariosFiltrados[0].id;
+                    }
+                });
+            }
+        },
+        toggleAcordeon(vetId) {
+            this.vetAcordeonAbiertoId = this.vetAcordeonAbiertoId === vetId ? null : vetId;
+        },
+        obtenerCantSlotsDisponibles(vetId) {
+            const data = this.horariosPorVeterinario[vetId];
+            if (!data) return 0;
+            const normales = data.normal?.filter(s => s.disponible).length || 0;
+            const urgencias = data.urgencia?.filter(s => s.disponible).length || 0;
+            return normales + urgencias;
+        },
+        seleccionarHorarioAcordeon(slot, vetId) {
+            this.evitarResetHorario = true;
+            this.formularioCita.veterinario_id = vetId;
+            this.formularioCita.fecha_hora = slot.fecha_hora;
+            this.formularioCita.tipo       = slot.tipo;
+            setTimeout(() => {
+                this.evitarResetHorario = false;
+            }, 100);
+        },
+        seleccionarHorario(slot) {
+            this.formularioCita.fecha_hora = slot.fecha_hora;
+            this.formularioCita.tipo       = slot.tipo;
+        },
     },
     data() {
         return {
@@ -664,7 +1117,30 @@ export default {
                 esterilizado: false,
                 errors: {},
                 processing: false,
-            }
+            },
+            // Cita variables
+            mostrarModalCita: false,
+            cargandoHorarios: false,
+            errorGeneral: null,
+            horariosNormales: [],
+            horariosUrgencia: [],
+            horariosPorVeterinario: {},
+            vetAcordeonAbiertoId: null,
+            evitarResetHorario: false,
+            formularioCita: {
+                titulo: '',
+                descripcion: '',
+                fecha_hora: '',
+                fecha_seleccionada: '',
+                tipo: 'normal',
+                prestacion_id: '',
+                sucursal_id: '',
+                veterinario_id: '',
+                box_id: '',
+                mascota_id: '',
+                errors: {},
+                processing: false,
+            },
         };
     }
 }

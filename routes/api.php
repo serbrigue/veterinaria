@@ -142,8 +142,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/veterinarios/{veterinario}', [VeterinarioController::class, 'eliminar'])
         ->middleware('can:eliminar,veterinario');
     Route::patch('/veterinarios/{veterinario}/horario', [VeterinarioController::class, 'actualizarHorario']);
-    Route::post('/veterinarios/{veterinario}/bloqueos', [BloqueoHorarioController::class, 'crear']);
-    Route::delete('/bloqueos/{bloqueo}', [BloqueoHorarioController::class, 'eliminar']);
+    Route::post('/veterinarios/{veterinario}/bloqueos', [BloqueoHorarioController::class, 'crear'])
+        ->middleware('can:crear,App\Models\BloqueoHorario');
+    Route::delete('/bloqueos/{bloqueo}', [BloqueoHorarioController::class, 'eliminar'])
+        ->middleware('can:eliminar,bloqueo');
 
     //Insumos
     Route::get('/insumos', [InsumoController::class, 'obtenerTodas'])

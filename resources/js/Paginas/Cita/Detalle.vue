@@ -300,7 +300,7 @@
                                 </div>
 
                                 <!-- Formulario de asignación/cambio de box SOLO para veterinarios -->
-                                <div v-if="$page.props.auth.user?.rol?.nombre_interno === 'veterinario' && estadoActual !== 'completada' && estadoActual !== 'cancelada'" class="border rounded-3 p-3 bg-white mt-2">
+                                <div v-if="$page.props.auth.user?.rol?.nombre_interno === 'veterinario' && estadoActual !== 'completada' && estadoActual !== 'cancelada' && $page.props.auth.user?.id === cita.veterinario?.user_id" class="border rounded-3 p-3 bg-white mt-2">
                                     <h4 class="h6 fw-semibold text-dark mb-2"><i class="bi bi-pencil-square me-1 text-primary"></i> Asignar Box</h4>
                                     <div class="d-flex flex-column gap-2">
                                         <div>

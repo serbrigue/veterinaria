@@ -330,7 +330,10 @@ class CitaController extends Controller
         ]);
     }
 
+
+    # Genera los slots horarios para un tipo de slot específico (normal o urgencia) 
     private function generarSlotsHorarios(
+
         string $fecha,
         int $horaInicio,
         int $minutoInicio,
@@ -502,51 +505,63 @@ class CitaController extends Controller
 
         $cita->load('prestacion.categoriaPrestacion');
 
-        # Verificamos si tiene box asignado para cambiar a en_curso o completada
-        if (in_array($nuevoEstado, ['en_curso', 'completada']) && !$cita->box_id) {
-            return response()->json([
-                'error' => 'Debe asignar un box a la cita antes de iniciarla o completarla.'
-            ], 422);
+        if ($errorBox = $this->validarBoxAsignado($cita, $nuevoEstado)) {
+            return response()->json(['error' => $errorBox], 422);
         }
 
-        # Verificamos si la cita es una cirugía
+        # Validamos si la cita es una cirugía y tiene el personal necesario
+        if ($errorCirugia = $this->validarPersonalCirugia($cita, $nuevoEstado)) {
+            return response()->json(['error' => $errorCirugia], 422);
+        }
+
+        # Procesamos la creación o anulación de la transacción
+        $this->procesarTransaccionCita($cita, $nuevoEstado);
+
+        # Actualizamos la cita
+        $cita->update(['estado' => $nuevoEstado]);
+
+        # Retornamos la cita
+        return response()->json($cita->load('transaccion'));
+    }
+
+    private function validarBoxAsignado(Cita $cita, string $nuevoEstado): ?string
+    {
+        if (in_array($nuevoEstado, ['en_curso', 'completada']) && !$cita->box_id) {
+            return 'Debe asignar un box a la cita antes de iniciarla o completarla.';
+        }
+        return null;
+    }
+
+    private function validarPersonalCirugia(Cita $cita, string $nuevoEstado): ?string
+    {
         if ($cita->prestacion?->categoriaPrestacion?->nombre === 'Cirugia') {
-
-            # Verificamos si la cita es en curso o completada
             if (in_array($nuevoEstado, ['en_curso', 'completada'])) {
-
-                # Verificamos si la cita tiene un arsenalero
                 $tieneArsenalero = $cita->equipoMedico()
                     ->whereHas('rol', function ($q) {
                         $q->where('nombre_interno', 'arsenalero');
                     })
                     ->exists();
 
-                # Si la cita no tiene un arsenalero, retornamos un error
                 if (!$tieneArsenalero) {
-                    return response()->json([
-                        'error' => 'Para iniciar o completar una cirugía, debe asignar al menos un arsenalero en el equipo médico.'
-                    ], 422);
+                    return 'Para iniciar o completar una cirugía, debe asignar al menos un arsenalero en el equipo médico.';
                 }
             }
         }
+        return null;
+    }
 
-        # Si el estado es completada y no tiene transacción, generamos una
+    private function procesarTransaccionCita(Cita $cita, string $nuevoEstado): void
+    {
         if ($nuevoEstado === 'completada' && !$cita->transaccion) {
             $cita->load('prestacion');
-
-            # Obtenemos la mascota
             $mascota = Mascota::find($cita->mascota_id);
 
-            # Calculamos el total de los insumos
             $totalCargos = CitaCargo::where('cita_id', $cita->id)
                 ->whereNotNull('insumo_id')
                 ->sum('subtotal');
 
-            # Obtenemos el monto total de la cita
             $montoTotal = ($cita->prestacion ? $cita->prestacion->precio_base : 0) + $totalCargos;
 
-            # Creamos la transacción
             Transaccion::create([
                 'cita_id' => $cita->id,
                 'cliente_id' => $mascota->cliente_id,
@@ -554,18 +569,10 @@ class CitaController extends Controller
                 'monto_pagado' => 0,
                 'estado' => 'pendiente',
             ]);
-
-            # Si el estado es cancelada y tiene transacción, anulamos la transacción
         } elseif ($nuevoEstado === 'cancelada') {
             if ($cita->transaccion) {
                 $cita->transaccion->update(['estado' => 'anulado']);
             }
         }
-
-        # Actualizamos la cita
-        $cita->update(['estado' => $nuevoEstado]);
-
-        # Retornamos la cita
-        return response()->json($cita->load('transaccion'));
     }
 }

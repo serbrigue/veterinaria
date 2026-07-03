@@ -7,7 +7,7 @@
             <nav aria-label="breadcrumb" class="mb-4">
                 <ol class="breadcrumb bg-light p-3 rounded-pill shadow-sm border border-light">
                     <li class="breadcrumb-item">
-                        <Link :href="route('panel')" class="text-decoration-none text-muted hover-primary transition-all">
+                        <Link :href="route('perfil.editar')" class="text-decoration-none text-muted hover-primary transition-all">
                             <i class="bi bi-house-door"></i> Inicio
                         </Link>
                     </li>
@@ -240,16 +240,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Manejo de Error / No Encontrado -->
-            <div v-else class="text-center py-5 bg-white rounded-4 shadow-sm border border-light mt-4">
-                <i class="bi bi-exclamation-circle text-danger display-1 d-block mb-4 opacity-50"></i>
-                <h2 class="h4 text-dark mb-3">Veterinario no encontrado</h2>
-                <p class="text-muted mb-4">No se pudo cargar la información de este veterinario.</p>
-                <Link :href="route('veterinarios.listado')" class="btn btn-primary rounded-pill px-4">
-                    Volver al Listado
-                </Link>
             </div>
         </div>
     </AuthenticatedLayout>

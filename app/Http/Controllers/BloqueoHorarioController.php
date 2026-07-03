@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\BloqueoHorario;
 use App\Models\Veterinario;
+use App\Models\Cita;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Http\Requests\GuardarBloqueoHorarioRequest;
 
@@ -11,13 +13,8 @@ class BloqueoHorarioController extends Controller
 {
     public function crear(GuardarBloqueoHorarioRequest  $request, Veterinario $veterinario)
     {
-        # Validar que el usuario sea Admin
-        if (auth()->user()->rol->nombre_interno !== 'admin') {
-            abort(403, 'No autorizado');
-        }
-
         # Validamos los datos de entrada
-        $request->validate();
+        $request->validated();
 
         # Validamos que la hora de inicio y fin sean correctas
         if (($request->hora_inicio && !$request->hora_fin) || (!$request->hora_inicio && $request->hora_fin)) {
@@ -45,15 +42,43 @@ class BloqueoHorarioController extends Controller
             ], 422);
         }
 
-        # Creamos el bloqueo
-        $bloqueo = BloqueoHorario::create([
-            'veterinario_id' => $veterinario->id,
-            'fecha_inicio' => $request->fecha_inicio,
-            'fecha_fin' => $request->fecha_fin,
-            'hora_inicio' => $request->hora_inicio,
-            'hora_fin' => $request->hora_fin,
-            'motivo' => $request->motivo,
-        ]);
+        # Creamos el bloqueo y cancelamos citas en cascada
+        $bloqueo = DB::transaction(function () use ($request, $veterinario) {
+            $nuevoBloqueo = BloqueoHorario::create([
+                'veterinario_id' => $veterinario->id,
+                'fecha_inicio' => $request->fecha_inicio,
+                'fecha_fin' => $request->fecha_fin,
+                'hora_inicio' => $request->hora_inicio,
+                'hora_fin' => $request->hora_fin,
+                'motivo' => $request->motivo,
+            ]);
+
+            # Buscar citas que se superpongan y cancelarlas
+            $queryCitas = Cita::where('veterinario_id', $veterinario->id)
+                ->where('estado', 'pendiente')
+                ->whereDate('fecha_hora', '>=', $request->fecha_inicio);
+
+
+            if ($request->fecha_fin) {
+                $queryCitas->whereDate('fecha_hora', '<=', $request->fecha_fin);
+            } else {
+                $queryCitas->whereDate('fecha_hora', '<=', $request->fecha_inicio);
+            }
+
+            if ($request->hora_inicio && $request->hora_fin) {
+                $queryCitas->where(function ($q) use ($request) {
+                    $q->whereTime('fecha_hora', '<', $request->hora_fin)
+                        ->whereTime('hora_termino', '>', $request->hora_inicio);
+                });
+            }
+
+            $queryCitas->update([
+                'estado' => 'cancelada',
+                'notas' => 'Cita cancelada automáticamente por bloqueo de horario: ' . $request->motivo
+            ]);
+
+            return $nuevoBloqueo;
+        });
 
         # Retornamos el bloqueo
         return response()->json([
@@ -64,11 +89,6 @@ class BloqueoHorarioController extends Controller
 
     public function eliminar(BloqueoHorario $bloqueo)
     {
-        # Validar que el usuario sea Admin
-        if (auth()->user()->rol->nombre_interno !== 'admin') {
-            abort(403, 'No autorizado');
-        }
-
         # Eliminamos el bloqueo
         $bloqueo->delete();
 
