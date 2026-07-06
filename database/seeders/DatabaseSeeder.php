@@ -2,22 +2,22 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\User;
-use App\Models\Rol;
-use App\Models\Permiso;
-use App\Models\Sucursal;
 use App\Models\Box;
+use App\Models\Cita;
+use App\Models\Cliente;
 use App\Models\Especialidad;
 use App\Models\Especie;
-use App\Models\Raza;
-use App\Models\Veterinario;
-use App\Models\Cliente;
 use App\Models\Mascota;
-use App\Models\Cita;
-use Illuminate\Support\Facades\Hash;
+use App\Models\Permiso;
+use App\Models\Raza;
+use App\Models\Rol;
+use App\Models\Sucursal;
+use App\Models\User;
+use App\Models\Veterinario;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -61,7 +61,6 @@ class DatabaseSeeder extends Seeder
             'nombre' => 'eliminar-mis-mascotas',
             'descripcion' => 'Permite eliminar la ficha de datos de una mascota propia.',
         ]);
-
 
         // Permisos de Veterinario
         $permisoVerMascotasSucursal = Permiso::create([
@@ -138,7 +137,6 @@ class DatabaseSeeder extends Seeder
             'nombre' => 'pagar-transacciones',
             'descripcion' => 'Permite realizar el pago en línea de las transacciones pendientes.',
         ]);
-
 
         $permisoVerCitasSucursal = Permiso::create([
             'nombre' => 'ver-citas-sucursal',
@@ -614,7 +612,7 @@ class DatabaseSeeder extends Seeder
             'esterilizado' => true,
             'cliente_id' => $cliente1->id,
             'raza_id' => $razaPersa->id,
-            'imagen_url' => 'https://i.pinimg.com/736x/f2/38/0d/f2380dee74e4635c58a49d4aa469a78a.jpg'
+            'imagen_url' => 'https://i.pinimg.com/736x/f2/38/0d/f2380dee74e4635c58a49d4aa469a78a.jpg',
         ]);
 
         $mascota2 = Mascota::create([
@@ -627,7 +625,7 @@ class DatabaseSeeder extends Seeder
             'esterilizado' => false,
             'cliente_id' => $cliente2->id,
             'raza_id' => $razaPug->id,
-            'imagen_url' => 'https://i.pinimg.com/736x/2f/6f/26/2f6f26a6f20616cbe56ed3d522d1ac88.jpg'
+            'imagen_url' => 'https://i.pinimg.com/736x/2f/6f/26/2f6f26a6f20616cbe56ed3d522d1ac88.jpg',
         ]);
 
         $mascota3 = Mascota::create([
@@ -640,7 +638,7 @@ class DatabaseSeeder extends Seeder
             'esterilizado' => true,
             'cliente_id' => $cliente2->id,
             'raza_id' => $razaPersa->id,
-            'imagen_url' => 'https://i.pinimg.com/736x/77/6a/bf/776abfe995882c4f5fa8e8146830648f.jpg'
+            'imagen_url' => 'https://i.pinimg.com/736x/77/6a/bf/776abfe995882c4f5fa8e8146830648f.jpg',
         ]);
 
         // 10. Crear Citas Múltiples (Pasadas, Canceladas, Urgencias y Futuras)
@@ -735,8 +733,6 @@ class DatabaseSeeder extends Seeder
             'updated_at' => Carbon::now(),
         ]);
 
-
-
         DB::table('citas_cargo')->insert([
             'cita_id' => $citaCirugia->id,
             'prestacion_id' => $citaCirugia->prestacion_id,
@@ -763,7 +759,7 @@ class DatabaseSeeder extends Seeder
         // 13. Generar Clientes extra con Transacciones Pendientes (Para pruebas masivas de correo)
         for ($i = 1; $i <= 5; $i++) {
             $userExtra = User::create([
-                'name' => 'Cliente Deuda ' . $i,
+                'name' => 'Cliente Deuda '.$i,
                 'email' => "cliente.deuda{$i}@prueba.com",
                 'password' => Hash::make('password123'),
                 'rol_id' => $rolCliente->id,
@@ -771,13 +767,13 @@ class DatabaseSeeder extends Seeder
 
             $clienteExtra = Cliente::create([
                 'user_id' => $userExtra->id,
-                'telefono' => '+5690000000' . $i,
+                'telefono' => '+5690000000'.$i,
                 'direccion' => "Calle Falsa 12{$i}, Viña del Mar",
                 'foto_perfil_url' => "https://i.pravatar.cc/150?u=deuda{$i}",
             ]);
 
             $mascotaExtra = Mascota::create([
-                'nombre' => 'Mascota Morosa ' . $i,
+                'nombre' => 'Mascota Morosa '.$i,
                 'descripcion' => 'Paciente generado masivamente',
                 'sexo' => $i % 2 == 0 ? 'Macho' : 'Hembra',
                 'fecha_nacimiento' => Carbon::create(2021, 1, $i),
@@ -786,7 +782,7 @@ class DatabaseSeeder extends Seeder
                 'esterilizado' => true,
                 'cliente_id' => $clienteExtra->id,
                 'raza_id' => $razaPug->id,
-                'imagen_url' => 'https://ui-avatars.com/api/?name=Mascota&background=random'
+                'imagen_url' => 'https://ui-avatars.com/api/?name=Mascota&background=random',
             ]);
 
             $citaExtra = Cita::create([
@@ -818,28 +814,28 @@ class DatabaseSeeder extends Seeder
         // 14. Catálogo de Categorías de Prestación
         // ─────────────────────────────────────────────────────────────────────
         $catPrestConsultaId = DB::table('categorias_prestaciones')->insertGetId([
-            'nombre'      => 'Consulta',
+            'nombre' => 'Consulta',
             'descripcion' => 'Atención clínica básica y revisiones generales.',
-            'created_at'  => Carbon::now(),
-            'updated_at'  => Carbon::now(),
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now(),
         ]);
         $catPrestCirugiaId = DB::table('categorias_prestaciones')->insertGetId([
-            'nombre'      => 'Cirugia',
+            'nombre' => 'Cirugia',
             'descripcion' => 'Procedimientos quirúrgicos que requieren quirófano y equipo especializado.',
-            'created_at'  => Carbon::now(),
-            'updated_at'  => Carbon::now(),
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now(),
         ]);
         $catPrestUrgenciaId = DB::table('categorias_prestaciones')->insertGetId([
-            'nombre'      => 'Urgencia',
+            'nombre' => 'Urgencia',
             'descripcion' => 'Atención de emergencia fuera de horario habitual.',
-            'created_at'  => Carbon::now(),
-            'updated_at'  => Carbon::now(),
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now(),
         ]);
         $catPrestEsteticaId = DB::table('categorias_prestaciones')->insertGetId([
-            'nombre'      => 'Estetica',
+            'nombre' => 'Estetica',
             'descripcion' => 'Servicios de peluquería, baño y estética animal.',
-            'created_at'  => Carbon::now(),
-            'updated_at'  => Carbon::now(),
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now(),
         ]);
 
         // — Asignar categorías a TODAS las prestaciones existentes —
@@ -1000,32 +996,32 @@ class DatabaseSeeder extends Seeder
         // 16. Roles médicos adicionales
         // ─────────────────────────────────────────────────────────────────────
         $rolAnestesista = Rol::create(['nombre_interno' => 'anestesista', 'nombre_legible' => 'Anestesista']);
-        $rolArsenalero  = Rol::create(['nombre_interno' => 'arsenalero',  'nombre_legible' => 'Arsenalero']);
-        $rolTens        = Rol::create(['nombre_interno' => 'tens',        'nombre_legible' => 'Técnico en Enfermería (TENS)']);
+        $rolArsenalero = Rol::create(['nombre_interno' => 'arsenalero',  'nombre_legible' => 'Arsenalero']);
+        $rolTens = Rol::create(['nombre_interno' => 'tens',        'nombre_legible' => 'Técnico en Enfermería (TENS)']);
         Rol::create(['nombre_interno' => 'enfermero', 'nombre_legible' => 'Enfermero/a']);
 
         // ─────────────────────────────────────────────────────────────────────
         // 17. Usuarios dedicados para personal médico de apoyo
         // ─────────────────────────────────────────────────────────────────────
         $userAnestesista1 = User::create([
-            'name'     => 'Dr. Miguel Herrera',
-            'email'    => 'anestesista@prueba.com',
+            'name' => 'Dr. Miguel Herrera',
+            'email' => 'anestesista@prueba.com',
             'password' => Hash::make('password123'),
-            'rol_id'   => $rolAnestesista->id,
+            'rol_id' => $rolAnestesista->id,
         ]);
 
         $userArsenalero1 = User::create([
-            'name'     => 'Sra. Valentina Torres',
-            'email'    => 'arsenalero@prueba.com',
+            'name' => 'Sra. Valentina Torres',
+            'email' => 'arsenalero@prueba.com',
             'password' => Hash::make('password123'),
-            'rol_id'   => $rolArsenalero->id,
+            'rol_id' => $rolArsenalero->id,
         ]);
 
         $userTens1 = User::create([
-            'name'     => 'Sr. Felipe Muñoz',
-            'email'    => 'tens@prueba.com',
+            'name' => 'Sr. Felipe Muñoz',
+            'email' => 'tens@prueba.com',
             'password' => Hash::make('password123'),
-            'rol_id'   => $rolTens->id,
+            'rol_id' => $rolTens->id,
         ]);
 
         // ─────────────────────────────────────────────────────────────────────
@@ -1035,23 +1031,23 @@ class DatabaseSeeder extends Seeder
         // ─────────────────────────────────────────────────────────────────────
         DB::table('equipos_medicos')->insert([
             [
-                'cita_id'    => $citaCirugia->id,
+                'cita_id' => $citaCirugia->id,
                 'usuario_id' => $userAnestesista1->id,
-                'rol_id'     => $rolAnestesista->id,
+                'rol_id' => $rolAnestesista->id,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ],
             [
-                'cita_id'    => $citaCirugia->id,
+                'cita_id' => $citaCirugia->id,
                 'usuario_id' => $userArsenalero1->id,
-                'rol_id'     => $rolArsenalero->id,
+                'rol_id' => $rolArsenalero->id,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ],
             [
-                'cita_id'    => $citaCirugia->id,
+                'cita_id' => $citaCirugia->id,
                 'usuario_id' => $userTens1->id,
-                'rol_id'     => $rolTens->id,
+                'rol_id' => $rolTens->id,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ],

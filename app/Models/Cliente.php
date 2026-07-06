@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Cliente extends Model
 {
-    # Definimos los campos que se pueden llenar
+    // Definimos los campos que se pueden llenar
     protected $fillable = [
         'telefono',
         'direccion',
@@ -14,21 +14,21 @@ class Cliente extends Model
         'user_id',
     ];
 
-    # Relaciones
+    // Relaciones
 
-    # Relación con usuario
+    // Relación con usuario
     public function usuario()
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    # Relación con mascotas
+    // Relación con mascotas
     public function mascotas()
     {
         return $this->hasMany(Mascota::class, 'cliente_id');
     }
 
-    # Relación con transacciones
+    // Relación con transacciones
     public function transacciones()
     {
         return $this->hasMany(Transaccion::class);

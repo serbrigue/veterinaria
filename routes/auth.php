@@ -13,47 +13,47 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
     Route::get('registro', [RegisteredUserController::class, 'create'])
-                ->name('registrarse');
+        ->name('registrarse');
 
     Route::post('registro', [RegisteredUserController::class, 'store']);
 
     Route::get('iniciar-sesion', [AuthenticatedSessionController::class, 'create'])
-                ->name('iniciar-sesion');
+        ->name('iniciar-sesion');
 
     Route::post('iniciar-sesion', [AuthenticatedSessionController::class, 'store']);
 
     Route::get('recuperar-contrasena', [PasswordResetLinkController::class, 'create'])
-                ->name('contrasena.solicitar');
+        ->name('contrasena.solicitar');
 
     Route::post('recuperar-contrasena', [PasswordResetLinkController::class, 'store'])
-                ->name('contrasena.correo');
+        ->name('contrasena.correo');
 
     Route::get('restablecer-contrasena/{token}', [NewPasswordController::class, 'create'])
-                ->name('contrasena.restablecer');
+        ->name('contrasena.restablecer');
 
     Route::post('restablecer-contrasena', [NewPasswordController::class, 'store'])
-                ->name('contrasena.guardar');
+        ->name('contrasena.guardar');
 });
 
 Route::middleware('auth')->group(function () {
     Route::get('verificar-email', EmailVerificationPromptController::class)
-                ->name('verificacion.aviso');
+        ->name('verificacion.aviso');
 
     Route::get('verificar-email/{id}/{hash}', VerifyEmailController::class)
-                ->middleware(['signed', 'throttle:6,1'])
-                ->name('verificacion.verificar');
+        ->middleware(['signed', 'throttle:6,1'])
+        ->name('verificacion.verificar');
 
     Route::post('email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
-                ->middleware('throttle:6,1')
-                ->name('verificacion.enviar');
+        ->middleware('throttle:6,1')
+        ->name('verificacion.enviar');
 
     Route::get('confirmar-contrasena', [ConfirmablePasswordController::class, 'show'])
-                ->name('contrasena.confirmar');
+        ->name('contrasena.confirmar');
 
     Route::post('confirmar-contrasena', [ConfirmablePasswordController::class, 'store']);
 
     Route::put('password', [PasswordController::class, 'update'])->name('contrasena.actualizar');
 
     Route::post('cerrar-sesion', [AuthenticatedSessionController::class, 'destroy'])
-                ->name('cerrar-sesion');
+        ->name('cerrar-sesion');
 });

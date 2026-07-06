@@ -117,15 +117,22 @@
                                 <div class="col-12 col-md-4">
                                     <div class="p-3 bg-light rounded-4 border border-light text-center">
                                         <i class="bi bi-calendar-check text-primary fs-3 mb-2"></i>
-                                        <h4 class="mb-0 fw-bold">{{ veterinario.citas_count || '0' }}</h4>
+                                        <h4 class="mb-0 fw-bold">{{ citasRealizadas || '0' }}</h4>
                                         <span class="text-muted small">Citas Atendidas</span>
                                     </div>
                                 </div>
                                 <div class="col-12 col-md-4">
                                     <div class="p-3 bg-light rounded-4 border border-light text-center">
                                         <i class="bi bi-clock-history text-primary fs-3 mb-2"></i>
-                                        <h4 class="mb-0 fw-bold">{{ veterinario.citas_pendientes_count || '0' }}</h4>
+                                        <h4 class="mb-0 fw-bold">{{ citasPendientes || '0' }}</h4>
                                         <span class="text-muted small">Citas Pendientes</span>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <div class="p-3 bg-light rounded-4 border border-light text-center">
+                                        <i class="bi bi-clock-history text-primary fs-3 mb-2"></i>
+                                        <h4 class="mb-0 fw-bold">{{ citasCanceladas || '0' }}</h4>
+                                        <span class="text-muted small">Citas Canceladas</span>
                                     </div>
                                 </div>
                             </div>
@@ -259,6 +266,18 @@ export default {
         veterinario: {
             type: Object,
             default: null,
+        },
+        citasRealizadas: {
+            type: Number,
+            default: 0,
+        },
+        citasPendientes: {
+            type: Number,
+            default: 0,
+        },
+        citasCanceladas: {
+            type: Number,
+            default: 0,
         },
         bloqueos: {
             type: Array,

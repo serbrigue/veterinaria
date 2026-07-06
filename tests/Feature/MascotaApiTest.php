@@ -1,5 +1,5 @@
 <?php
- 
+
 use App\Models\Mascota;
 use App\Models\User;
 

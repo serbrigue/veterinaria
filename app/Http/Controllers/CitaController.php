@@ -2,41 +2,40 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ActualizarCitaRequest;
+use App\Http\Requests\GuardarCitaRequest;
+use App\Models\BloqueoHorario;
+use App\Models\Box;
 use App\Models\Cita;
-use App\Models\Mascota;
 use App\Models\CitaCargo;
 use App\Models\Insumo;
+use App\Models\Mascota;
 use App\Models\Prestacion;
-use App\Models\Transaccion;
-use \Illuminate\Support\Carbon;
-use App\Models\Sucursal;
-use App\Models\Box;
-use App\Models\Veterinario;
-use App\Models\BloqueoHorario;
 use App\Models\Rol;
+use App\Models\Sucursal;
+use App\Models\Transaccion;
 use App\Models\User;
-use App\Http\Requests\GuardarCitaRequest;
-use App\Http\Requests\ActualizarCitaRequest;
-use Inertia\Inertia;
+use App\Models\Veterinario;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class CitaController extends Controller
 {
-
     public function listado(Request $request)
     {
-        # Verificamos si el usuario es administrador o veterinario
+        // Verificamos si el usuario es administrador o veterinario
         if (auth()->user()->isAdmin() || auth()->user()->isVeterinario()) {
-            #Si lo es, traemos todas las mascotas
+            // Si lo es, traemos todas las mascotas
             $mascotas = Mascota::with('cliente.usuario', 'raza.especie')->get();
         } else {
-            #Si no, traemos solo las mascotas del cliente
+            // Si no, traemos solo las mascotas del cliente
             $mascotas = Mascota::where('cliente_id', auth()->user()->cliente?->id)->get();
         }
 
-        # Filtros de citas, con eager loading
+        // Filtros de citas, con eager loading
 
         $query = Cita::with(['mascota.cliente.usuario', 'veterinario.usuario', 'box', 'transaccion'])
             ->when($request->filled('mascota_id'), fn($q) => $q->where('mascota_id', $request->mascota_id))
@@ -45,37 +44,42 @@ class CitaController extends Controller
             ->when($request->filled('titulo'), fn($q) => $q->where('titulo', 'like', '%' . $request->titulo . '%'))
             ->when($request->filled('estado'), fn($q) => $q->where('estado', $request->estado));
 
-        # Si el usuario no es administrador ni veterinario
+        // Si el usuario no es administrador ni veterinario
 
-        if (!auth()->user()->isAdmin() && !auth()->user()->isVeterinario()) {
-            # Traemos solo las citas del cliente
+        if (! auth()->user()->isAdmin() && ! auth()->user()->isVeterinario()) {
+            // Traemos solo las citas del cliente
             $clienteId = auth()->user()->cliente?->id;
             $query->whereHas('mascota', fn($q) => $q->where('cliente_id', $clienteId));
-            # Aparte si no se especifica estado, no mostramos canceladas
-            if (!$request->filled('estado')) {
-                $query->where('estado', '!=', 'cancelada');
-            }
+            // Aparte si no se especifica estado, no mostramos canceladas
+        } else if (auth()->user()->isVeterinario()) {
+            // Si el usuario es veterinario traemos solo sus citas
+            $query->where('veterinario_id', auth()->user()->veterinario?->id);
         }
 
-        # Paginamos los resultados
+        // Aparte si no se especifica estado, no mostramos canceladas
+        if (! $request->filled('estado')) {
+            $query->where('estado', '!=', 'cancelada');
+        }
+
+        // Paginamos los resultados
         $citas = $query->orderBy('fecha_hora', 'desc')->paginate(15);
 
-        # Traemos las sucursales con eager loading
+        // Traemos las sucursales con eager loading
         $sucursales = Cache::remember('sucursales_full', now()->addMinutes(30), function () {
             return Sucursal::with(['veterinarios.usuario', 'boxes'])->orderBy('nombre')->get();
         });
 
-        # Traemos las prestaciones con eager loading
+        // Traemos las prestaciones con eager loading
         $prestaciones = Cache::remember('prestaciones_full', now()->addMinutes(30), function () {
             return Prestacion::with(['sucursal', 'especialidad'])->orderBy('nombre')->get();
         });
 
-        # Traemos los veterinarios con eager loading
+        // Traemos los veterinarios con eager loading
         $veterinarios = Cache::remember('veterinarios_simple', now()->addMinutes(30), function () {
             return Veterinario::all();
         });
 
-        # Si la solicitud es en formato JSON, devolvemos JSON
+        // Si la solicitud es en formato JSON, devolvemos JSON
         if ($request->wantsJson()) {
             return response()->json([
                 'citas' => $citas,
@@ -85,7 +89,7 @@ class CitaController extends Controller
             ]);
         }
 
-        # Devolvemos la vista con los datos
+        // Devolvemos la vista con los datos
         return Inertia::render('Cita/Listado', [
             'citas' => $citas,
             'mascotas' => $mascotas,
@@ -97,35 +101,41 @@ class CitaController extends Controller
 
     public function obtenerTodas()
     {
-        # Si es admin o veterinario, traemos todas las citas
-        if (auth()->user()->isAdmin() || auth()->user()->isVeterinario()) {
+        // Si es admin, traemos todas las citas
+        if (auth()->user()->isAdmin()) {
             return Cita::with(['mascota.cliente.usuario', 'veterinario.usuario'])->get();
         }
 
-        # Si no es admin ni veterinario, traemos solo las citas del cliente
+        // Si es veterinario, traemos solo sus citas
+        if (auth()->user()->isVeterinario()) {
+            return Cita::where('veterinario_id', auth()->user()->veterinario?->id)
+                ->with(['mascota.cliente.usuario', 'veterinario.usuario'])
+                ->get();
+        }
+
+        // Si no es admin ni veterinario, traemos solo las citas del cliente
         $clienteId = auth()->user()->cliente?->id;
 
-        # Traemos las citas con eager loading, si no hay cliente no traemos nada
+        // Traemos las citas con eager loading, si no hay cliente no traemos nada
         return Cita::whereHas('mascota', function ($query) use ($clienteId) {
             $query->where('cliente_id', $clienteId);
         })->with(['mascota.cliente.usuario', 'veterinario.usuario', 'box'])->get();
     }
 
-
     public function crear(GuardarCitaRequest $solicitud)
     {
-        # Validamos la solicitud
+        // Validamos la solicitud
         $data = $solicitud->validated();
 
-        # Iniciamos una transacción para evitar condiciones de carrera
+        // Iniciamos una transacción para evitar condiciones de carrera
         return DB::transaction(function () use ($data) {
 
-            # Obtenemos la hora de termino de la cita
+            // Obtenemos la hora de termino de la cita
             $horaTermino = Carbon::parse($data['fecha_hora'])->addMinutes(30);
 
             Veterinario::where('id', $data['veterinario_id'])->lockForUpdate()->first();
 
-            # Verificamos si hay solapamiento de citas con el veterinario
+            // Verificamos si hay solapamiento de citas con el veterinario
             $solapamientoCitasVeterinario = Cita::where('veterinario_id', $data['veterinario_id'])
                 ->where('fecha_hora', '<', $horaTermino)
                 ->where('hora_termino', '>', Carbon::parse($data['fecha_hora']))
@@ -137,32 +147,31 @@ class CitaController extends Controller
             }
 
             $cita = Cita::create([
-                'titulo'         => $data['titulo'],
-                'descripcion'    => $data['descripcion'],
-                'fecha_hora'     => $data['fecha_hora'],
-                'hora_termino'   => $horaTermino,
-                'estado'         => 'pendiente',
-                'mascota_id'     => $data['mascota_id'],
+                'titulo' => $data['titulo'],
+                'descripcion' => $data['descripcion'],
+                'fecha_hora' => $data['fecha_hora'],
+                'hora_termino' => $horaTermino,
+                'estado' => 'pendiente',
+                'mascota_id' => $data['mascota_id'],
                 'veterinario_id' => $data['veterinario_id'],
-                'box_id'         => null,
-                'prestacion_id'  => $data['prestacion_id'],
+                'box_id' => null,
+                'prestacion_id' => $data['prestacion_id'],
             ]);
 
-            # Retornamos la cita
+            // Retornamos la cita
             return response()->json($cita, 201);
         });
     }
 
-
     public function actualizar(ActualizarCitaRequest $solicitud, Cita $cita)
     {
 
-        # Validamos la solicitud
+        // Validamos la solicitud
         $data = $solicitud->validated();
 
-        # Iniciamos una transacción para evitar condiciones de carrera
+        // Iniciamos una transacción para evitar condiciones de carrera
         return DB::transaction(function () use ($data, $cita) {
-            # Obtenemos la hora de termino de la cita
+            // Obtenemos la hora de termino de la cita
             $horaTermino = Carbon::parse($data['fecha_hora'])->addMinutes(30);
             $boxId = array_key_exists('box_id', $data) ? $data['box_id'] : $cita->box_id;
 
@@ -170,14 +179,15 @@ class CitaController extends Controller
                 $errorMsg = $this->verificarBox($boxId, $data['prestacion_id'], $cita->id, $data['fecha_hora'], $horaTermino);
                 if ($errorMsg) {
                     $codigoError = str_contains($errorMsg, 'ocupado') ? 409 : 422;
+
                     return response()->json(['error' => $errorMsg], $codigoError);
                 }
             }
 
-            # Bloqueamos los recursos padre para evitar condiciones de carrera
+            // Bloqueamos los recursos padre para evitar condiciones de carrera
             Veterinario::where('id', $data['veterinario_id'])->lockForUpdate()->first();
 
-            # Verificamos si hay solapamiento de citas con el veterinario
+            // Verificamos si hay solapamiento de citas con el veterinario
             $solapamientoCitasVeterinario = Cita::where('veterinario_id', $data['veterinario_id'])
                 ->where('id', '!=', $cita->id)
                 ->where('fecha_hora', '<', $horaTermino)
@@ -191,7 +201,7 @@ class CitaController extends Controller
 
             $cita->update(array_merge($data, ['hora_termino' => $horaTermino, 'box_id' => $boxId]));
 
-            # Retornamos la cita
+            // Retornamos la cita
             return response()->json($cita);
         });
     }
@@ -226,55 +236,52 @@ class CitaController extends Controller
         return null;
     }
 
-
-
-
     public function horariosDisponibles(Request $request)
     {
-        # Validamos la solicitud
+        // Validamos la solicitud
         $request->validate([
-            'fecha'          => 'required|date_format:Y-m-d',
+            'fecha' => 'required|date_format:Y-m-d',
             'veterinario_id' => 'required|exists:veterinarios,id',
         ]);
 
         $fecha = $request->fecha;
         $veterinario = Veterinario::findOrFail($request->veterinario_id);
 
-        # Obtener el número del día de la semana de la fecha utilizando Carbon (1 Lunes a 7 Domingo)
+        // Obtener el número del día de la semana de la fecha utilizando Carbon (1 Lunes a 7 Domingo)
         $diaSemana = Carbon::parse($fecha)->dayOfWeekIso;
 
-        # Recuperar el horario personalizado o usar el valor predeterminado
+        // Recuperar el horario personalizado o usar el valor predeterminado
         $horarioCustom = $veterinario->horario;
         $diaConfig = null;
 
-        # Buscamos el día de la semana en el horario personalizado
+        // Buscamos el día de la semana en el horario personalizado
         if ($horarioCustom && is_array($horarioCustom)) {
-            # Iteramos sobre el horario personalizado para encontrar el día de la semana
+            // Iteramos sobre el horario personalizado para encontrar el día de la semana
             foreach ($horarioCustom as $dia) {
-                # Verificamos si el día de la semana tiene configuración
-                if (isset($dia['dia']) && (int)$dia['dia'] === $diaSemana) {
-                    # Asignamos la configuración del día    
+                // Verificamos si el día de la semana tiene configuración
+                if (isset($dia['dia']) && (int) $dia['dia'] === $diaSemana) {
+                    // Asignamos la configuración del día
                     $diaConfig = $dia;
                     break;
                 }
             }
         }
 
-        # Verificamos si el día de la semana tiene configuración
-        if (!$diaConfig) {
-            # Configuración predeterminada (Lunes a Viernes activo, Fines de semana inactivo)
+        // Verificamos si el día de la semana tiene configuración
+        if (! $diaConfig) {
+            // Configuración predeterminada (Lunes a Viernes activo, Fines de semana inactivo)
             $esFinSemana = in_array($diaSemana, [6, 7]);
 
-            # Asignamos la configuración del día    
+            // Asignamos la configuración del día
             $diaConfig = [
                 'dia' => $diaSemana,
                 'normal' => [
-                    'activo' => !$esFinSemana,
+                    'activo' => ! $esFinSemana,
                     'inicio' => '09:00',
                     'fin' => '18:00',
                 ],
                 'urgencia' => [
-                    'activo' => !$esFinSemana,
+                    'activo' => ! $esFinSemana,
                     'inicio' => '18:00',
                     'fin' => '21:30',
                 ],
@@ -286,14 +293,14 @@ class CitaController extends Controller
             ->where('estado', '!=', 'cancelada')
             ->get(['fecha_hora', 'hora_termino']);
 
-        # Obtener bloqueos de emergencia que coincidan con la fecha seleccionada
+        // Obtener bloqueos de emergencia que coincidan con la fecha seleccionada
         $bloqueos = BloqueoHorario::where('veterinario_id', $request->veterinario_id)
             ->whereDate('fecha_inicio', '<=', $fecha)
             ->whereDate('fecha_fin', '>=', $fecha)
             ->get();
 
         $normalSlots = [];
-        if (!empty($diaConfig['normal']['activo']) && !empty($diaConfig['normal']['inicio']) && !empty($diaConfig['normal']['fin'])) {
+        if (! empty($diaConfig['normal']['activo']) && ! empty($diaConfig['normal']['inicio']) && ! empty($diaConfig['normal']['fin'])) {
             $inicioNormal = Carbon::parse($diaConfig['normal']['inicio']);
             $finNormal = Carbon::parse($diaConfig['normal']['fin']);
             $normalSlots = $this->generarSlotsHorarios(
@@ -309,7 +316,7 @@ class CitaController extends Controller
         }
 
         $urgenciaSlots = [];
-        if (!empty($diaConfig['urgencia']['activo']) && !empty($diaConfig['urgencia']['inicio']) && !empty($diaConfig['urgencia']['fin'])) {
+        if (! empty($diaConfig['urgencia']['activo']) && ! empty($diaConfig['urgencia']['inicio']) && ! empty($diaConfig['urgencia']['fin'])) {
             $inicioUrgencia = Carbon::parse($diaConfig['urgencia']['inicio']);
             $finUrgencia = Carbon::parse($diaConfig['urgencia']['fin']);
             $urgenciaSlots = $this->generarSlotsHorarios(
@@ -325,13 +332,12 @@ class CitaController extends Controller
         }
 
         return response()->json([
-            'normal'   => $normalSlots,
+            'normal' => $normalSlots,
             'urgencia' => $urgenciaSlots,
         ]);
     }
 
-
-    # Genera los slots horarios para un tipo de slot específico (normal o urgencia) 
+    // Genera los slots horarios para un tipo de slot específico (normal o urgencia)
     private function generarSlotsHorarios(
 
         string $fecha,
@@ -351,15 +357,15 @@ class CitaController extends Controller
         while ($cursor->lt($fin)) {
             $slotFin = $cursor->copy()->addMinutes(30);
 
-            # Verificar si el slot actual se encuentra ocupado por alguna cita
+            // Verificar si el slot actual se encuentra ocupado por alguna cita
             $ocupadoVeterinario = $citasVeterinario->some(
                 fn($cita) => Carbon::parse($cita->fecha_hora)->lt($slotFin)
                     && Carbon::parse($cita->hora_termino)->gt($cursor)
             );
 
-            # Verificar si el slot actual se encuentra bloqueado por alguna emergencia
+            // Verificar si el slot actual se encuentra bloqueado por alguna emergencia
             $estaBloqueado = $bloqueos->some(function ($bloqueo) use ($fecha, $cursor, $slotFin) {
-                # Si no tiene horas de inicio y fin, se bloquea el día completo
+                // Si no tiene horas de inicio y fin, se bloquea el día completo
                 if (is_null($bloqueo->hora_inicio) && is_null($bloqueo->hora_fin)) {
                     return true;
                 }
@@ -371,10 +377,10 @@ class CitaController extends Controller
             });
 
             $slots[] = [
-                'hora'       => $cursor->format('H:i'),
+                'hora' => $cursor->format('H:i'),
                 'fecha_hora' => $cursor->toDateTimeString(),
-                'disponible' => !$ocupadoVeterinario && !$estaBloqueado,
-                'tipo'       => $tipoSlot,
+                'disponible' => ! $ocupadoVeterinario && ! $estaBloqueado,
+                'tipo' => $tipoSlot,
             ];
 
             $cursor->addMinutes(30);
@@ -386,28 +392,28 @@ class CitaController extends Controller
     public function cancelar(Request $request, Cita $cita)
     {
 
-        # Verificamos si la cita ya está cancelada
+        // Verificamos si la cita ya está cancelada
         if ($cita->estado === 'cancelada') {
             return response()->json(['mensaje' => 'La cita ya estaba cancelada'], 422);
         }
 
-        # Obtenemos el motivo de la cancelación
+        // Obtenemos el motivo de la cancelación
         $motivo = $request->input('motivo_cancelacion', 'Cancelada sin motivo especificado.');
 
-        # Actualizamos la cita
+        // Actualizamos la cita
         $cita->update([
             'estado' => 'cancelada',
-            'notas' => $motivo
+            'notas' => $motivo,
         ]);
 
-        # Retornamos la cita
+        // Retornamos la cita
         return response()->json(['mensaje' => 'Cita cancelada correctamente']);
     }
 
     public function detalle(Cita $cita)
     {
 
-        # Cargamos las relaciones de la cita
+        // Cargamos las relaciones de la cita
         $cita->load([
             'mascota.cliente.usuario',
             'veterinario.usuario',
@@ -415,21 +421,21 @@ class CitaController extends Controller
             'transaccion',
             'prestacion.categoriaPrestacion',
             'equipoMedico.usuario',
-            'equipoMedico.rol'
+            'equipoMedico.rol',
         ]);
 
-        # Obtenemos la mascota
+        // Obtenemos la mascota
         $mascota = Mascota::with([
             'cliente.usuario',
             'raza.especie',
         ])->find($cita->mascota_id);
 
-        # Obtenemos los cargos registrados para esta cita
+        // Obtenemos los cargos registrados para esta cita
         $cargos = CitaCargo::where('cita_id', $cita->id)
             ->with(['prestacion', 'insumo'])
             ->get();
 
-        # Obtenemos los insumos disponibles en la sucursal del veterinario asignado
+        // Obtenemos los insumos disponibles en la sucursal del veterinario asignado
         $insumosSucursal = [];
         if ($cita->veterinario && $cita->box?->sucursal_id) {
             $insumosSucursal = Insumo::where('sucursal_id', $cita->box->sucursal_id)
@@ -438,69 +444,69 @@ class CitaController extends Controller
                 ->get(['id', 'nombre', 'precio_venta', 'stock_actual']);
         }
 
-        # Obtenemos el personal médico adicional si la cita es una cirugía
+        // Obtenemos el personal médico adicional si la cita es una cirugía
         $rolesMedicos = [];
         $usuariosMedicos = [];
 
-        # Si la cita es una cirugía, obtenemos el personal médico adicional
+        // Si la cita es una cirugía, obtenemos el personal médico adicional
         if ($cita->prestacion?->categoriaPrestacion?->nombre === 'Cirugia') {
-            # Obtenemos los roles médicos
+            // Obtenemos los roles médicos
             $rolesMedicos = Rol::whereIn('nombre_interno', ['anestesista', 'arsenalero', 'tens', 'enfermero'])->get();
-            # Obtenemos los usuarios médicos
+            // Obtenemos los usuarios médicos
             $usuariosMedicos = User::whereIn('rol_id', $rolesMedicos->pluck('id'))->with('rol')->orderBy('name')->get();
         }
 
-        # Obtenemos los boxes compatibles de la sucursal de la prestación de la cita
+        // Obtenemos los boxes compatibles de la sucursal de la prestación de la cita
         $boxes = [];
 
-        # Si hay prestación
+        // Si hay prestación
         if ($cita->prestacion) {
 
-            # Obtenemos la sucursal de la prestación
+            // Obtenemos la sucursal de la prestación
             $sucursalId = $cita->prestacion->sucursal_id;
-            # Obtenemos la categoría de la prestación
+            // Obtenemos la categoría de la prestación
             $categoriaPrestacionId = $cita->prestacion->categoria_prestacion_id;
 
-            # Obtenemos los boxes de la sucursal que tienen la misma categoría de prestación
+            // Obtenemos los boxes de la sucursal que tienen la misma categoría de prestación
             $boxes = Box::where('sucursal_id', $sucursalId)
                 ->where('categoria_prestacion_id', $categoriaPrestacionId)
                 ->orderBy('nombre')
                 ->get(['id', 'nombre', 'categoria_prestacion_id']);
         }
 
-        # Retornamos la vista de detalle
+        // Retornamos la vista de detalle
         return Inertia::render('Cita/Detalle', [
-            'cita'            => $cita,
-            'cargos'          => $cargos,
+            'cita' => $cita,
+            'cargos' => $cargos,
             'insumosSucursal' => $insumosSucursal,
-            'mascota'         => $mascota,
-            'prestacion'      => $cita->prestacion,
-            'rolesMedicos'    => $rolesMedicos,
+            'mascota' => $mascota,
+            'prestacion' => $cita->prestacion,
+            'rolesMedicos' => $rolesMedicos,
             'usuariosMedicos' => $usuariosMedicos,
-            'boxes'           => $boxes,
+            'boxes' => $boxes,
         ]);
     }
 
     public function actualizarNotas(Request $request, Cita $cita)
     {
 
-        # Validamos la solicitud
+        // Validamos la solicitud
         $request->validate(['notas' => 'nullable|string']);
 
-        # Actualizamos la cita
+        // Actualizamos la cita
         $cita->update(['notas' => $request->notas]);
 
-        # Retornamos la cita
+        // Retornamos la cita
         return response()->json($cita);
     }
 
     public function actualizarEstado(Request $request, Cita $cita)
     {
 
-        # Validamos la solicitud
+        // Validamos la solicitud
         $request->validate(['estado' => 'required|in:pendiente,en_curso,completada,cancelada']);
 
-        # Obtenemos el nuevo estado
+        // Obtenemos el nuevo estado
         $nuevoEstado = $request->estado;
 
         $cita->load('prestacion.categoriaPrestacion');
@@ -509,26 +515,27 @@ class CitaController extends Controller
             return response()->json(['error' => $errorBox], 422);
         }
 
-        # Validamos si la cita es una cirugía y tiene el personal necesario
+        // Validamos si la cita es una cirugía y tiene el personal necesario
         if ($errorCirugia = $this->validarPersonalCirugia($cita, $nuevoEstado)) {
             return response()->json(['error' => $errorCirugia], 422);
         }
 
-        # Procesamos la creación o anulación de la transacción
+        // Procesamos la creación o anulación de la transacción
         $this->procesarTransaccionCita($cita, $nuevoEstado);
 
-        # Actualizamos la cita
+        // Actualizamos la cita
         $cita->update(['estado' => $nuevoEstado]);
 
-        # Retornamos la cita
+        // Retornamos la cita
         return response()->json($cita->load('transaccion'));
     }
 
     private function validarBoxAsignado(Cita $cita, string $nuevoEstado): ?string
     {
-        if (in_array($nuevoEstado, ['en_curso', 'completada']) && !$cita->box_id) {
+        if (in_array($nuevoEstado, ['en_curso', 'completada']) && ! $cita->box_id) {
             return 'Debe asignar un box a la cita antes de iniciarla o completarla.';
         }
+
         return null;
     }
 
@@ -542,17 +549,18 @@ class CitaController extends Controller
                     })
                     ->exists();
 
-                if (!$tieneArsenalero) {
+                if (! $tieneArsenalero) {
                     return 'Para iniciar o completar una cirugía, debe asignar al menos un arsenalero en el equipo médico.';
                 }
             }
         }
+
         return null;
     }
 
     private function procesarTransaccionCita(Cita $cita, string $nuevoEstado): void
     {
-        if ($nuevoEstado === 'completada' && !$cita->transaccion) {
+        if ($nuevoEstado === 'completada' && ! $cita->transaccion) {
             $cita->load('prestacion');
             $mascota = Mascota::find($cita->mascota_id);
 

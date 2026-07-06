@@ -2,17 +2,17 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\Cita;
-use App\Models\Mascota;
-use App\Models\Veterinario;
 use App\Models\Box;
-use App\Models\Prestacion;
-use App\Models\Transaccion;
 use App\Models\CategoriaPrestacion;
-use App\Models\Rol;
-use App\Models\User;
+use App\Models\Cita;
 use App\Models\EquipoMedico;
+use App\Models\Mascota;
+use App\Models\Prestacion;
+use App\Models\Rol;
+use App\Models\Transaccion;
+use App\Models\User;
+use App\Models\Veterinario;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 
 class HistoricalDataSeeder extends Seeder
@@ -26,6 +26,7 @@ class HistoricalDataSeeder extends Seeder
 
         if ($mascotas->isEmpty() || $veterinarios->isEmpty() || $boxes->isEmpty() || $prestaciones->isEmpty()) {
             $this->command->error('Se requieren Mascotas, Veterinarios, Boxes y Prestaciones previas para generar historial.');
+
             return;
         }
 
@@ -44,7 +45,7 @@ class HistoricalDataSeeder extends Seeder
         $diasAtras = 60; // 2 meses de datos históricos
         $totalCitasGeneradas = 0;
         $totalEquiposAsignados = 0;
-        
+
         $estadosPosibles = ['completada', 'completada', 'completada', 'cancelada']; // 75% completadas, 25% canceladas
         $metodosPago = ['tarjeta', 'efectivo', 'transferencia'];
 
@@ -56,18 +57,22 @@ class HistoricalDataSeeder extends Seeder
 
             for ($j = 0; $j < $citasDia; $j++) {
                 $veterinario = $veterinarios->random();
-                
+
                 // Encontrar un box que corresponda a la sucursal del veterinario
                 $box = $boxes->where('sucursal_id', $veterinario->sucursal_id)->random();
-                if (!$box) continue;
+                if (! $box) {
+                    continue;
+                }
 
                 // Encontrar una prestación de la misma sucursal
                 $prestacion = $prestaciones->where('sucursal_id', $veterinario->sucursal_id)->random();
-                if (!$prestacion) continue;
+                if (! $prestacion) {
+                    continue;
+                }
 
                 $mascota = $mascotas->random();
                 $estado = $estadosPosibles[array_rand($estadosPosibles)];
-                
+
                 $horaInicio = clone $fechaDia;
                 $horaInicio->setTime(rand(9, 17), rand(0, 1) === 0 ? 0 : 30, 0); // Horas entre 9 AM y 5:30 PM
                 $horaTermino = clone $horaInicio;
@@ -75,7 +80,7 @@ class HistoricalDataSeeder extends Seeder
 
                 // Crear cita
                 $cita = Cita::create([
-                    'titulo' => 'Consulta ' . $prestacion->nombre,
+                    'titulo' => 'Consulta '.$prestacion->nombre,
                     'descripcion' => 'Atención rutinaria generada automáticamente.',
                     'fecha_hora' => $horaInicio,
                     'hora_termino' => $horaTermino,
@@ -111,16 +116,16 @@ class HistoricalDataSeeder extends Seeder
                         $overlap = EquipoMedico::where('usuario_id', $c->id)
                             ->whereHas('cita', function ($q) use ($horaInicio, $horaTermino) {
                                 $q->where('estado', '!=', 'cancelada')
-                                  ->where('fecha_hora', '<', $horaTermino)
-                                  ->where('hora_termino', '>', $horaInicio);
+                                    ->where('fecha_hora', '<', $horaTermino)
+                                    ->where('hora_termino', '>', $horaInicio);
                             })
                             ->exists();
-                        if (!$overlap) {
+                        if (! $overlap) {
                             $arsenaleroAsignado = $c;
                             break;
                         }
                     }
-                    if (!$arsenaleroAsignado && $arsenaleros->isNotEmpty()) {
+                    if (! $arsenaleroAsignado && $arsenaleros->isNotEmpty()) {
                         $arsenaleroAsignado = $arsenaleros->random();
                     }
 
@@ -140,11 +145,11 @@ class HistoricalDataSeeder extends Seeder
                             $overlap = EquipoMedico::where('usuario_id', $c->id)
                                 ->whereHas('cita', function ($q) use ($horaInicio, $horaTermino) {
                                     $q->where('estado', '!=', 'cancelada')
-                                      ->where('fecha_hora', '<', $horaTermino)
-                                      ->where('hora_termino', '>', $horaInicio);
+                                        ->where('fecha_hora', '<', $horaTermino)
+                                        ->where('hora_termino', '>', $horaInicio);
                                 })
                                 ->exists();
-                            if (!$overlap) {
+                            if (! $overlap) {
                                 $anestesistaAsignado = $c;
                                 break;
                             }
@@ -166,11 +171,11 @@ class HistoricalDataSeeder extends Seeder
                             $overlap = EquipoMedico::where('usuario_id', $c->id)
                                 ->whereHas('cita', function ($q) use ($horaInicio, $horaTermino) {
                                     $q->where('estado', '!=', 'cancelada')
-                                      ->where('fecha_hora', '<', $horaTermino)
-                                      ->where('hora_termino', '>', $horaInicio);
+                                        ->where('fecha_hora', '<', $horaTermino)
+                                        ->where('hora_termino', '>', $horaInicio);
                                 })
                                 ->exists();
-                            if (!$overlap) {
+                            if (! $overlap) {
                                 $tensAsignado = $c;
                                 break;
                             }
@@ -193,4 +198,3 @@ class HistoricalDataSeeder extends Seeder
         $this->command->info("¡Seeder Histórico ejecutado con éxito! Se generaron {$totalCitasGeneradas} citas y transacciones en los últimos {$diasAtras} días. Se asignaron {$totalEquiposAsignados} miembros a equipos médicos de cirugía.");
     }
 }
-

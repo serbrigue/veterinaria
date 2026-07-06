@@ -1,11 +1,11 @@
 <?php
 
+use App\Models\Box;
 use App\Models\Cita;
+use App\Models\Mascota;
+use App\Models\Prestacion;
 use App\Models\User;
 use App\Models\Veterinario;
-use App\Models\Box;
-use App\Models\Prestacion;
-use App\Models\Mascota;
 use Illuminate\Support\Carbon;
 
 test('crear cita sin box_id crea la cita con box_id null', function () {

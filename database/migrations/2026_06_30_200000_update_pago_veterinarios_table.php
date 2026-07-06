@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -15,10 +15,10 @@ return new class extends Migration
         Schema::table('pago_veterinarios', function (Blueprint $table) {
             // Drop unique constraint
             $table->dropUnique('pago_veterinarios_veterinario_id_mes_anio_unique');
-            
+
             $table->unsignedBigInteger('veterinario_id')->nullable()->change();
             $table->unsignedBigInteger('usuario_id')->nullable()->after('id');
-            
+
             // Create unique constraint on usuario_id + mes + anio
             $table->unique(['usuario_id', 'mes', 'anio']);
         });

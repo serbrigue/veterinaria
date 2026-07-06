@@ -15,6 +15,7 @@ class CitaEstadoActualizadoMail extends Mailable implements ShouldQueue
     use Queueable, SerializesModels;
 
     public Cita $cita;
+
     public string $rol;
 
     /**
@@ -32,7 +33,7 @@ class CitaEstadoActualizadoMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Actualización de Cita Médica - ' . config('app.name'),
+            subject: 'Actualización de Cita Médica - '.config('app.name'),
         );
     }
 

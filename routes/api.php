@@ -1,23 +1,20 @@
 <?php
 
 use App\Http\Controllers\AuthApiController;
+use App\Http\Controllers\BloqueoHorarioController;
+use App\Http\Controllers\BoxController;
+use App\Http\Controllers\CitaCargoController;
 use App\Http\Controllers\CitaController;
 use App\Http\Controllers\ClienteController;
+use App\Http\Controllers\EquipoMedicoController;
 use App\Http\Controllers\EspecieController;
+use App\Http\Controllers\InsumoController;
 use App\Http\Controllers\MascotaController;
+use App\Http\Controllers\PrestacionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RazaController;
 use App\Http\Controllers\SucursalController;
-use App\Http\Controllers\BoxController;
 use App\Http\Controllers\VeterinarioController;
-use App\Http\Controllers\InsumoController;
-use App\Http\Controllers\PrestacionController;
-use App\Http\Controllers\CitaCargoController;
-use App\Http\Controllers\EquipoMedicoController;
-use App\Http\Controllers\BloqueoHorarioController;
-use App\Models\Rol;
-use App\Models\User;
-
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -108,11 +105,11 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('can:eliminar,cargo');
 
     // MÓDULO 7 — Equipo Médico (Cirugías)
-    Route::get('/citas/{cita}/equipo',                [EquipoMedicoController::class, 'porCita']);
-    Route::post('/citas/{cita}/equipo',               [EquipoMedicoController::class, 'agregar']);
-    Route::delete('/citas/{cita}/equipo/{miembro}',   [EquipoMedicoController::class, 'eliminar']);
+    Route::get('/citas/{cita}/equipo', [EquipoMedicoController::class, 'porCita']);
+    Route::post('/citas/{cita}/equipo', [EquipoMedicoController::class, 'agregar']);
+    Route::delete('/citas/{cita}/equipo/{miembro}', [EquipoMedicoController::class, 'eliminar']);
 
-    //Sucursales
+    // Sucursales
     Route::get('/sucursales', [SucursalController::class, 'obtenerTodas'])
         ->middleware('can:verTodas,App\Models\Sucursal');
     Route::post('/sucursales', [SucursalController::class, 'crear'])
@@ -122,7 +119,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/sucursales/{sucursal}', [SucursalController::class, 'eliminar'])
         ->middleware('can:eliminar,sucursal');
 
-    //Boxes
+    // Boxes
     Route::get('/boxes', [BoxController::class, 'obtenerTodas'])
         ->middleware('can:verTodas,App\Models\Box');
     Route::post('/boxes', [BoxController::class, 'crear'])
@@ -132,7 +129,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/boxes/{box}', [BoxController::class, 'eliminar'])
         ->middleware('can:eliminar,box');
 
-    //Veterinarios
+    // Veterinarios
     Route::get('/veterinarios', [VeterinarioController::class, 'obtenerTodas'])
         ->middleware('can:verTodas,App\Models\Veterinario');
     Route::post('/veterinarios', [VeterinarioController::class, 'crear'])
@@ -147,7 +144,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/bloqueos/{bloqueo}', [BloqueoHorarioController::class, 'eliminar'])
         ->middleware('can:eliminar,bloqueo');
 
-    //Insumos
+    // Insumos
     Route::get('/insumos', [InsumoController::class, 'obtenerTodas'])
         ->middleware('can:verTodas,App\Models\Insumo');
     Route::post('/insumos', [InsumoController::class, 'crear'])
@@ -157,7 +154,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/insumos/{insumo}', [InsumoController::class, 'eliminar'])
         ->middleware('can:eliminar,insumo');
 
-    //Prestaciones
+    // Prestaciones
     Route::get('/prestaciones', [PrestacionController::class, 'obtenerTodas'])
         ->middleware('can:verTodas,App\Models\Prestacion');
     Route::post('/prestaciones', [PrestacionController::class, 'crear'])

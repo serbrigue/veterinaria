@@ -5,8 +5,10 @@
             <div class="card shadow-sm">
                 <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <h1 class="h5 mb-0">Mis Mascotas</h1>
+
+
                     <div class="d-flex flex-wrap gap-2 align-items-center">
-                        <button type="button" class="btn btn-sm btn-primary" @click="abrirModalCrear">
+                        <button v-if="esCliente" type="button" class="btn btn-sm btn-primary" @click="abrirModalCrear">
                             + Nueva Mascota
                         </button>
                     </div>
@@ -17,12 +19,12 @@
                     <BarraFiltros 
                         :deshabilitar-limpiar="!filtros.nombre && !filtros.especie_id && !filtros.raza_id && !filtros.sexo && !filtros.esterilizado" 
                         clase-boton-contenedor="col-12 col-lg-2 d-flex gap-2 justify-content-lg-end"
-                        @limpiar="limpiarFiltros"
+                        @limpiar="limpiarFiltros()"
                     >
                         <!-- Buscar por Nombre -->
                         <div class="col-12 col-md-6 col-lg-3">
                             <label class="form-label small fw-bold text-secondary mb-1" for="filtroNombre">Buscar por Nombre</label>
-                            <input type="text" class="form-control form-control-sm" id="filtroNombre" placeholder="Ej: Toby" v-model="filtros.nombre" @keyup.enter="obtenerMascotas">
+                            <input type="text" class="form-control form-control-sm" id="filtroNombre" placeholder="Ej: Toby" v-model="filtros.nombre" @keyup.enter="obtenerMascotas()">
                         </div>
                         
                         <!-- Buscar por Especie -->
@@ -105,7 +107,7 @@
                                     <th>Peso (kg)</th>
                                     <th>Color</th>
                                     <th>Esterilizado</th>
-                                    <th style="width: 180px">Acciones</th>
+                                    <th v-if="esCliente" style="width: 180px">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -131,7 +133,7 @@
                                     <td>{{ mascota.color || '—' }}</td>
                                     <td>{{ mascota.esterilizado ? 'Sí' : 'No' }}</td>
                                     <td>
-                                        <div class="btn-group btn-group-sm">
+                                        <div v-if="$page.props.auth.user.rol.nombre_interno == 'cliente'" class="btn-group btn-group-sm">
                                             <button
                                                 type="button"
                                                 class="btn btn-primary"
@@ -330,18 +332,21 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="imagen_url" class="form-label fw-semibold text-secondary small text-uppercase">Imagen (URL)</label>
+                            <label for="foto" class="form-label fw-semibold text-secondary small text-uppercase">Foto de la Mascota</label>
                             <input
-                                id="imagen_url"
-                                type="text"
-                                name="imagen_url"
-                                v-model="formulario.imagen_url"
+                                id="foto"
+                                ref="fotoInput"
+                                type="file"
                                 class="form-control bg-light border-0 py-2"
-                                placeholder="https://ejemplo.com/foto.jpg"
-                                :class="{ 'is-invalid': formulario.errors.imagen_url }"
+                                accept="image/*"
+                                @change="seleccionarFoto"
+                                :class="{ 'is-invalid': formulario.errors.foto }"
                             />
-                            <div v-if="formulario.errors.imagen_url" class="invalid-feedback">
-                                {{ formulario.errors.imagen_url }}
+                            <div v-if="formulario.errors.foto" class="invalid-feedback">
+                                {{ formulario.errors.foto }}
+                            </div>
+                            <div v-if="formulario.imagen_url" class="mt-2 text-center">
+                                <img :src="formulario.imagen_url" class="img-thumbnail" style="max-height: 120px;" alt="Vista previa de la mascota" />
                             </div>
                         </div>
 
@@ -455,6 +460,7 @@ export default {
                 raza_id: '',
                 cliente_id: '',
                 imagen_url: '',
+                foto: null,
                 peso_kg: '',
                 color: '',
                 esterilizado: false,
@@ -464,6 +470,10 @@ export default {
         }
     },
     computed: {
+        esCliente() {
+            const role = this.$page.props.auth.user.rol.nombre_interno;
+            return role === 'cliente'
+        },
         mascotasVisibles() {
             return this.mascotas
         },
@@ -498,6 +508,10 @@ export default {
             this.formulario.sexo = ''
             this.formulario.fecha_nacimiento = ''
             this.formulario.imagen_url = ''
+            this.formulario.foto = null
+            if (this.$refs.fotoInput) {
+                this.$refs.fotoInput.value = ''
+            }
             this.formulario.peso_kg = ''
             this.formulario.color = ''
             this.formulario.esterilizado = false
@@ -515,6 +529,10 @@ export default {
             this.formulario.raza_id = mascota.raza_id
             this.formulario.cliente_id = mascota.cliente_id
             this.formulario.imagen_url = mascota.imagen_url
+            this.formulario.foto = null
+            if (this.$refs.fotoInput) {
+                this.$refs.fotoInput.value = ''
+            }
             this.formulario.peso_kg = mascota.peso_kg ?? ''
             this.formulario.color = mascota.color ?? ''
             this.formulario.esterilizado = !!mascota.esterilizado
@@ -529,26 +547,50 @@ export default {
             const edad = this.$edadDesde(mascota.fecha_nacimiento)
             return edad ? `${edad}` : ''
         },
-        datosFormulario() {
-            return {
-                nombre: this.formulario.nombre,
-                descripcion: this.formulario.descripcion,
-                sexo: this.formulario.sexo,
-                fecha_nacimiento: this.formulario.fecha_nacimiento || null,
-                raza_id: this.formulario.especie_id,
-                cliente_id: this.formulario.cliente_id,
-                imagen_url: this.formulario.imagen_url,
-                peso_kg: this.formulario.peso_kg === '' ? null : this.formulario.peso_kg,
-                color: this.formulario.color || null,
-                esterilizado: this.formulario.esterilizado,
+        seleccionarFoto(e) {
+            const archivos = e.target.files
+            if (archivos && archivos.length > 0) {
+                this.formulario.foto = archivos[0]
             }
+        },
+        datosFormulario() {
+            const formData = new FormData()
+            formData.append('nombre', this.formulario.nombre)
+            formData.append('descripcion', this.formulario.descripcion)
+            formData.append('sexo', this.formulario.sexo)
+            if (this.formulario.fecha_nacimiento) {
+                formData.append('fecha_nacimiento', this.formulario.fecha_nacimiento)
+            }
+            formData.append('raza_id', this.formulario.raza_id)
+            formData.append('cliente_id', this.formulario.cliente_id)
+            if (this.formulario.peso_kg !== '') {
+                formData.append('peso_kg', this.formulario.peso_kg)
+            }
+            if (this.formulario.color) {
+                formData.append('color', this.formulario.color)
+            }
+            formData.append('esterilizado', this.formulario.esterilizado ? '1' : '0')
+            
+            if (this.formulario.foto) {
+                formData.append('foto', this.formulario.foto)
+            } else if (this.formulario.imagen_url) {
+                formData.append('imagen_url', this.formulario.imagen_url)
+            }
+            return formData
         },
         guardar() {
             this.formulario.processing = true
             this.formulario.errors = {}
 
+            const data = this.datosFormulario()
+
             if (this.modoEdicion) {
-                axios.put(`/api/mascotas/${this.mascotaEditando.id}`, this.datosFormulario())
+                data.append('_method', 'PUT')
+                axios.post(`/api/mascotas/${this.mascotaEditando.id}`, data, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                })
                 .then(() => {
                     this.cerrarModal()
                     return this.$alertaExito('Mascota actualizada', 'Los cambios se guardaron correctamente.')
@@ -566,7 +608,11 @@ export default {
                     this.formulario.processing = false
                 })
             } else {
-                axios.post('/api/mascotas', this.datosFormulario())
+                axios.post('/api/mascotas', data, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                })
                 .then(() => {
                     this.cerrarModal()
                     return this.$alertaExito('Mascota creada', 'El registro se guardó correctamente.')
@@ -601,6 +647,7 @@ export default {
                 }
             }).catch((error)=>{
                 this.$alertaError('Error', 'No se pudo obtener las mascotas.')
+                console.error(error)
             }).finally(() => {
                 this.cargando = false
             })

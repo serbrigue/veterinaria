@@ -15,7 +15,7 @@ return new class extends Migration
             $table->dropColumn('user_id');
             $table->unsignedBigInteger('cliente_id')->nullable()->index();
             $table->unsignedBigInteger('raza_id')->nullable()->index();
-            
+
         });
     }
 

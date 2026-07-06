@@ -6,13 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Box extends Model
 {
-    # Trait para limpiar el cache
+    // Trait para limpiar el cache
     use \App\Traits\ClearsCache;
 
-    # Definimos las claves del cache
+    // Definimos las claves del cache
     public $cacheKeys = ['boxes_full', 'sucursales_full'];
 
-    # Definimos los campos que se pueden llenar
+    // Definimos los campos que se pueden llenar
     protected $fillable = [
         'nombre',
         'descripcion',
@@ -20,16 +20,15 @@ class Box extends Model
         'categoria_prestacion_id',
     ];
 
-    # Definimos las relaciones
+    // Definimos las relaciones
 
-
-    # Relación con sucursal
+    // Relación con sucursal
     public function sucursal()
     {
         return $this->belongsTo(Sucursal::class, 'sucursal_id');
     }
 
-    # Relación con categoría de prestación
+    // Relación con categoría de prestación
     public function categoriaPrestacion()
     {
         return $this->belongsTo(CategoriaPrestacion::class, 'categoria_prestacion_id');

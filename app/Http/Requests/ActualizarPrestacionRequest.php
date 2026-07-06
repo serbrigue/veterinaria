@@ -23,6 +23,7 @@ class ActualizarPrestacionRequest extends FormRequest
             'categoria_prestacion_id' => 'nullable|exists:categorias_prestaciones,id',
         ];
     }
+
     public function messages(): array
     {
         return [

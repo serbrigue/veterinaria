@@ -2,18 +2,21 @@
 
 namespace App\Models;
 
+use App\Traits\HasStorageAttributes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
 class Mascota extends Model
 {
-    # Atributos adicionales
+    use HasStorageAttributes;
+
+    // Atributos adicionales
     protected $appends = [
         'fecha_nacimiento_formato',
         'edad_texto',
     ];
 
-    # Campos que se pueden llenar
+    // Campos que se pueden llenar
     protected $fillable = [
         'nombre',
         'descripcion',
@@ -33,35 +36,35 @@ class Mascota extends Model
         'esterilizado' => 'boolean',
     ];
 
-    # Relaciones
+    // Relaciones
 
-    # Relación con cliente
+    // Relación con cliente
     public function cliente()
     {
         return $this->belongsTo(Cliente::class, 'cliente_id');
     }
 
-    # Relación con raza
+    // Relación con raza
     public function raza()
     {
         return $this->belongsTo(Raza::class, 'raza_id');
     }
 
-    # Función para obtener la foto de la mascota
+    // Función para obtener la foto de la mascota
     public function foto_url()
     {
         return $this->imagen_url;
     }
 
-    # Relación con citas
+    // Relación con citas
     public function citas()
     {
         return $this->hasMany(Cita::class, 'mascota_id');
     }
 
-    # Getters
+    // Getters
 
-    # Obtener la fecha de nacimiento en formato d/m/Y
+    // Obtener la fecha de nacimiento en formato d/m/Y
     public function getFechaNacimientoFormatoAttribute(): ?string
     {
         if (! $this->fecha_nacimiento) {
@@ -71,13 +74,13 @@ class Mascota extends Model
         return Carbon::parse($this->fecha_nacimiento)->format('d/m/Y');
     }
 
-    # Obtener la edad en texto
+    // Obtener la edad en texto
     public function getEdadTextoAttribute(): ?string
     {
         if (! $this->fecha_nacimiento) {
             return null;
         }
 
-        return Carbon::parse($this->fecha_nacimiento)->age . ' años';
+        return Carbon::parse($this->fecha_nacimiento)->age.' años';
     }
 }

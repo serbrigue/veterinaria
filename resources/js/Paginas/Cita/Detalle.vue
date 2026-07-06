@@ -1,6 +1,5 @@
 <template>
     <Head :title="'Cita - ' + (cita.titulo || 'Detalle')" />
-
     <AuthenticatedLayout>
         <div class="container py-4">
             <div class="d-flex align-items-center justify-content-between mb-4">

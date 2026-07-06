@@ -2,51 +2,52 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Raza;
-use App\Models\Especie;
-use App\Http\Requests\GuardarRazaRequest;
 use App\Http\Requests\ActualizarRazaRequest;
+use App\Http\Requests\GuardarRazaRequest;
+use App\Models\Especie;
+use App\Models\Raza;
+use App\Traits\HandlesPhotoUploads;
 use Illuminate\Http\Request;
-
-use Inertia\Inertia;
 use Illuminate\Support\Facades\Cache;
+use Inertia\Inertia;
 
 class RazaController extends Controller
 {
+    use HandlesPhotoUploads;
 
     public function listado(Request $request)
     {
 
-        #Obtenemos el filtro de especie
+        // Obtenemos el filtro de especie
         $filtroEspecie = $request->input('especie_id');
 
-        #Obtenemos todas las razas con su especie, y lo cacheamos por 30 minutos
+        // Obtenemos todas las razas con su especie, y lo cacheamos por 30 minutos
         $razasCached = Cache::remember('razas_full', now()->addMinutes(30), function () {
             return Raza::with('especie')->get();
         });
 
-        #Obtenemos todas las especies, y lo cacheamos por 30 minutos
+        // Obtenemos todas las especies, y lo cacheamos por 30 minutos
         $especiesCached = Cache::remember('especies_simple', now()->addMinutes(30), function () {
             return Especie::all();
         });
 
-        #Si la peticion es JSON
+        // Si la peticion es JSON
         if (request()->wantsJson()) {
             $razas = $razasCached;
-            #Si hay filtro de especie
+            // Si hay filtro de especie
             if ($filtroEspecie) {
-                #Filtramos las razas
+                // Filtramos las razas
                 $razas = $razas->where('especie_id', $filtroEspecie)->values();
             }
 
-            #Devolvemos las razas y las especies
+            // Devolvemos las razas y las especies
             return response()->json([
                 'razas' => $razas,
                 'especies' => $especiesCached,
             ]);
         }
 
-        #Devolvemos la vista con las razas y las especies
+        // Devolvemos la vista con las razas y las especies
         return Inertia::render('Raza/Listado', [
             'razas' => $razasCached,
             'especies' => $especiesCached,
@@ -56,48 +57,61 @@ class RazaController extends Controller
     public function obtenerTodas()
     {
 
-        #Obtenemos todas las razas ordenadas por nombre
+        // Obtenemos todas las razas ordenadas por nombre
         return Raza::orderBy('nombre')->get();
     }
 
     public function crear(GuardarRazaRequest $solicitud)
     {
-
-        #Obtenemos los datos validados
+        // Obtenemos los datos validados
         $data = $solicitud->validated();
 
-        #Creamos la raza
+        // Guardamos el creador
+        $data['creado_por'] = auth()->id();
+
+        if ($solicitud->hasFile('foto')) {
+            $data['imagen_url'] = $this->procesarFoto($solicitud, 'foto', 'razas/fotos');
+        }
+
+        // Creamos la raza
         $raza = Raza::create($data);
 
-        #Devolvemos la raza
+        // Devolvemos la raza
         return response()->json($raza, 201);
     }
 
     public function actualizar(ActualizarRazaRequest $solicitud, Raza $raza)
     {
+        // Obtenemos los datos validados
+        $data = $solicitud->validated();
 
-        #Actualizamos la raza
-        $raza->update($solicitud->validated());
+        if ($solicitud->hasFile('foto')) {
+            $data['imagen_url'] = $this->procesarFoto($solicitud, 'foto', 'razas/fotos', $raza->imagen_url);
+        }
 
-        #Devolvemos la raza
+        // Actualizamos la raza
+        $raza->update($data);
+
+        // Devolvemos la raza
         return response()->json($raza);
     }
 
     public function eliminar(Raza $raza)
     {
+        // Eliminamos la foto física del storage
+        $this->eliminarFotoFisica($raza->imagen_url);
 
-        #Eliminamos la raza
+        // Eliminamos la raza
         $raza->delete();
 
-        #Devolvemos mensaje de éxito
+        // Devolvemos mensaje de éxito
         return response()->json(['mensaje' => 'Raza eliminada correctamente']);
     }
 
     public function detalle(Raza $raza)
     {
 
-
-        #Devolvemos la vista con la raza y la especie
+        // Devolvemos la vista con la raza y la especie
         return Inertia::render('Raza/Detalle', [
             'raza' => $raza,
             'especie' => $raza->especie,

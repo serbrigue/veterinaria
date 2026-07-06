@@ -1,19 +1,19 @@
 <?php
 
+use App\Http\Controllers\BoxController;
 use App\Http\Controllers\CitaController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\EspecieController;
+use App\Http\Controllers\InsumoController;
 use App\Http\Controllers\MascotaController;
+use App\Http\Controllers\PagoVeterinarioController;
 use App\Http\Controllers\PanelController;
+use App\Http\Controllers\PrestacionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RazaController;
 use App\Http\Controllers\SucursalController;
-use App\Http\Controllers\BoxController;
-use App\Http\Controllers\VeterinarioController;
-use App\Http\Controllers\InsumoController;
-use App\Http\Controllers\PagoVeterinarioController;
-use App\Http\Controllers\PrestacionController;
 use App\Http\Controllers\TransaccionController;
+use App\Http\Controllers\VeterinarioController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -73,41 +73,41 @@ Route::middleware('auth')->group(function () {
     Route::get('/citas', [CitaController::class, 'listado'])->name('citas.listado')->middleware('can:verTodas,App\Models\Cita');
     Route::get('/citas/{cita}', [CitaController::class, 'detalle'])->name('citas.detalle')->middleware('can:ver,cita');
 
-    //Sucursales
+    // Sucursales
     Route::get('/sucursales', [SucursalController::class, 'listado'])->name('sucursales.listado')->middleware('can:verTodas,App\Models\Sucursal');
     Route::get('/sucursales/{sucursal}', [SucursalController::class, 'detalle'])->name('sucursales.detalle')->middleware('can:ver,sucursal');
 
-    //Boxes
+    // Boxes
     Route::get('/boxes', [BoxController::class, 'listado'])->name('boxes.listado')->middleware('can:verTodas,App\Models\Box');
     Route::get('/boxes/{box}', [BoxController::class, 'detalle'])->name('boxes.detalle')->middleware('can:ver,box');
 
-    //Veterinarios
+    // Veterinarios
     Route::get('/veterinarios', [VeterinarioController::class, 'listado'])->name('veterinarios.listado')->middleware('can:verTodas,App\Models\Veterinario');
     Route::get('/veterinarios/{veterinario}', [VeterinarioController::class, 'detalle'])->name('veterinarios.detalle')->middleware('can:ver,veterinario');
 
-    //Prestaciones
+    // Prestaciones
     Route::get('/prestaciones', [PrestacionController::class, 'listado'])->name('prestaciones.listado')->middleware('can:verTodas,App\Models\Prestacion');
     Route::get('/prestaciones/{prestacion}', [PrestacionController::class, 'detalle'])->name('prestaciones.detalle')->middleware('can:ver,prestacion');
 
-    //Insumos
+    // Insumos
     Route::get('/insumos', [InsumoController::class, 'listado'])->name('insumos.listado')->middleware('can:verTodas,App\Models\Insumo');
     Route::get('/insumos/{insumo}', [InsumoController::class, 'detalle'])->name('insumos.detalle')->middleware('can:ver,insumo');
 
     // Transacciones y Pagos
     Route::get('/ingresos', [TransaccionController::class, 'listado'])->name('ingresos.listado');
-    
+
     // Realizar Pagos (Liquidación de Personal Médico)
     Route::get('/realizar-pagos', [PagoVeterinarioController::class, 'index'])->name('pagos.personal');
     Route::get('/realizar-pagos/{usuario}', [PagoVeterinarioController::class, 'detalle'])->name('pagos.personal.detalle');
     Route::post('/realizar-pagos/{usuario}/pagar', [PagoVeterinarioController::class, 'procesarPago'])->name('pagos.personal.pagar');
-    
+
     Route::get('/transacciones/{transaccion}/checkout', [TransaccionController::class, 'checkout'])
         ->name('transacciones.checkout')
         ->middleware('can:pagar,transaccion');
-        
+
     Route::post('/transacciones/{transaccion}/pagar', [TransaccionController::class, 'procesarPago'])
         ->name('transacciones.pagar')
         ->middleware('can:pagar,transaccion');
 });
 
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';

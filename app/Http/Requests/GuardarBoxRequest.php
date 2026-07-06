@@ -17,7 +17,7 @@ class GuardarBoxRequest extends FormRequest
         return [
             'nombre' => ['required', 'string', 'max:255'],
             'descripcion' => ['nullable', 'string'],
-            'sucursal_id' => ['required', 'exists:sucursales,id']
+            'sucursal_id' => ['required', 'exists:sucursales,id'],
         ];
     }
 

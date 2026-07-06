@@ -2,15 +2,13 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\Mascota;
-use Illuminate\Auth\Access\Response;
+use App\Models\User;
 
 class MascotaPolicy
 {
-
-    #El filtro before se ejecuta antes de cualquier otro método de la Policy.
-    #Si el usuario es administrador supremo, le otorgamos acceso total automático (bypass).
+    // El filtro before se ejecuta antes de cualquier otro método de la Policy.
+    // Si el usuario es administrador supremo, le otorgamos acceso total automático (bypass).
     public function before(User $user, string $ability)
     {
         if ($user->isAdmin()) {
@@ -18,15 +16,15 @@ class MascotaPolicy
         }
     }
 
-    #Verifica si el usuario tiene permiso para ver todas las mascotas
+    // Verifica si el usuario tiene permiso para ver todas las mascotas
     public function verTodas(User $user): bool
     {
-        # Un cliente necesita el permiso de ver sus propias mascotas
+        // Un cliente necesita el permiso de ver sus propias mascotas
         if ($user->isCliente() && $user->tienePermiso('ver-mis-mascotas')) {
             return true;
         }
 
-        # Un veterinario necesita el permiso de ver las de su sucursal
+        // Un veterinario necesita el permiso de ver las de su sucursal
         if ($user->isVeterinario() && $user->tienePermiso('ver-mascotas-sucursal')) {
             return true;
         }
@@ -34,15 +32,15 @@ class MascotaPolicy
         return false;
     }
 
-    #Verifica si el usuario tiene permiso para ver los detalles de una mascota específica
+    // Verifica si el usuario tiene permiso para ver los detalles de una mascota específica
     public function ver(User $user, Mascota $mascota): bool
     {
-        # Si es cliente, solo puede ver la mascota si es el propietario (dueño)
+        // Si es cliente, solo puede ver la mascota si es el propietario (dueño)
         if ($user->isCliente()) {
             return $user->tienePermiso('ver-mis-mascotas') && $mascota->cliente_id === $user->cliente?->id;
         }
 
-        # Si es veterinario, de momento requiere el permiso general de sucursal
+        // Si es veterinario, de momento requiere el permiso general de sucursal
         if ($user->isVeterinario()) {
             return $user->tienePermiso('ver-mascotas-sucursal');
         }
@@ -50,23 +48,22 @@ class MascotaPolicy
         return false;
     }
 
-    #Verifica si el usuario tiene permiso para crear una mascota
+    // Verifica si el usuario tiene permiso para crear una mascota
     public function crear(User $user): bool
     {
-        #Solo clientes pueden crear mascotas
+        // Solo clientes pueden crear mascotas
         return $user->isCliente() && $user->tienePermiso('crear-mis-mascotas');
     }
 
-    #Verifica si el usuario tiene permiso para editar una mascota específica
+    // Verifica si el usuario tiene permiso para editar una mascota específica
     public function editar(User $user, Mascota $mascota): bool
-
-    {   #Si es cliente, requiere el permiso de edición y ser el propietario
+    {   // Si es cliente, requiere el permiso de edición y ser el propietario
 
         if ($user->isCliente()) {
             return $user->tienePermiso('editar-mis-mascotas') && $mascota->cliente_id === $user->cliente?->id;
         }
 
-        #Si es veterinario, requiere el permiso de edición de su sucursal
+        // Si es veterinario, requiere el permiso de edición de su sucursal
 
         if ($user->isVeterinario()) {
             return $user->tienePermiso('editar-mascotas-sucursal');
@@ -75,10 +72,10 @@ class MascotaPolicy
         return false;
     }
 
-    #Verifica si el usuario tiene permiso para eliminar una mascota específica
+    // Verifica si el usuario tiene permiso para eliminar una mascota específica
     public function eliminar(User $user, Mascota $mascota): bool
     {
-        # Solo clientes pueden eliminar sus mascotas
+        // Solo clientes pueden eliminar sus mascotas
         return $user->isCliente()
             && $user->tienePermiso('eliminar-mis-mascotas')
             && $mascota->cliente_id === $user->cliente?->id;

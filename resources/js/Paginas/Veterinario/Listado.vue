@@ -5,7 +5,7 @@
             <div class="card shadow-sm border-0 rounded-4">
                 <div class="card-header bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
                     <h1 class="h4 mb-0 text-primary fw-bold">Veterinarios</h1>
-                    <button v-if="esVeterinarioOAdmin" type="button" class="btn btn-primary rounded-pill shadow-sm px-4" @click="abrirModalCrear">
+                    <button v-if="esAdmin" type="button" class="btn btn-primary rounded-pill shadow-sm px-4" @click="abrirModalCrear">
                         <i class="bi bi-plus-lg me-1"></i> Nuevo Veterinario
                     </button>
                 </div>
@@ -55,7 +55,7 @@
                     <EstadoVacio
                         :visible="!cargando && listaVacia"
                         mensaje="No hay veterinarios registrados aún."
-                        :texto-boton="esVeterinarioOAdmin ? 'Registrar tu primer veterinario' : ''"
+                        :texto-boton="esAdmin ? 'Registrar tu primer veterinario' : ''"
                         icono="bi bi-person-badge"
                         @accion="abrirModalCrear"
                     />
@@ -98,7 +98,7 @@
                                             <div class="text-muted" v-if="vet.direccion"><i class="bi bi-geo-alt me-2"></i>{{ vet.direccion }}</div>
                                         </div>
                                         
-                                        <div v-if="esVeterinarioOAdmin" class="d-flex gap-2 pt-3 border-top mt-auto justify-content-between">
+                                        <div v-if="esAdmin" class="d-flex gap-2 pt-3 border-top mt-auto justify-content-between">
                                             <button 
                                                 class="btn btn-sm btn-light text-primary border border-primary-subtle flex-grow-1 btn-hover-primary transition-all rounded-pill" 
                                                 @click.prevent="abrirModalEditar(vet)"
@@ -195,9 +195,22 @@
                     </div>
 
                     <div class="col-12">
-                        <label for="foto_perfil_url" class="form-label fw-semibold text-secondary small">URL Foto de Perfil (Opcional)</label>
-                        <input id="foto_perfil_url" v-model="formulario.foto_perfil_url" type="url" class="form-control bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.foto_perfil_url }" placeholder="https://ejemplo.com/foto.jpg" />
-                        <div v-if="formulario.errors.foto_perfil_url" class="invalid-feedback">{{ formulario.errors.foto_perfil_url }}</div>
+                        <label for="foto" class="form-label fw-semibold text-secondary small">Foto de Perfil (Opcional)</label>
+                        <input
+                            id="foto"
+                            ref="fotoInput"
+                            type="file"
+                            class="form-control bg-light border-0 py-2"
+                            accept="image/*"
+                            @change="seleccionarFoto"
+                            :class="{ 'is-invalid': formulario.errors.foto }"
+                        />
+                        <div v-if="formulario.errors.foto" class="invalid-feedback">
+                            {{ formulario.errors.foto }}
+                        </div>
+                        <div v-if="formulario.foto_perfil_url" class="mt-2 text-center">
+                            <img :src="formulario.foto_perfil_url" class="rounded-circle img-thumbnail shadow-sm" style="width: 100px; height: 100px; object-fit: cover;" alt="Vista previa de perfil" />
+                        </div>
                     </div>
                 </div>
             </ModalCrud>
@@ -257,6 +270,7 @@ export default {
                 password: '',
                 especialidad_id: '',
                 foto_perfil_url: '',
+                foto: null,
                 sucursal_id: '',
                 telefono: '',
                 direccion: '',
@@ -266,9 +280,9 @@ export default {
         }
     },
     computed: {
-        esVeterinarioOAdmin() {
-            const role = this.$page.props.auth.user.rol_id;
-            return role === 1 || role === 2; // Asumiendo 1=Admin, 2=Veterinario
+        esAdmin() {
+            const role = this.$page.props.auth.user.rol.nombre_interno;
+            return role === 'admin' // Admin
         },
         listaVacia() {
             return this.veterinariosLocales.length === 0 && !this.filtros.nombre && !this.filtros.especialidad_id && !this.filtros.sucursal_id;
@@ -301,6 +315,36 @@ export default {
             };
             this.obtenerVeterinarios();
         },
+        seleccionarFoto(e) {
+            const archivos = e.target.files;
+            if (archivos && archivos.length > 0) {
+                this.formulario.foto = archivos[0];
+            }
+        },
+        datosFormulario() {
+            const formData = new FormData();
+            formData.append('especialidad_id', this.formulario.especialidad_id);
+            formData.append('sucursal_id', this.formulario.sucursal_id);
+            if (this.formulario.telefono) {
+                formData.append('telefono', this.formulario.telefono);
+            }
+            if (this.formulario.direccion) {
+                formData.append('direccion', this.formulario.direccion);
+            }
+
+            if (!this.modoEdicion) {
+                formData.append('name', this.formulario.name);
+                formData.append('email', this.formulario.email);
+                formData.append('password', this.formulario.password);
+            }
+
+            if (this.formulario.foto) {
+                formData.append('foto', this.formulario.foto);
+            } else if (this.formulario.foto_perfil_url) {
+                formData.append('foto_perfil_url', this.formulario.foto_perfil_url);
+            }
+            return formData;
+        },
         abrirModalCrear() {
             this.modoEdicion = false;
             this.vetEditando = null;
@@ -309,6 +353,10 @@ export default {
             this.formulario.password = '';
             this.formulario.especialidad_id = '';
             this.formulario.foto_perfil_url = '';
+            this.formulario.foto = null;
+            if (this.$refs.fotoInput) {
+                this.$refs.fotoInput.value = '';
+            }
             this.formulario.sucursal_id = '';
             this.formulario.telefono = '';
             this.formulario.direccion = '';
@@ -319,8 +367,15 @@ export default {
             this.modoEdicion = true;
             this.vetEditando = vet;
             
+            this.formulario.name = vet.usuario?.name || '';
+            this.formulario.email = vet.usuario?.email || '';
+            this.formulario.password = '';
             this.formulario.especialidad_id = vet.especialidad_id || '';
             this.formulario.foto_perfil_url = vet.foto_perfil_url || '';
+            this.formulario.foto = null;
+            if (this.$refs.fotoInput) {
+                this.$refs.fotoInput.value = '';
+            }
             this.formulario.sucursal_id = vet.sucursal_id || '';
             this.formulario.telefono = vet.telefono || '';
             this.formulario.direccion = vet.direccion || '';
@@ -330,17 +385,43 @@ export default {
         },
         cerrarModal() {
             this.mostrarModal = false;
+            this.formulario.name = '';
+            this.formulario.email = '';
+            this.formulario.password = '';
+            this.formulario.especialidad_id = '';
+            this.formulario.foto_perfil_url = '';
+            this.formulario.foto = null;
+            if (this.$refs.fotoInput) {
+                this.$refs.fotoInput.value = '';
+            }
+            this.formulario.sucursal_id = '';
+            this.formulario.telefono = '';
+            this.formulario.direccion = '';
             this.formulario.errors = {};
         },
         guardar() {
             this.formulario.processing = true;
             this.formulario.errors = {};
 
-            const request = this.modoEdicion
-                ? axios.put(`/api/veterinarios/${this.vetEditando.id}`, this.formulario)
-                : axios.post('/api/veterinarios', this.formulario);
+            const data = this.datosFormulario();
+            let promise;
 
-            request
+            if (this.modoEdicion) {
+                data.append('_method', 'PUT');
+                promise = axios.post(`/api/veterinarios/${this.vetEditando.id}`, data, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+            } else {
+                promise = axios.post('/api/veterinarios', data, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+            }
+
+            promise
                 .then(() => {
                     this.cerrarModal();
                     this.obtenerVeterinarios();

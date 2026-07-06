@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class PagoVeterinario extends Model
 {
-    # Atributos
+    // Atributos
     protected $fillable = [
         'veterinario_id',
         'usuario_id',
@@ -16,15 +16,15 @@ class PagoVeterinario extends Model
         'estado',
     ];
 
-    # Relaciones
+    // Relaciones
 
-    # Relación con veterinario
+    // Relación con veterinario
     public function veterinario()
     {
         return $this->belongsTo(Veterinario::class);
     }
 
-    # Relación con usuario
+    // Relación con usuario
     public function usuario()
     {
         return $this->belongsTo(User::class, 'usuario_id');

@@ -14,18 +14,18 @@ test('actualizar horario de veterinario guarda los datos en base de datos', func
         [
             'dia' => 1, // Lunes
             'normal' => ['activo' => true, 'inicio' => '09:00', 'fin' => '13:00'],
-            'urgencia' => ['activo' => false, 'inicio' => '', 'fin' => '']
+            'urgencia' => ['activo' => false, 'inicio' => '', 'fin' => ''],
         ],
         [
             'dia' => 3, // Miercoles
             'normal' => ['activo' => false, 'inicio' => '', 'fin' => ''],
-            'urgencia' => ['activo' => false, 'inicio' => '', 'fin' => '']
-        ]
+            'urgencia' => ['activo' => false, 'inicio' => '', 'fin' => ''],
+        ],
     ];
 
     $this->actingAs($user)
         ->patchJson("/api/veterinarios/{$veterinario->id}/horario", [
-            'horario' => $horarioData
+            'horario' => $horarioData,
         ])
         ->assertOk()
         ->assertJsonPath('mensaje', 'Horario actualizado correctamente.');
@@ -48,13 +48,13 @@ test('horarios disponibles retorna slots basados en el horario personalizado del
         [
             'dia' => 1, // Lunes
             'normal' => ['activo' => true, 'inicio' => '09:00', 'fin' => '11:00'],
-            'urgencia' => ['activo' => false, 'inicio' => '', 'fin' => '']
+            'urgencia' => ['activo' => false, 'inicio' => '', 'fin' => ''],
         ],
         [
             'dia' => 3, // Miercoles
             'normal' => ['activo' => false, 'inicio' => '', 'fin' => ''],
-            'urgencia' => ['activo' => false, 'inicio' => '', 'fin' => '']
-        ]
+            'urgencia' => ['activo' => false, 'inicio' => '', 'fin' => ''],
+        ],
     ];
 
     $veterinario->update(['horario' => $horarioData]);

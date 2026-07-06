@@ -19,7 +19,7 @@
                             <option value="activo">Activos</option>
                             <option value="inactivo">Inactivos</option>
                         </select>
-                        <button type="button" class="btn btn-sm btn-primary" @click="abrirModalCrear">+ Nuevo Insumo</button>
+                        <button v-if="esAdmin" type="button" class="btn btn-sm btn-primary" @click="abrirModalCrear">+ Nuevo Insumo</button>
                     </div>
                 </div>
 
@@ -222,6 +222,10 @@ export default {
         }
     },
     computed: {
+        esAdmin() {
+            const role = this.$page.props.auth.user.rol.nombre_interno;
+            return role === 'admin'
+        },
         insumosVisibles() {
             let visibles = this.listaInsumos;
             if (this.filtroEstado)    visibles = visibles.filter(i => i.estado === this.filtroEstado);

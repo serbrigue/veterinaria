@@ -18,17 +18,17 @@ class ActualizarSucursalRequest extends FormRequest
             'nombre' => [
                 'required',
                 'string',
-                'max:255'
+                'max:255',
             ],
             'direccion' => [
                 'required',
                 'string',
-                'max:255'
+                'max:255',
             ],
             'telefono' => [
                 'nullable',
                 'string',
-                'max:255'
+                'max:255',
             ],
         ];
     }

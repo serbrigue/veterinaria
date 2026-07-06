@@ -6,7 +6,7 @@
 
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h1 class="h5 mb-0">Razas</h1>
-                    <button  v-if="esVeterinarioOAdmin"  type="button" class="btn btn-primary" @click="abrirModalCrear">
+                    <button  v-if="esVeterinario"  type="button" class="btn btn-primary" @click="abrirModalCrear">
                         + Nueva Raza
                     </button>
                 </div>
@@ -57,7 +57,7 @@
                     <EstadoVacio
                         :visible="!cargando && listaVacia"
                         mensaje="No tienes razas registradas aún."
-                        :texto-boton="esVeterinarioOAdmin ? 'Registrar tu primera raza' : ''"
+                        :texto-boton="esVeterinario ? 'Registrar tu primera raza' : ''"
                         icono="bi bi-bug-fill"
                         @accion="abrirModalCrear"
                     />
@@ -75,7 +75,7 @@
                                 :imagen-url="raza.imagen_url"
                                 icono="bi-bug-fill"
                                 :url-detalle="`/razas/${raza.id}`"
-                                :mostrar-acciones="esVeterinarioOAdmin"
+                                :mostrar-acciones="esVeterinario"
                                 @editar="abrirModalEditar(raza)"
                                 @eliminar="confirmarEliminar(raza)"
                             >
@@ -160,17 +160,21 @@
                     </div>
                 </div>
                 <div class="mb-3">
-                    <label for="imagen" class="form-label fw-semibold text-secondary small text-uppercase">Imagen (URL)</label>
+                    <label for="foto" class="form-label fw-semibold text-secondary small text-uppercase">Foto de la Raza</label>
                     <input
-                        id="imagen"
-                        v-model="formulario.imagen"
-                        type="text"
+                        id="foto"
+                        ref="fotoInput"
+                        type="file"
                         class="form-control bg-light border-0 py-2"
-                        placeholder="Ej: https://imagenes.com/mi-imagen.jpg"
-                        :class="{ 'is-invalid': formulario.errors.imagen }"
+                        accept="image/*"
+                        @change="seleccionarFoto"
+                        :class="{ 'is-invalid': formulario.errors.foto }"
                     />
-                    <div v-if="formulario.errors.imagen" class="invalid-feedback">
-                        {{ formulario.errors.imagen }}
+                    <div v-if="formulario.errors.foto" class="invalid-feedback">
+                        {{ formulario.errors.foto }}
+                    </div>
+                    <div v-if="formulario.imagen" class="mt-2 text-center">
+                        <img :src="formulario.imagen" class="img-thumbnail" style="max-height: 120px;" alt="Vista previa de la raza" />
                     </div>
                 </div>
             </ModalCrud>
@@ -223,15 +227,16 @@ export default {
                 descripcion: '',
                 especie_id: '',
                 imagen: '',
+                foto: null,
                 errors: {},
                 processing: false,
             },
         }
     },
     computed: {
-        esVeterinarioOAdmin() {
+        esVeterinario() {
             const user = this.$page.props.auth.user;
-            return user && (user.rol?.nombre_interno === 'veterinario' || user.rol?.nombre_interno === 'admin');
+            return user && (user.rol?.nombre_interno === 'veterinario');
         },
         textoBotonGuardar() {
             return this.modoEdicion ? 'Guardar cambios' : 'Crear raza';
@@ -253,6 +258,12 @@ export default {
         },
     },
     methods: {
+        seleccionarFoto(e) {
+            const archivos = e.target.files;
+            if (archivos && archivos.length > 0) {
+                this.formulario.foto = archivos[0];
+            }
+        },
         limpiarFiltros(){
             this.filtroTexto='';
             this.filtroEspecie='';
@@ -265,16 +276,26 @@ export default {
             this.formulario.descripcion='';
             this.formulario.especie_id='';
             this.formulario.imagen='';
+            this.formulario.foto=null;
+            if (this.$refs.fotoInput) {
+                this.$refs.fotoInput.value = '';
+            }
             this.formulario.errors={};
             this.mostrarModal=true;
         },
         datosFormulario(){
-            return {
-                nombre: this.formulario.nombre,
-                descripcion: this.formulario.descripcion,
-                especie_id: this.formulario.especie_id,
-                imagen_url: this.formulario.imagen,
+            const formData = new FormData();
+            formData.append('nombre', this.formulario.nombre);
+            if (this.formulario.descripcion) {
+                formData.append('descripcion', this.formulario.descripcion);
             }
+            formData.append('especie_id', this.formulario.especie_id);
+            if (this.formulario.foto) {
+                formData.append('foto', this.formulario.foto);
+            } else if (this.formulario.imagen) {
+                formData.append('imagen_url', this.formulario.imagen);
+            }
+            return formData;
         },                                          
 
         abrirModalEditar(raza) {
@@ -284,6 +305,10 @@ export default {
             this.formulario.descripcion=raza.descripcion;
             this.formulario.especie_id=raza.especie_id;
             this.formulario.imagen=raza.imagen_url;
+            this.formulario.foto=null;
+            if (this.$refs.fotoInput) {
+                this.$refs.fotoInput.value = '';
+            }
             this.formulario.errors={};
             this.mostrarModal=true;
         },
@@ -296,6 +321,10 @@ export default {
             this.formulario.descripcion='';
             this.formulario.especie_id='';
             this.formulario.imagen='';
+            this.formulario.foto=null;
+            if (this.$refs.fotoInput) {
+                this.$refs.fotoInput.value = '';
+            }
             this.formulario.errors={};
         },
 
@@ -319,11 +348,6 @@ export default {
                     this.cargando=false;
                 })
         },
-        limpiarFiltros(){
-            this.filtroTexto='';
-            this.filtroEspecie='';
-            this.obtenerRazas();
-        },
         guardar() {
             this.formulario.processing=true;
             this.formulario.errors={};
@@ -334,16 +358,26 @@ export default {
             }
         },
         actualizarRaza(){
-            axios.put(`/api/razas/${this.razaEditando.id}`, { ...this.datosFormulario() })
-                .then(() => { this.cerrarModal(); this.obtenerRazas(); })
-                .catch((error) => { if (error.response?.status === 422) this.formulario.errors = error.response.data.errors })
-                .finally(() => { this.formulario.processing = false });
+            const data = this.datosFormulario();
+            data.append('_method', 'PUT');
+            axios.post(`/api/razas/${this.razaEditando.id}`, data, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            })
+            .then(() => { this.cerrarModal(); this.obtenerRazas(); })
+            .catch((error) => { if (error.response?.status === 422) this.formulario.errors = error.response.data.errors })
+            .finally(() => { this.formulario.processing = false });
         },
         crearRaza(){
-            axios.post('/api/razas', { ...this.datosFormulario() })
-                .then(() => { this.cerrarModal(); this.obtenerRazas(); })
-                .catch((error) => { if (error.response?.status === 422) this.formulario.errors = error.response.data.errors })
-                .finally(() => { this.formulario.processing = false });
+            axios.post('/api/razas', this.datosFormulario(), {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            })
+            .then(() => { this.cerrarModal(); this.obtenerRazas(); })
+            .catch((error) => { if (error.response?.status === 422) this.formulario.errors = error.response.data.errors })
+            .finally(() => { this.formulario.processing = false });
         },
         confirmarEliminar(raza) {
             this.razaAEliminar = raza;

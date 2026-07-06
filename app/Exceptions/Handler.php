@@ -2,13 +2,12 @@
 
 namespace App\Exceptions;
 
-use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Throwable;
 
 class Handler extends ExceptionHandler
-
 {
     /**
      * The list of the inputs that are never flashed to the session on validation exceptions.
@@ -32,17 +31,19 @@ class Handler extends ExceptionHandler
 
         $this->renderable(function (HttpException $e, $request) {
             if ($e->getStatusCode() === 403) {
-                if (!auth()->check()) {
+                if (! auth()->check()) {
                     return redirect()->route('iniciar-sesion');
                 }
+
                 return redirect('/');
             }
         });
 
         $this->renderable(function (AuthorizationException $e, $request) {
-            if (!auth()->check()) {
+            if (! auth()->check()) {
                 return redirect()->route('iniciar-sesion');
             }
+
             return redirect('/');
         });
     }

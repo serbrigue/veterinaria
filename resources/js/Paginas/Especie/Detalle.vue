@@ -1,5 +1,6 @@
 <template>
     <AuthenticatedLayout>
+        {{ especie.imagen_url}}
         <Head :title="`Detalle - ${especie.nombre}`" />
         <div class="container py-4">
             <div class="mb-3">

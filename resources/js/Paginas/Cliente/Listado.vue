@@ -14,7 +14,7 @@
 
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h1 class="h5 mb-0">Gestión de Clientes</h1>
-                    <button type="button" class="btn btn-primary" @click="abrirModalCrear">
+                    <button v-if="esAdmin" type="button" class="btn btn-primary" @click="abrirModalCrear">
                         + Nuevo Cliente
                     </button>
                 </div>

@@ -23,6 +23,7 @@ class GuardarInsumoRequest extends FormRequest
             'estado' => 'required|in:activo,inactivo',
         ];
     }
+
     public function messages(): array
     {
         return [

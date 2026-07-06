@@ -18,6 +18,7 @@ class ActualizarCitaCargoRequest extends FormRequest
             'cantidad' => 'required|integer|min:1',
         ];
     }
+
     public function messages(): array
     {
         return [

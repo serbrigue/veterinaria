@@ -5,7 +5,7 @@
             <div class="card shadow-sm border-0 rounded-4">
                 <div class="card-header bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
                     <h1 class="h4 mb-0 text-primary fw-bold">Boxes de Atención</h1>
-                    <button v-if="esVeterinarioOAdmin" type="button" class="btn btn-primary rounded-pill shadow-sm px-4" @click="abrirModalCrear">
+                    <button v-if="esAdmin" type="button" class="btn btn-primary rounded-pill shadow-sm px-4" @click="abrirModalCrear">
                         <i class="bi bi-plus-lg me-1"></i> Nuevo Box
                     </button>
                 </div>
@@ -210,9 +210,9 @@ export default {
         }
     },
     computed: {
-        esVeterinarioOAdmin() {
+        esAdmin() {
             const user = this.$page.props.auth.user;
-            return user && (user.rol?.nombre_interno === 'veterinario' || user.rol?.nombre_interno === 'admin');
+            return user && (user.rol?.nombre_interno === 'admin');
         },
         textoBotonGuardar() { return this.modoEdicion ? 'Guardar Cambios' : 'Crear Box'; },
         tituloModal()       { return this.modoEdicion ? 'Editar Box' : 'Nuevo Box'; },

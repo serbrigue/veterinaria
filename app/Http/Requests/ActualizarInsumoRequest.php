@@ -23,6 +23,7 @@ class ActualizarInsumoRequest extends FormRequest
             'estado' => 'sometimes|required|in:activo,inactivo',
         ];
     }
+
     public function messages(): array
     {
         return [

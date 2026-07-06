@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\User;
 
-
 class BloqueoHorarioPolicy
 {
     public function before(User $user, string $ability)
