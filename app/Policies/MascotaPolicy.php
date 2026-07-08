@@ -29,6 +29,11 @@ class MascotaPolicy
             return true;
         }
 
+        // Una secretaria necesita el permiso de ver las de su sucursal
+        if ($user->rol?->nombre_interno === 'secretaria' && $user->tienePermiso('ver-mascotas-sucursal')) {
+            return true;
+        }
+
         return false;
     }
 
@@ -40,9 +45,14 @@ class MascotaPolicy
             return $user->tienePermiso('ver-mis-mascotas') && $mascota->cliente_id === $user->cliente?->id;
         }
 
-        // Si es veterinario, de momento requiere el permiso general de sucursal
-        if ($user->isVeterinario()) {
-            return $user->tienePermiso('ver-mascotas-sucursal');
+        // Si es veterinario
+        if ($user->isVeterinario() && $user->tienePermiso('ver-mascotas-sucursal')) {
+            return true;
+        }
+
+        // Si es secretaria
+        if ($user->rol?->nombre_interno === 'secretaria' && $user->tienePermiso('ver-mascotas-sucursal')) {
+            return true;
         }
 
         return false;
@@ -51,22 +61,30 @@ class MascotaPolicy
     // Verifica si el usuario tiene permiso para crear una mascota
     public function crear(User $user): bool
     {
-        // Solo clientes pueden crear mascotas
-        return $user->isCliente() && $user->tienePermiso('crear-mis-mascotas');
+        // Clientes pueden crear sus propias mascotas
+        if ($user->isCliente() && $user->tienePermiso('crear-mis-mascotas')) {
+            return true;
+        }
+
+        // Secretarias pueden registrar mascotas de la sucursal
+        if ($user->rol?->nombre_interno === 'secretaria' && $user->tienePermiso('editar-mascotas-sucursal')) {
+            return true;
+        }
+
+        return false;
     }
 
     // Verifica si el usuario tiene permiso para editar una mascota específica
     public function editar(User $user, Mascota $mascota): bool
-    {   // Si es cliente, requiere el permiso de edición y ser el propietario
-
+    {
+        // Si es cliente, requiere el permiso de edición y ser el propietario
         if ($user->isCliente()) {
             return $user->tienePermiso('editar-mis-mascotas') && $mascota->cliente_id === $user->cliente?->id;
         }
 
-        // Si es veterinario, requiere el permiso de edición de su sucursal
-
-        if ($user->isVeterinario()) {
-            return $user->tienePermiso('editar-mascotas-sucursal');
+        // Si es secretaria, requiere el permiso de edición de mascotas
+        if ($user->rol?->nombre_interno === 'secretaria' && $user->tienePermiso('editar-mascotas-sucursal')) {
+            return true;
         }
 
         return false;
@@ -75,9 +93,16 @@ class MascotaPolicy
     // Verifica si el usuario tiene permiso para eliminar una mascota específica
     public function eliminar(User $user, Mascota $mascota): bool
     {
-        // Solo clientes pueden eliminar sus mascotas
-        return $user->isCliente()
-            && $user->tienePermiso('eliminar-mis-mascotas')
-            && $mascota->cliente_id === $user->cliente?->id;
+        // Si es cliente, requiere el permiso de eliminación y ser el propietario
+        if ($user->isCliente()) {
+            return $user->tienePermiso('eliminar-mis-mascotas') && $mascota->cliente_id === $user->cliente?->id;
+        }
+
+        // Si es secretaria, requiere el permiso de edición de mascotas
+        if ($user->rol?->nombre_interno === 'secretaria' && $user->tienePermiso('editar-mascotas-sucursal')) {
+            return true;
+        }
+
+        return false;
     }
 }

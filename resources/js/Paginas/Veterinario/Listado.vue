@@ -5,9 +5,11 @@
             <div class="card shadow-sm border-0 rounded-4">
                 <div class="card-header bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
                     <h1 class="h4 mb-0 text-primary fw-bold">Veterinarios</h1>
-                    <button v-if="esAdmin" type="button" class="btn btn-primary rounded-pill shadow-sm px-4" @click="abrirModalCrear">
-                        <i class="bi bi-plus-lg me-1"></i> Nuevo Veterinario
-                    </button>
+                    <TieneRol rol="admin">
+                        <button type="button" class="btn btn-primary rounded-pill shadow-sm px-4" @click="abrirModalCrear">
+                            <i class="bi bi-person-plus me-1"></i> Registrar Veterinario
+                        </button>
+                    </TieneRol>
                 </div>
 
                 <div class="card-body p-4">
@@ -55,7 +57,7 @@
                     <EstadoVacio
                         :visible="!cargando && listaVacia"
                         mensaje="No hay veterinarios registrados aún."
-                        :texto-boton="esAdmin ? 'Registrar tu primer veterinario' : ''"
+                        :texto-boton="$isAdmin() ? 'Registrar tu primer veterinario' : ''"
                         icono="bi bi-person-badge"
                         @accion="abrirModalCrear"
                     />
@@ -98,7 +100,7 @@
                                             <div class="text-muted" v-if="vet.direccion"><i class="bi bi-geo-alt me-2"></i>{{ vet.direccion }}</div>
                                         </div>
                                         
-                                        <div v-if="esAdmin" class="d-flex gap-2 pt-3 border-top mt-auto justify-content-between">
+                                        <div v-if="$isAdmin()" class="d-flex gap-2 pt-3 border-top mt-auto justify-content-between">
                                             <button 
                                                 class="btn btn-sm btn-light text-primary border border-primary-subtle flex-grow-1 btn-hover-primary transition-all rounded-pill" 
                                                 @click.prevent="abrirModalEditar(vet)"
@@ -280,10 +282,6 @@ export default {
         }
     },
     computed: {
-        esAdmin() {
-            const role = this.$page.props.auth.user.rol.nombre_interno;
-            return role === 'admin' // Admin
-        },
         listaVacia() {
             return this.veterinariosLocales.length === 0 && !this.filtros.nombre && !this.filtros.especialidad_id && !this.filtros.sucursal_id;
         },

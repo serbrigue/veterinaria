@@ -14,9 +14,11 @@
 
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h1 class="h5 mb-0">Gestión de Clientes</h1>
-                    <button v-if="esAdmin" type="button" class="btn btn-primary" @click="abrirModalCrear">
-                        + Nuevo Cliente
-                    </button>
+                    <TieneRol :rol="['admin', 'secretaria']">
+                        <button type="button" class="btn btn-primary" @click="abrirModalCrear">
+                            + Nuevo Cliente
+                        </button>
+                    </TieneRol>
                 </div>
 
                 <div class="card-body">
@@ -73,7 +75,7 @@
 
                     <div v-if="!cargando && !listaVacia && !sinResultadosFiltro">
                         <!-- MENU DE ACCION RAPIDA (CORREO MASIVO) -->
-                        <div v-if="esAdmin && selectedClientes.length > 0" class="alert alert-info d-flex justify-content-between align-items-center mb-4 shadow-sm border border-info rounded-3 p-3">
+                        <div v-if="$isAdmin() && selectedClientes.length > 0" class="alert alert-info d-flex justify-content-between align-items-center mb-4 shadow-sm border border-info rounded-3 p-3">
                             <div class="d-flex align-items-center gap-2">
                                 <i class="bi bi-people-fill fs-5"></i>
                                 <span>Hay <strong>{{ selectedClientes.length }}</strong> cliente(s) seleccionado(s).</span>
@@ -93,10 +95,10 @@
                             <table class="table table-hover align-middle border">
                             <thead class="table-light">
                                 <tr>
-                                    <th v-if="esAdmin" class="ps-3" style="width: 45px;">
+                                    <th v-if="$isAdmin()" class="ps-3" style="width: 45px;">
                                         <input type="checkbox" class="form-check-input" :checked="isAllSelected" @change="toggleSelectAll">
                                     </th>
-                                    <th class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7" :class="{ 'ps-3': !esAdmin }">Cliente</th>
+                                    <th class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7" :class="{ 'ps-3': !$isAdmin() }">Cliente</th>
                                     <th class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7">Contacto</th>
                                     <th class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7">Mascotas</th>
                                     <th class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7">Estado Financiero</th>
@@ -104,11 +106,11 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="cliente in clientesArray" :key="cliente.id" :class="{ 'table-active': esAdmin && selectedClientes.includes(cliente.id) }">
-                                    <td v-if="esAdmin" class="ps-3">
+                                <tr v-for="cliente in clientesArray" :key="cliente.id" :class="{ 'table-active': $isAdmin() && selectedClientes.includes(cliente.id) }">
+                                    <td v-if="$isAdmin()" class="ps-3">
                                         <input type="checkbox" class="form-check-input" :value="cliente.id" v-model="selectedClientes">
                                     </td>
-                                    <td :class="{ 'ps-3': !esAdmin }">
+                                    <td :class="{ 'ps-3': !$isAdmin() }">
                                         <div class="d-flex align-items-center gap-2">
                                             <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
                                                 <img v-if="cliente.foto_perfil_url" :src="cliente.foto_perfil_url" class="rounded-circle object-fit-cover" style="width: 40px; height: 40px;">
@@ -149,9 +151,11 @@
                                     </td>
                                     <td>
                                         <div class="d-flex justify-content-center gap-2">
-                                            <button class="btn btn-sm btn-outline-primary rounded-pill px-3 hover-opacity" @click="abrirModalEditar(cliente)">
-                                                Editar
-                                            </button>
+                                            <TieneRol :rol="['admin', 'secretaria']">
+                                                <button class="btn btn-sm btn-outline-primary rounded-pill px-3 hover-opacity" @click="abrirModalEditar(cliente)">
+                                                    Editar
+                                                </button>
+                                            </TieneRol>
                                         </div>
                                     </td>
                                 </tr>
@@ -331,10 +335,6 @@ export default {
         isAllSelected() {
             if (this.clientesArray.length === 0) return false;
             return this.clientesArray.every(c => this.selectedClientes.includes(c.id));
-        },
-        esAdmin() {
-            const user = this.$page.props.auth.user;
-            return user && (user.rol_id === 1 || (user.rol && user.rol.nombre_interno === 'admin'));
         },
         listaVacia() {
             return !this.filtroNombre && !this.filtroMascota && !this.filtroSucursal && !this.filtroEstadoPago && this.clientesArray.length === 0;

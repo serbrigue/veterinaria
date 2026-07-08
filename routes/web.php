@@ -72,6 +72,7 @@ Route::middleware('auth')->group(function () {
     // MÓDULO 5 — Citas (manual): Route::get('/citas', ...)->name('citas.listado');
     Route::get('/citas', [CitaController::class, 'listado'])->name('citas.listado')->middleware('can:verTodas,App\Models\Cita');
     Route::get('/citas/{cita}', [CitaController::class, 'detalle'])->name('citas.detalle')->middleware('can:ver,cita');
+    Route::get('/secretaria/calendario', [CitaController::class, 'agendaSecretaria'])->name('agenda.secretaria');
 
     // Sucursales
     Route::get('/sucursales', [SucursalController::class, 'listado'])->name('sucursales.listado')->middleware('can:verTodas,App\Models\Sucursal');

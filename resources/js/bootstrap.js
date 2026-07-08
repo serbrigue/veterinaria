@@ -11,6 +11,10 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 window.axios.defaults.headers.common['Accept'] = 'application/json';
 window.axios.defaults.withCredentials = true;
 
+import { Chart, registerables } from 'chart.js';
+Chart.register(...registerables);
+window.Chart = Chart;
+
 // Interceptor global para redireccionar en caso de error 403 (falta de permisos)
 window.axios.interceptors.response.use(
     response => response,

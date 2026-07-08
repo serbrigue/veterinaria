@@ -8,7 +8,7 @@
 
 
                     <div class="d-flex flex-wrap gap-2 align-items-center">
-                        <button v-if="esCliente" type="button" class="btn btn-sm btn-primary" @click="abrirModalCrear">
+                        <button v-if="$isCliente() || $isAdmin() || $isSecretaria()" type="button" class="btn btn-sm btn-primary" @click="abrirModalCrear">
                             + Nueva Mascota
                         </button>
                     </div>
@@ -107,7 +107,7 @@
                                     <th>Peso (kg)</th>
                                     <th>Color</th>
                                     <th>Esterilizado</th>
-                                    <th v-if="esCliente" style="width: 180px">Acciones</th>
+                                    <th v-if="$isCliente() || $isAdmin() || $isSecretaria()" style="width: 180px">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -133,7 +133,7 @@
                                     <td>{{ mascota.color || '—' }}</td>
                                     <td>{{ mascota.esterilizado ? 'Sí' : 'No' }}</td>
                                     <td>
-                                        <div v-if="$page.props.auth.user.rol.nombre_interno == 'cliente'" class="btn-group btn-group-sm">
+                                        <div v-if="$isCliente() || $isAdmin() || $isSecretaria()" class="btn-group btn-group-sm">
                                             <button
                                                 type="button"
                                                 class="btn btn-primary"
@@ -470,10 +470,6 @@ export default {
         }
     },
     computed: {
-        esCliente() {
-            const role = this.$page.props.auth.user.rol.nombre_interno;
-            return role === 'cliente'
-        },
         mascotasVisibles() {
             return this.mascotas
         },

@@ -88,13 +88,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/citas', [CitaController::class, 'crear'])
         ->middleware('can:crear,App\Models\Cita');
     Route::put('/citas/{cita}', [CitaController::class, 'actualizar'])
-        ->middleware('can:editar,cita');
+        ->middleware('can:actualizar,cita');
     Route::patch('/citas/{cita}/cancelar', [CitaController::class, 'cancelar'])
         ->middleware('can:cancelar,cita');
     Route::patch('/citas/{cita}/notas', [CitaController::class, 'actualizarNotas'])
-        ->middleware('can:editar,cita');
+        ->middleware('can:editarNotas,cita');
     Route::patch('/citas/{cita}/estado', [CitaController::class, 'actualizarEstado'])
-        ->middleware('can:editar,cita');
+        ->middleware('can:editarEstado,cita');
 
     // MÓDULO 6 — Cargos de Citas
     Route::post('/citas/{cita}/cargo', [CitaCargoController::class, 'crear'])

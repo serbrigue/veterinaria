@@ -1,5 +1,6 @@
 <template>
     <Head :title="'Mascota - ' + (mascota.nombre || 'Detalle')" />
+
     <AuthenticatedLayout>
         <div class="container py-4">
             <div class="d-flex align-items-center justify-content-between mb-4">
@@ -9,7 +10,7 @@
                     </Link>
                     <h1 class="h3 mb-0 text-dark fw-bold">Perfil del Paciente</h1>
                 </div>
-                <div class="d-flex gap-2">
+                <div v-if="puedeEditarMascota" class="d-flex gap-2">
                     <button @click="abrirEditar" class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1">
                         <i class="bi bi-pencil"></i> Editar
                     </button>
@@ -45,7 +46,7 @@
                                 <div>
                                     <div class="text-muted small fw-medium mb-1">Dueño (Cliente)</div>
                                         <Link v-if='cliente':href="route('clientes.detalle', cliente.id)" class="text-decoration-none fw-bold text-primary hover-primary">
-                                            {{ cliente?.name }} <i class="bi bi-box-arrow-up-right ms-1 small"></i>
+                                            {{ cliente?.usuario?.name }} <i class="bi bi-box-arrow-up-right ms-1 small"></i>
                                         </Link>
                                         <span v-else class="text-dark fw-medium">No asignado</span>
                                     </div>
@@ -88,7 +89,7 @@
                             <h3 class="h6 mb-0 fw-bold text-dark d-flex align-items-center gap-2">
                                 <i class="bi bi-calendar-event text-primary"></i> Citas Próximas
                             </h3>
-                            <button @click="abrirModalCita" class="btn btn-sm btn-primary d-flex align-items-center gap-1">
+                            <button v-if="puedeCrearCita" @click="abrirModalCita" class="btn btn-sm btn-primary d-flex align-items-center gap-1">
                                 <i class="bi bi-plus-lg"></i> Nueva Cita
                             </button>
                         </div>
@@ -790,6 +791,34 @@ export default {
                 return vet.especialidad_id === prestacion.especialidad_id;
             });
         },
+        puedeEditarMascota() {
+            const user = this.$page.props.auth.user;
+            if (!user || !user.rol) return false;
+
+            if (this.$isAdmin() || this.$isSecretaria()) {
+                return true;
+            }
+
+            if (this.$isCliente()) {
+                return this.mascota.cliente_id === user.cliente?.id;
+            }
+
+            return false;
+        },
+        puedeCrearCita() {
+            const user = this.$page.props.auth.user;
+            if (!user || !user.rol) return false;
+
+            if (this.$isAdmin() || this.$isSecretaria()) {
+                return true;
+            }
+
+            if (this.$isCliente()) {
+                return this.mascota.cliente_id === user.cliente?.id;
+            }
+
+            return false;
+        },
     },
     watch: {
         'formularioCita.prestacion_id'(newVal, oldVal) {
@@ -895,7 +924,7 @@ export default {
         },
         obtenerClientes() {
             const user = this.$page.props.auth.user;
-            if (user && (user.rol.nombre_interno === 'admin' || user.rol.nombre_interno === 'veterinario')) {
+            if (this.$isAdmin() || this.$isVeterinario() || this.$isSecretaria()) {
                 axios.get('/api/clientes')
                     .then((response) => {
                         this.clientes = response.data.clientes || response.data;

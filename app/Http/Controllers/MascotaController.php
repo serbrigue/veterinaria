@@ -23,14 +23,14 @@ class MascotaController extends Controller
     {
         // Iniciamos la consulta con eager loading
         $query = Mascota::with('cliente.usuario', 'raza.especie')
-            ->when($request->filled('nombre'), fn ($q) => $q->where('nombre', 'like', '%'.$request->nombre.'%'))
-            ->when($request->filled('especie_id'), fn ($q) => $q->whereHas('raza', fn ($r) => $r->where('especie_id', $request->especie_id)))
-            ->when($request->filled('raza_id'), fn ($q) => $q->where('raza_id', $request->raza_id))
-            ->when($request->filled('sexo'), fn ($q) => $q->where('sexo', $request->sexo))
-            ->when($request->filled('esterilizado'), fn ($q) => $q->where('esterilizado', $request->esterilizado));
+            ->when($request->filled('nombre'), fn($q) => $q->where('nombre', 'like', '%' . $request->nombre . '%'))
+            ->when($request->filled('especie_id'), fn($q) => $q->whereHas('raza', fn($r) => $r->where('especie_id', $request->especie_id)))
+            ->when($request->filled('raza_id'), fn($q) => $q->where('raza_id', $request->raza_id))
+            ->when($request->filled('sexo'), fn($q) => $q->where('sexo', $request->sexo))
+            ->when($request->filled('esterilizado'), fn($q) => $q->where('esterilizado', $request->esterilizado));
 
-        // Obtenemos todas las mascotas si el usuario es admin o veterinario
-        if (auth()->user()->isAdmin() || auth()->user()->isVeterinario()) {
+        // Obtenemos todas las mascotas si el usuario es admin o veterinario o secretaria
+        if (auth()->user()->isAdmin() || auth()->user()->isVeterinario() || auth()->user()->isSecretaria()) {
             $clientes = Cliente::with('usuario')->get();
         } else {
             // Si no, filtramos por el cliente
@@ -59,7 +59,10 @@ class MascotaController extends Controller
 
     public function obtenerTodas()
     {
-        // Obtenemos todas las mascotas paginadas
+        // Obtenemos todas las mascotas
+        if (auth()->user()->isAdmin() || auth()->user()->isVeterinario() || auth()->user()->isSecretaria()) {
+            return Mascota::with('cliente.usuario')->get();
+        }
         return Mascota::where('cliente_id', auth()->user()->cliente?->id)->get();
     }
 
@@ -139,7 +142,7 @@ class MascotaController extends Controller
             'mascota' => $mascota,
             'proximasCitas' => $proximasCitas,
             'historialClinico' => $historialClinico,
-            'cliente' => $mascota->cliente->usuario,
+            'cliente' => $mascota->cliente,
             'especie' => $mascota->raza->especie,
             'raza' => $mascota->raza,
             'sucursales' => $sucursales,

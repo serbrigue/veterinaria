@@ -26,8 +26,8 @@ class CitaController extends Controller
 {
     public function listado(Request $request)
     {
-        // Verificamos si el usuario es administrador o veterinario
-        if (auth()->user()->isAdmin() || auth()->user()->isVeterinario()) {
+        // Verificamos si el usuario es administrador, veterinario o secretaria
+        if (auth()->user()->isAdmin() || auth()->user()->isVeterinario() || auth()->user()->rol?->nombre_interno === 'secretaria') {
             // Si lo es, traemos todas las mascotas
             $mascotas = Mascota::with('cliente.usuario', 'raza.especie')->get();
         } else {
@@ -44,16 +44,19 @@ class CitaController extends Controller
             ->when($request->filled('titulo'), fn($q) => $q->where('titulo', 'like', '%' . $request->titulo . '%'))
             ->when($request->filled('estado'), fn($q) => $q->where('estado', $request->estado));
 
-        // Si el usuario no es administrador ni veterinario
-
-        if (! auth()->user()->isAdmin() && ! auth()->user()->isVeterinario()) {
-            // Traemos solo las citas del cliente
+        // Aplicamos restricciones según el rol del usuario
+        if (auth()->user()->isAdmin()) {
+            // Admin ve todo
+        } else if (auth()->user()->isVeterinario()) {
+            // Veterinario ve solo sus citas
+            $query->where('veterinario_id', auth()->user()->veterinario?->id);
+        } else if (auth()->user()->rol?->nombre_interno === 'secretaria') {
+            // Secretaria ve las citas de su sucursal
+            $query->whereHas('veterinario', fn($v) => $v->where('sucursal_id', auth()->user()->secretaria?->sucursal_id));
+        } else {
+            // Cliente ve solo sus citas
             $clienteId = auth()->user()->cliente?->id;
             $query->whereHas('mascota', fn($q) => $q->where('cliente_id', $clienteId));
-            // Aparte si no se especifica estado, no mostramos canceladas
-        } else if (auth()->user()->isVeterinario()) {
-            // Si el usuario es veterinario traemos solo sus citas
-            $query->where('veterinario_id', auth()->user()->veterinario?->id);
         }
 
         // Aparte si no se especifica estado, no mostramos canceladas
@@ -110,6 +113,13 @@ class CitaController extends Controller
         if (auth()->user()->isVeterinario()) {
             return Cita::where('veterinario_id', auth()->user()->veterinario?->id)
                 ->with(['mascota.cliente.usuario', 'veterinario.usuario'])
+                ->get();
+        }
+
+        // Si es secretaria, traemos las de su sucursal
+        if (auth()->user()->rol?->nombre_interno === 'secretaria') {
+            return Cita::whereHas('veterinario', fn($v) => $v->where('sucursal_id', auth()->user()->secretaria?->sucursal_id))
+                ->with(['mascota.cliente.usuario', 'veterinario.usuario', 'box'])
                 ->get();
         }
 
@@ -582,5 +592,30 @@ class CitaController extends Controller
                 $cita->transaccion->update(['estado' => 'anulado']);
             }
         }
+    }
+
+    public function agendaSecretaria()
+    {
+        if (auth()->user()->rol->nombre_interno !== 'secretaria') {
+            abort(403, 'Acceso exclusivo para el personal de secretaría.');
+        }
+
+        $citas = Cita::with(['mascota.cliente.usuario', 'veterinario.usuario', 'box', 'prestacion'])
+            ->where('fecha_hora', '>=', Carbon::today())
+            ->orderBy('fecha_hora', 'asc')
+            ->get();
+
+        $mascotas = Mascota::with('cliente.usuario', 'raza.especie')->get();
+        $sucursales = Sucursal::with(['veterinarios.usuario', 'boxes'])->orderBy('nombre')->get();
+        $prestaciones = Prestacion::with(['sucursal', 'especialidad'])->orderBy('nombre')->get();
+        $veterinarios = Veterinario::with('usuario')->get();
+
+        return Inertia::render('Secretaria/Calendario', [
+            'citas' => $citas,
+            'mascotas' => $mascotas,
+            'sucursales' => $sucursales,
+            'prestaciones' => $prestaciones,
+            'veterinarios' => $veterinarios,
+        ]);
     }
 }

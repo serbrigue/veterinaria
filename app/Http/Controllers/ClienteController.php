@@ -7,6 +7,8 @@ use App\Http\Requests\GuardarClienteRequest;
 use App\Mail\NotificacionMasivaMail;
 use App\Models\Cliente;
 use App\Models\Sucursal;
+use App\Models\User;
+use App\Models\Rol;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
@@ -18,9 +20,9 @@ class ClienteController extends Controller
         // Obtenemos los datos del query
         $query = Cliente::with(['usuario', 'mascotas']);
 
-        // Verificamos si el usuario es administrador o veterinario
-        if (auth()->user()->isAdmin() || auth()->user()->isVeterinario()) {
-            // Los administradores y veterinarios ven todos, con opción a filtrar
+        // Verificamos si el usuario es administrador, veterinario o secretaria
+        if (auth()->user()->isAdmin() || auth()->user()->isVeterinario() || auth()->user()->isSecretaria()) {
+            // Los administradores, veterinarios y secretarias ven todos, con opción a filtrar
         } else {
             // Un cliente solo ve su perfil
             $query->where('user_id', auth()->id());
@@ -29,21 +31,21 @@ class ClienteController extends Controller
         // Filtros
         $query->when(
             $request->filled('nombre'),
-            fn ($q) => $q->whereHas('usuario', fn ($u) => $u->where('name', 'like', '%'.$request->nombre.'%'))
+            fn($q) => $q->whereHas('usuario', fn($u) => $u->where('name', 'like', '%' . $request->nombre . '%'))
         )
             ->when(
                 $request->filled('mascota'),
-                fn ($q) => $q->whereHas('mascotas', fn ($m) => $m->where('nombre', 'like', '%'.$request->mascota.'%'))
+                fn($q) => $q->whereHas('mascotas', fn($m) => $m->where('nombre', 'like', '%' . $request->mascota . '%'))
             )
             ->when(
                 $request->filled('sucursal_id'),
-                fn ($q) => $q->whereHas('mascotas.citas.box', fn ($b) => $b->where('sucursal_id', $request->sucursal_id))
+                fn($q) => $q->whereHas('mascotas.citas.box', fn($b) => $b->where('sucursal_id', $request->sucursal_id))
             )
             ->when($request->filled('estado_pago'), function ($q) use ($request) {
                 if ($request->estado_pago === 'moroso') {
-                    $q->whereHas('transacciones', fn ($t) => $t->where('estado', 'pendiente'));
+                    $q->whereHas('transacciones', fn($t) => $t->where('estado', 'pendiente'));
                 } elseif ($request->estado_pago === 'al_dia') {
-                    $q->whereDoesntHave('transacciones', fn ($t) => $t->where('estado', 'pendiente'));
+                    $q->whereDoesntHave('transacciones', fn($t) => $t->where('estado', 'pendiente'));
                 }
             });
 
@@ -104,29 +106,51 @@ class ClienteController extends Controller
     public function obtenerTodas()
     {
         // Retorna todos los clientes
+        if (auth()->user()->isAdmin() || auth()->user()->isVeterinario() || auth()->user()->isSecretaria()) {
+            return Cliente::with('usuario')->get();
+        }
         return Cliente::where('user_id', auth()->id())->get();
     }
 
     public function crear(GuardarClienteRequest $solicitud)
     {
-        // Crea un nuevo cliente
-        $cliente = Cliente::create([
-            'nombre' => $solicitud->nombre,
+        $rolCliente = Rol::where('nombre_interno', 'cliente')->first();
+
+        // Crear el usuario asociado
+        $usuario = User::create([
+            'name' => $solicitud->nombre,
             'email' => $solicitud->email,
-            'telefono' => $solicitud->telefono,
-            'direccion' => $solicitud->direccion,
-            'user_id' => auth()->id(),
+            'password' => \Illuminate\Support\Facades\Hash::make('password123'),
+            'rol_id' => $rolCliente?->id,
         ]);
 
-        return response()->json($cliente, 201);
+        // Crear el cliente asociado a ese usuario
+        $cliente = Cliente::create([
+            'telefono' => $solicitud->telefono,
+            'direccion' => $solicitud->direccion,
+            'user_id' => $usuario->id,
+        ]);
+
+        return response()->json($cliente->load('usuario'), 201);
     }
 
     public function actualizar(ActualizarClienteRequest $solicitud, Cliente $cliente)
     {
-        // Actualizamos el cliente
-        $cliente->update($solicitud->validated());
+        // Actualizar el usuario asociado
+        if ($cliente->usuario) {
+            $cliente->usuario->update([
+                'name' => $solicitud->nombre,
+                'email' => $solicitud->email,
+            ]);
+        }
 
-        return response()->json($cliente);
+        // Actualizar el cliente
+        $cliente->update([
+            'telefono' => $solicitud->telefono,
+            'direccion' => $solicitud->direccion,
+        ]);
+
+        return response()->json($cliente->load('usuario'));
     }
 
     public function eliminar(Cliente $cliente)
@@ -173,6 +197,6 @@ class ClienteController extends Controller
             }
         }
 
-        return response()->json(['mensaje' => 'Correos enviados correctamente a '.$clientes->count().' clientes.']);
+        return response()->json(['mensaje' => 'Correos enviados correctamente a ' . $clientes->count() . ' clientes.']);
     }
 }

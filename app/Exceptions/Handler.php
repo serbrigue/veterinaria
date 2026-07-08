@@ -31,6 +31,10 @@ class Handler extends ExceptionHandler
 
         $this->renderable(function (HttpException $e, $request) {
             if ($e->getStatusCode() === 403) {
+                if ($request->expectsJson() || $request->wantsJson()) {
+                    return response()->json(['error' => 'No autorizado.'], 403);
+                }
+
                 if (! auth()->check()) {
                     return redirect()->route('iniciar-sesion');
                 }
@@ -40,6 +44,10 @@ class Handler extends ExceptionHandler
         });
 
         $this->renderable(function (AuthorizationException $e, $request) {
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json(['error' => 'No autorizado.'], 403);
+            }
+
             if (! auth()->check()) {
                 return redirect()->route('iniciar-sesion');
             }

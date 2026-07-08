@@ -37,69 +37,18 @@ class PagoVeterinarioController extends Controller
             if ($rolSelected) {
                 // Obtenemos todos los usuarios con ese rol
                 $usuarios = User::where('rol_id', $rolId)->with(['rol'])->paginate(15);
-
                 // Recorremos todas las citas para calcular la comisión, usamos transform para modificar la colección
                 $usuarios->getCollection()->transform(function ($user) use ($mes, $anio, $rolSelected) {
-                    // Inicializamos la comisión
-                    $totalComision = 0;
+                    $pagoTemporal = new PagoVeterinario([
+                        'usuario_id' => $user->id,
+                        'veterinario_id' => $rolSelected->nombre_interno === 'veterinario'
+                            ? Veterinario::where('user_id', $user->id)->value('id')
+                            : null,
+                        'mes' => $mes,
+                        'anio' => $anio,
+                    ]);
 
-                    // Si el rol es veterinario
-                    if ($rolSelected->nombre_interno === 'veterinario') {
-                        // Obtenemos el veterinario
-                        $vet = Veterinario::where('user_id', $user->id)->first();
-
-                        if ($vet) {
-                            // Obtenemos todas las citas completadas del veterinario
-                            $citas = Cita::where('veterinario_id', $vet->id)
-                                ->where('estado', 'completada')
-                                ->whereHas('transaccion', function ($t) use ($mes, $anio) {
-                                    $t->where('estado', 'pagado')
-                                        ->whereMonth('fecha_pago', $mes)
-                                        ->whereYear('fecha_pago', $anio);
-                                })
-                                ->with('prestacion')
-                                ->get();
-
-                            // Obtenemos todas las citas completadas del veterinario
-                            foreach ($citas as $cita) {
-                                // Verificamos que la prestacion exista
-                                if ($cita->prestacion) {
-                                    // Obtenemos el precio base de la prestacion
-                                    $precio = $cita->prestacion->precio_base;
-                                    // Obtenemos el porcentaje de comisión del veterinario
-                                    $porcentaje = $cita->prestacion->comision_vet ?? 0;
-                                    // Calculamos la comisión
-                                    $totalComision += ($precio * $porcentaje) / 100;
-                                }
-                            }
-                        }
-                    } else {
-                        // Obtenemos todas las citas completadas del personal de apoyo
-                        $citas = Cita::whereHas('equipoMedico', function ($em) use ($user) {
-                            $em->where('usuario_id', $user->id);
-                        })
-                            ->where('estado', 'completada')
-                            ->whereHas('transaccion', function ($t) use ($mes, $anio) {
-                                $t->where('estado', 'pagado')
-                                    ->whereMonth('fecha_pago', $mes)
-                                    ->whereYear('fecha_pago', $anio);
-                            })
-                            ->with('prestacion')
-                            ->get();
-
-                        // Recorremos todas las citas para calcular la comisión
-                        foreach ($citas as $cita) {
-                            // Verificamos que la prestacion exista
-                            if ($cita->prestacion) {
-                                // Obtenemos el precio base de la prestacion
-                                $precio = $cita->prestacion->precio_base;
-                                // Obtenemos el porcentaje de comisión del personal de apoyo
-                                $porcentaje = $cita->prestacion->comision_equipo ?? 0;
-                                // Calculamos la comisión
-                                $totalComision += ($precio * $porcentaje) / 100;
-                            }
-                        }
-                    }
+                    $totalComision = $pagoTemporal->comisionCalculada();
 
                     // Obtenemos si el pago ha sido realizado
                     $pagoRealizado = PagoVeterinario::where('usuario_id', $user->id)
@@ -121,53 +70,20 @@ class PagoVeterinarioController extends Controller
             }
         }
 
-        // Calculamos el total general
+        // Calculamos el total general sumando la comisión de todos los usuarios del rol seleccionado
         $totalGeneral = 0;
-        // Si el rol es veterinario
-        if ($rolId) {
-            // Obtenemos el rol seleccionado
-            $rolSelected = Rol::find($rolId);
-            // Si el rol es veterinario
-            if ($rolSelected) {
-                // Si el rol es veterinario
-                if ($rolSelected->nombre_interno === 'veterinario') {
-                    // Obtenemos todas las citas completadas del veterinario
-                    $citasMes = Cita::where('estado', 'completada')
-                        ->whereHas('transaccion', function ($t) use ($mes, $anio) {
-                            $t->where('estado', 'pagado')
-                                ->whereMonth('fecha_pago', $mes)
-                                ->whereYear('fecha_pago', $anio);
-                        })
-                        ->with('prestacion')->get();
-
-                    // Calculamos el total general
-                    $totalGeneral = $citasMes->sum(function ($cita) {
-                        $precio = $cita->prestacion->precio_base ?? 0;
-                        $porcentaje = $cita->prestacion->comision_vet ?? 0;
-
-                        return ($precio * $porcentaje) / 100;
-                    });
-                } else {
-                    // Obtenemos todas las citas completadas del personal de apoyo
-                    $citasMes = Cita::whereHas('equipoMedico', function ($em) use ($rolId) {
-                        $em->where('rol_id', $rolId);
-                    })
-                        ->where('estado', 'completada')
-                        ->whereHas('transaccion', function ($t) use ($mes, $anio) {
-                            $t->where('estado', 'pagado')
-                                ->whereMonth('fecha_pago', $mes)
-                                ->whereYear('fecha_pago', $anio);
-                        })
-                        ->with('prestacion')->get();
-
-                    // Calculamos el total general
-                    $totalGeneral = $citasMes->sum(function ($cita) {
-                        $precio = $cita->prestacion->precio_base ?? 0;
-                        $porcentaje = $cita->prestacion->comision_equipo ?? 0;
-
-                        return ($precio * $porcentaje) / 100;
-                    });
-                }
+        if ($rolId && isset($rolSelected) && $rolSelected) {
+            $todosUsuariosRol = User::where('rol_id', $rolId)->get();
+            foreach ($todosUsuariosRol as $user) {
+                $pagoTemporal = new PagoVeterinario([
+                    'usuario_id' => $user->id,
+                    'veterinario_id' => $rolSelected->nombre_interno === 'veterinario'
+                        ? Veterinario::where('user_id', $user->id)->value('id')
+                        : null,
+                    'mes' => $mes,
+                    'anio' => $anio,
+                ]);
+                $totalGeneral += $pagoTemporal->comisionCalculada();
             }
         }
 

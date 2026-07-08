@@ -83,6 +83,12 @@ class User extends Authenticatable
         return $this->rol && $this->rol->nombre_interno === 'cliente';
     }
 
+    // Verifica si el usuario es secretaria
+    public function isSecretaria(): bool
+    {
+        return $this->rol && $this->rol->nombre_interno === 'secretaria';
+    }
+
     // Un veterinario tiene un usuario
     public function veterinario()
     {
@@ -94,4 +100,11 @@ class User extends Authenticatable
     {
         return $this->hasOne(Cliente::class);
     }
+
+    // Una secretaria tiene un usuario
+    public function secretaria()
+    {
+        return $this->hasOne(Secretaria::class);
+    }
 }
+

@@ -112,7 +112,7 @@
 
                             <!-- Actividad o Info Adicional (Placeholder) -->
                             
-                            <div v-if="esVeterinarioOAdmin"class="row g-3">
+                            <div v-if="$isStaff()" class="row g-3">
                                 <h3 class="h6 mb-3 text-secondary fw-bold text-uppercase">Estadísticas</h3>
                                 <div class="col-12 col-md-4">
                                     <div class="p-3 bg-light rounded-4 border border-light text-center">
@@ -142,7 +142,7 @@
             </div>
 
             <!-- Bloqueos de Emergencia (Solo Admin) -->
-            <div v-if="veterinario && isAdmin" class="card border-0 shadow-sm rounded-4 mt-4">
+            <div v-if="veterinario && $isAdmin()" class="card border-0 shadow-sm rounded-4 mt-4">
                 <div class="card-header bg-white border-bottom-0 p-4 pb-0 d-flex justify-content-between align-items-center">
                     <div>
                         <h3 class="h5 mb-1 text-danger fw-bold">Bloqueos de Emergencia / Ausencias</h3>
@@ -298,16 +298,7 @@ export default {
             }
         };
     },
-    computed: {
-        esVeterinarioOAdmin() {
-            const user = this.$page.props.auth.user;
-            return user && user.rol && (user.rol.nombre_interno === 'veterinario' || user.rol.nombre_interno === 'admin');
-        },
-        isAdmin() {
-            const user = this.$page.props.auth.user;
-            return user && user.rol && user.rol.nombre_interno === 'admin';
-        }
-    },
+
     methods: {
         abrirModalBloqueo() {
             this.bloqueoForm = {

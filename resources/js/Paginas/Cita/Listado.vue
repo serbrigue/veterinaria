@@ -6,7 +6,7 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h1 class="h5 mb-0">Mis Citas</h1>
 
-                    <button v-if="esCliente()" type="button" class="btn btn-primary" @click="abrirModalCrear">
+                    <button v-if="$isCliente() || $isAdmin() || $isSecretaria()" type="button" class="btn btn-primary" @click="abrirModalCrear">
                         + Nueva Cita
                     </button>
                 </div>
@@ -108,7 +108,7 @@
                     <EstadoVacio
                         :visible="!cargando && listaVacia"
                         mensaje="No tienes citas registradas aún."
-                        :texto-boton="esCliente() ? 'Registrar tu primera cita' : ''"
+                        :texto-boton="$isCliente() || $isAdmin() || $isSecretaria() ? 'Registrar primera cita' : ''"
                         icono="bi bi-calendar-x"
                         @accion="abrirModalCrear"
                     />
@@ -179,6 +179,7 @@
                                             </template>
                                             <template v-else-if="cita.estado === 'pendiente'">
                                                 <button
+                                                    v-if="$isAdmin() || $isSecretaria() || $isCliente()"
                                                     type="button"
                                                     class="btn btn-sm btn-outline-primary rounded-pill px-3 transition-all hover-opacity"
                                                     @click="abrirModalEditar(cita)"
@@ -186,6 +187,7 @@
                                                     Editar
                                                 </button>
                                                 <button
+                                                    v-if="$isAdmin() || $isSecretaria() || $isCliente()"
                                                     type="button"
                                                     class="btn btn-sm btn-outline-warning rounded-pill px-3 transition-all hover-opacity"
                                                     @click="confirmarCancelar(cita)"
@@ -291,11 +293,22 @@
                                                 <textarea id="descripcion" v-model="formulario.descripcion" class="form-control bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.descripcion }" rows="2" required placeholder="Motivo de la cita..."></textarea>
                                                 <div v-if="formulario.errors.descripcion" class="invalid-feedback">{{ formulario.errors.descripcion }}</div>
                                             </div>
+                                            <div v-if="$isSecretaria()" class="col-12">
+                                                <label for="cliente_id" class="form-label fw-semibold text-secondary small text-uppercase">Cliente</label>
+                                                <select id="cliente_id" v-model="formulario.cliente_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.cliente_id }" required @change="formulario.mascota_id = ''">
+                                                    <option value="" disabled>Selecciona un cliente</option>
+                                                    <option v-for="cliente in clientes" :key="cliente.id" :value="cliente.id">
+                                                        {{ cliente.nombre }} ({{ cliente.email }})
+                                                    </option>
+                                                </select>
+                                                <div v-if="formulario.errors.cliente_id" class="invalid-feedback">{{ formulario.errors.cliente_id }}</div>
+                                            </div>
+
                                             <div class="col-12">
                                                 <label for="mascota_id" class="form-label fw-semibold text-secondary small text-uppercase">Mascota</label>
-                                                <select id="mascota_id" v-model="formulario.mascota_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.mascota_id }" required>
-                                                    <option value="" disabled>Selecciona una mascota</option>
-                                                    <option v-for="mascota in mascotas" :key="mascota.id" :value="mascota.id">
+                                                <select id="mascota_id" v-model="formulario.mascota_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.mascota_id }" required :disabled="$isSecretaria() && !formulario.cliente_id">
+                                                    <option value="" disabled>{{ ($isSecretaria() && !formulario.cliente_id) ? 'Debe seleccionar un cliente primero' : 'Selecciona una mascota' }}</option>
+                                                    <option v-for="mascota in mascotasFiltradas" :key="mascota.id" :value="mascota.id">
                                                         {{ mascota.nombre }} {{ mascota.sexo ? `(${mascota.sexo})` : '' }}
                                                     </option>
                                                 </select>
@@ -642,6 +655,7 @@ export default {
                 sucursal_id: '',
                 box_id: '',
                 prestacion_id: '',
+                cliente_id: '',
                 errors: {},
                 processing: false,
             },
@@ -650,6 +664,28 @@ export default {
     computed: {
         hoy() {
             return new Date().toISOString().split('T')[0];
+        },
+        clientes() {
+            const map = new Map();
+            this.mascotas.forEach(mascota => {
+                if (mascota.cliente && mascota.cliente.usuario) {
+                    map.set(mascota.cliente.id, {
+                        id: mascota.cliente.id,
+                        nombre: mascota.cliente.usuario.name,
+                        email: mascota.cliente.usuario.email
+                    });
+                }
+            });
+            return Array.from(map.values()).sort((a, b) => a.nombre.localeCompare(b.nombre));
+        },
+        mascotasFiltradas() {
+            if (this.$isSecretaria()) {
+                if (!this.formulario.cliente_id) {
+                    return [];
+                }
+                return this.mascotas.filter(m => m.cliente_id === this.formulario.cliente_id);
+            }
+            return this.mascotas;
         },
         sucursalesFiltradas() {
             if (!this.formulario.prestacion_id) return [];
@@ -749,6 +785,7 @@ export default {
             this.formulario.sucursal_id = '';
             this.formulario.veterinario_id = '';
             this.formulario.box_id = '';
+            this.formulario.cliente_id = '';
             this.formulario.errors = {};
             this.horariosNormales = [];
             this.horariosUrgencia = [];
@@ -823,6 +860,7 @@ export default {
             this.formulario.veterinario_id='';
             this.formulario.box_id='';
             this.formulario.mascota_id='';
+            this.formulario.cliente_id='';
             this.formulario.errors={};
             this.horariosNormales=[];
             this.horariosUrgencia=[];

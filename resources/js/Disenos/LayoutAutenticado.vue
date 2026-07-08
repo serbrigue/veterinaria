@@ -18,18 +18,29 @@
                         <button type="button" class="btn btn-sm btn-link nav-link text-white px-3 transition-all hover-opacity" @click="irSiExiste('prestaciones.listado')">Servicios</button>
                     </div>
 
-                    <!-- Sección Administración (Solo Vets/Admin) -->
-                    <div v-if="esVeterinarioOAdmin()" class="d-flex align-items-center bg-warning bg-opacity-25 border border-warning border-opacity-50 rounded-pill px-2 py-1 mb-2 mb-lg-0 me-0 me-lg-3 shadow-sm">
-                        <span class="text-warning small fw-bold ms-2 me-1 d-none d-md-inline"><i class="bi bi-shield-lock-fill"></i></span>
-                        <button type="button" class="btn btn-sm btn-link nav-link text-white px-2 fw-medium transition-all hover-opacity" @click="irSiExiste('clientes.listado')">Clientes</button>
-                        <button type="button" class="btn btn-sm btn-link nav-link text-white px-2 fw-medium transition-all hover-opacity" @click="irSiExiste('sucursales.listado')">Sucursales</button>
-                        <button type="button" class="btn btn-sm btn-link nav-link text-white px-2 fw-medium transition-all hover-opacity" @click="irSiExiste('boxes.listado')">Boxes</button>
-                        <button type="button" class="btn btn-sm btn-link nav-link text-white px-2 fw-medium transition-all hover-opacity" @click="irSiExiste('insumos.listado')">Insumos</button>
+                    <!-- Sección Administración (Solo Vets/Admin/Secretaria) -->
+                    <TieneRol :rol="['veterinario','secretaria']">
+                        <div class="d-flex align-items-center bg-warning bg-opacity-25 border border-warning border-opacity-50 rounded-pill px-2 py-1 mb-2 mb-lg-0 me-0 me-lg-3 shadow-sm">
+                            <span class="text-warning small fw-bold ms-2 me-1 d-none d-md-inline"><i class="bi bi-shield-lock-fill"></i></span>
+                            <button type="button" class="btn btn-sm btn-link nav-link text-white px-2 fw-medium transition-all hover-opacity" @click="irSiExiste('clientes.listado')">Clientes</button>
+                            <TieneRol :rol="['secretaria']">
+                                <button type="button" class="btn btn-sm btn-link nav-link text-white px-2 fw-medium transition-all hover-opacity" @click="irSiExiste('agenda.secretaria')">Agenda</button>
+                            </TieneRol>
+                        </div>
+                    </TieneRol>
+                    <TieneRol :rol="['admin']">
+                        <div class="d-flex align-items-center bg-warning bg-opacity-25 border border-warning border-opacity-50 rounded-pill px-2 py-1 mb-2 mb-lg-0 me-0 me-lg-3 shadow-sm">
+                            <span class="text-warning small fw-bold ms-2 me-1 d-none d-md-inline"><i class="bi bi-shield-lock-fill"></i></span>
+                            <button type="button" class="btn btn-sm btn-link nav-link text-white px-2 fw-medium transition-all hover-opacity" @click="irSiExiste('clientes.listado')">Clientes</button>
+                            <button type="button" class="btn btn-sm btn-link nav-link text-white px-2 fw-medium transition-all hover-or-opacity" @click="irSiExiste('boxes.listado')">Boxes</button>
+                            <button type="button" class="btn btn-sm btn-link nav-link text-white px-2 fw-medium transition-all hover-opacity" @click="irSiExiste('insumos.listado')">Insumos</button>
 
-                        <button v-if="esAdmin()" type="button" class="btn btn-sm btn-link nav-link text-white px-3 transition-all hover-opacity" @click="$inertia.visit(route('panel'))">Panel</button>
-                    </div>
+                            <TieneRol rol="admin">
+                                <button type="button" class="btn btn-sm btn-link nav-link text-white px-3 transition-all hover-opacity" @click="$inertia.visit(route('panel'))">Panel</button>
+                            </TieneRol>
+                        </div>
+                    </TieneRol>
 
-                    <!-- Sección Usuario -->
                     <div class="d-flex align-items-center border-start-lg border-white border-opacity-25 ps-0 ps-lg-3 py-1">
                         <button type="button" class="btn btn-sm btn-link nav-link text-white px-2 transition-all hover-opacity" @click="$inertia.visit(route('perfil.editar'))">
                             <i class="bi bi-person-circle me-1"></i>Perfil
@@ -48,6 +59,8 @@
 </template>
 
 <script>
+import TieneRol from '@/Componentes/TieneRol.vue';
+
 export default {
     methods: {
         irSiExiste(nombreRuta) {
@@ -60,14 +73,6 @@ export default {
             .then((response) => {
                 window.location.href = response.data.redirect || '/'
             })
-        },
-        esVeterinarioOAdmin() {
-            const user = this.$page.props.auth.user;
-            return user && user.rol && (user.rol.nombre_interno === 'veterinario' || user.rol.nombre_interno === 'admin');
-        },
-        esAdmin() {
-            const user = this.$page.props.auth.user;
-            return user && user.rol && user.rol.nombre_interno === 'admin';
         }
     },
 }

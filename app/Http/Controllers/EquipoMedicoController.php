@@ -105,14 +105,14 @@ class EquipoMedicoController extends Controller
         $user = auth()->user();
 
         // Admin puede siempre
-        if ($user->rol?->nombre_interno === 'admin') {
+        if ($user->isAdmin()) {
             return;
         }
 
-        // El veterinario asignado puede gestionar
-        if ($user->rol?->nombre_interno === 'veterinario') {
-            $veterinario = $user->veterinario;
-            if ($veterinario && $cita->veterinario_id === $veterinario->id) {
+        // Secretaria de la misma sucursal puede gestionar
+        if ($user->isSecretaria()) {
+            $secretaria = $user->secretaria;
+            if ($secretaria && $cita->veterinario && $cita->veterinario->sucursal_id === $secretaria->sucursal_id) {
                 return;
             }
         }

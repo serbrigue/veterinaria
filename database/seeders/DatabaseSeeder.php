@@ -12,6 +12,7 @@ use App\Models\Permiso;
 use App\Models\Raza;
 use App\Models\Rol;
 use App\Models\Sucursal;
+use App\Models\Secretaria;
 use App\Models\User;
 use App\Models\Veterinario;
 use Illuminate\Database\Seeder;
@@ -38,6 +39,11 @@ class DatabaseSeeder extends Seeder
         $rolCliente = Rol::create([
             'nombre_interno' => 'cliente',
             'nombre_legible' => 'Cliente / Propietario',
+        ]);
+
+        $rolSecretaria = Rol::create([
+            'nombre_interno' => 'secretaria',
+            'nombre_legible' => 'Personal Administrativo (Secretaría)',
         ]);
 
         // 1. Crear Permisos del Sistema
@@ -231,31 +237,36 @@ class DatabaseSeeder extends Seeder
         // Asociar permisos a Veterinario
         $rolVet->permisos()->attach([
             $permisoVerMascotasSucursal->id,
-            $permisoEditarMascotasSucursal->id,
             $permisoCrearRecetas->id,
-            $permisoGestionarCitasSucursal->id,
             $permisoCrearEspecies->id,
             $permisoEditarEspecies->id,
             $permisoEliminarEspecies->id,
             $permisoCrearRazas->id,
             $permisoEditarRazas->id,
             $permisoEliminarRazas->id,
+            $permisoVerMisCitas->id, // Solo ver sus propias citas
+            $permisoVerClientes->id,
+            $permisoVerSucursales->id,
+            $permisoVerBoxes->id,
+            $permisoVerInsumos->id,
+            $permisoVerPrestaciones->id,
+            $permisoGestionarCargosSucursal->id, // Modificación de cargos, exclusiva de médicos
+        ]);
+
+        // Asociar permisos a Secretaria
+        $rolSecretaria->permisos()->attach([
+            $permisoVerMascotasSucursal->id,
+            $permisoEditarMascotasSucursal->id,
+            $permisoGestionarCitasSucursal->id,
             $permisoVerCitasSucursal->id,
             $permisoEditarCitasSucursal->id,
             $permisoEliminarCitasSucursal->id,
             $permisoVerClientes->id,
             $permisoEditarClientes->id,
             $permisoVerSucursales->id,
-            $permisoCrearSucursales->id,
-            $permisoEditarSucursales->id,
-            $permisoEliminarSucursales->id,
             $permisoVerBoxes->id,
-            $permisoCrearBoxes->id,
-            $permisoEditarBoxes->id,
-            $permisoEliminarBoxes->id,
             $permisoVerInsumos->id,
             $permisoVerPrestaciones->id,
-            $permisoGestionarCargosSucursal->id,
         ]);
 
         // 3. Crear el Administrador Supremo
@@ -572,6 +583,18 @@ class DatabaseSeeder extends Seeder
             'telefono' => '+56988776655',
             'direccion' => 'Cerro Carcel 12, Valparaíso',
             'foto_perfil_url' => 'https://i.pinimg.com/736x/cc/0a/5a/cc0a5aa20adc32aaadc37913cbaa0f03.jpg',
+        ]);
+
+        $userSecretaria = User::create([
+            'name' => 'Secretaria Ana',
+            'email' => 'secretaria@prueba.com',
+            'password' => Hash::make('password123'),
+            'rol_id' => $rolSecretaria->id,
+        ]);
+        Secretaria::create([
+            'user_id' => $userSecretaria->id,
+            'sucursal_id' => $sucursalVina->id,
+            'telefono' => '+56999999999',
         ]);
 
         // 8. Crear Clientes y sus Perfiles
