@@ -20,6 +20,7 @@ class Sucursal extends Model
         'nombre',
         'direccion',
         'telefono',
+        'imagen_url',
 
     ];
 

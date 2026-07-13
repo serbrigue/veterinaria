@@ -38,6 +38,9 @@
                             <TieneRol rol="admin">
                                 <button type="button" class="btn btn-sm btn-link nav-link text-white px-3 transition-all hover-opacity" @click="$inertia.visit(route('panel'))">Panel</button>
                             </TieneRol>
+                            <TieneRol rol="admin">
+                                <button type="button" class="btn btn-sm btn-link nav-link text-white px-3 transition-all hover-opacity" @click="$inertia.visit(route('sucursales.listado'))">Sucursales</button>
+                            </TieneRol>
                         </div>
                     </TieneRol>
 
@@ -55,13 +58,20 @@
         <main class="flex-grow-1">
             <slot />
         </main>
+        <!-- Botón del Chatbot de n8n -->
+        <BotonChatbotn8n />
     </div>
 </template>
 
 <script>
 import TieneRol from '@/Componentes/TieneRol.vue';
+import BotonChatbotn8n from '@/Componentes/BotonChatbotn8n.vue';
 
 export default {
+    components: {
+        TieneRol,
+        BotonChatbotn8n
+    },
     methods: {
         irSiExiste(nombreRuta) {
             if (typeof route === 'function' && route().has(nombreRuta)) {

@@ -277,6 +277,9 @@ export default {
             return this.meses[this.filtros.mes] || '';
         }
     },
+    mounted() {
+        this.aplicarFiltros();
+    },
     methods: {
         verComprobante(vet) {
             this.liquidacionSeleccionada = vet;
@@ -303,7 +306,7 @@ export default {
                     this.liquidaciones = response.data;
                 }
             } catch (error) {
-                console.error('Error al calcular liquidaciones:', error);
+                this.$alertaError('Error', 'No se pudieron cargar las liquidaciones.');
             } finally {
                 this.cargando = false;
             }

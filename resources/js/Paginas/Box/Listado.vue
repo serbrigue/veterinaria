@@ -60,8 +60,9 @@
                             <TarjetaEntidad
                                 :titulo="box.nombre"
                                 icono="bi-door-closed"
+                                :imagen-url="box.imagen_url || '/images/default_box.png'"
                                 :url-detalle="route('boxes.detalle', box.id)"
-                                :mostrar-acciones="esVeterinarioOAdmin"
+                                :mostrar-acciones="esAdmin"
                                 @editar="abrirModalEditar(box)"
                                 @eliminar="confirmarEliminar(box)"
                             >
@@ -145,6 +146,23 @@
                     </select>
                     <div v-if="formulario.errors.sucursal_id" class="invalid-feedback">{{ formulario.errors.sucursal_id }}</div>
                 </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary small text-uppercase">Foto / Imagen del Box</label>
+                    <input
+                        ref="fotoInput"
+                        type="file"
+                        class="form-control bg-light border-0 py-2"
+                        accept="image/*"
+                        @change="seleccionarFoto"
+                        :class="{ 'is-invalid': formulario.errors.imagen_url }"
+                    />
+                    <div v-if="formulario.errors.imagen_url" class="invalid-feedback">
+                        {{ formulario.errors.imagen_url }}
+                    </div>
+                    <div v-if="formulario.imagen_url_preview || formulario.imagen_url" class="mt-2 text-center">
+                        <img :src="formulario.imagen_url_preview || formulario.imagen_url" class="img-thumbnail" style="max-height: 120px;" alt="Vista previa" />
+                    </div>
+                </div>
             </ModalCrud>
     </AuthenticatedLayout>
 </template>
@@ -198,6 +216,9 @@ export default {
                 descripcion: '',
                 sucursal_id: null,
                 categoria_prestacion_id: null,
+                imagen_url: '',
+                imagen_url_file: null,
+                imagen_url_preview: null,
                 errors: {},
                 processing: false,
             },
@@ -230,13 +251,24 @@ export default {
             };
             return mapa[nombre] || 'bg-secondary';
         },
-        datosFormulario() {
-            return {
-                nombre: this.formulario.nombre,
-                descripcion: this.formulario.descripcion,
-                sucursal_id: this.formulario.sucursal_id,
-                categoria_prestacion_id: this.formulario.categoria_prestacion_id,
+        seleccionarFoto(e) {
+            const archivos = e.target.files;
+            if (archivos && archivos.length > 0) {
+                this.formulario.imagen_url_file = archivos[0];
+                this.formulario.imagen_url_preview = URL.createObjectURL(archivos[0]);
             }
+        },
+        datosFormulario() {
+            const formData = new FormData();
+            formData.append('nombre', this.formulario.nombre);
+            formData.append('descripcion', this.formulario.descripcion || '');
+            if (this.formulario.sucursal_id) formData.append('sucursal_id', this.formulario.sucursal_id);
+            if (this.formulario.categoria_prestacion_id) formData.append('categoria_prestacion_id', this.formulario.categoria_prestacion_id);
+            
+            if (this.formulario.imagen_url_file) {
+                formData.append('imagen_url', this.formulario.imagen_url_file);
+            }
+            return formData;
         },
         
         abrirModalCrear() {
@@ -246,6 +278,12 @@ export default {
             this.formulario.descripcion = '';
             this.formulario.sucursal_id = null;
             this.formulario.categoria_prestacion_id = null;
+            this.formulario.imagen_url = '';
+            this.formulario.imagen_url_file = null;
+            this.formulario.imagen_url_preview = null;
+            if (this.$refs.fotoInput) {
+                this.$refs.fotoInput.value = '';
+            }
             this.formulario.errors = {};
             this.mostrarModal = true;
         },
@@ -256,6 +294,12 @@ export default {
             this.formulario.descripcion = box.descripcion;
             this.formulario.sucursal_id = box.sucursal_id;
             this.formulario.categoria_prestacion_id = box.categoria_prestacion_id;
+            this.formulario.imagen_url = box.imagen_url;
+            this.formulario.imagen_url_file = null;
+            this.formulario.imagen_url_preview = null;
+            if (this.$refs.fotoInput) {
+                this.$refs.fotoInput.value = '';
+            }
             this.formulario.errors = {};
             this.mostrarModal = true;
         },
@@ -283,6 +327,9 @@ export default {
             this.formulario.descripcion = '';
             this.formulario.sucursal_id = null;
             this.formulario.categoria_prestacion_id = null;
+            this.formulario.imagen_url = '';
+            this.formulario.imagen_url_file = null;
+            this.formulario.imagen_url_preview = null;
             this.formulario.errors = {};
             this.mostrarModal = false;
         },
@@ -290,8 +337,13 @@ export default {
             this.formulario.processing = true;
             this.formulario.errors = {};
             
+            const data = this.datosFormulario();
+
             if (this.modoEdicion) {
-                axios.put(`/api/boxes/${this.boxEditando.id}`, this.datosFormulario())
+                data.append('_method', 'PUT');
+                axios.post(`/api/boxes/${this.boxEditando.id}`, data, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                })
                 .then(() => { 
                     this.cerrarModal(); 
                     this.obtenerBoxes();
@@ -308,7 +360,9 @@ export default {
                     this.formulario.processing = false; 
                 });
             } else {
-                axios.post('/api/boxes', this.datosFormulario())
+                axios.post('/api/boxes', data, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                })
                 .then(() => { 
                     this.cerrarModal(); 
                     this.obtenerBoxes();

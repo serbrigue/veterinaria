@@ -60,6 +60,7 @@
                             <TarjetaEntidad
                                 :titulo="sucursal.nombre"
                                 icono="bi-shop"
+                                :imagen-url="sucursal.imagen_url || '/images/default_sucursal.png'"
                                 :url-detalle="route('sucursales.detalle', sucursal.id)"
                                 :mostrar-acciones="esVeterinarioOAdmin"
                                 @editar="abrirModalEditar(sucursal)"
@@ -108,6 +109,23 @@
                     <input v-model="formulario.telefono" type="text" class="form-control bg-light border-0 py-2" placeholder="Ej: +56 9 1234 5678" :class="{ 'is-invalid': formulario.errors.telefono }" required />
                     <div v-if="formulario.errors.telefono" class="invalid-feedback">{{ formulario.errors.telefono }}</div>
                 </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary small text-uppercase">Foto / Imagen de la Sucursal</label>
+                    <input
+                        ref="fotoInput"
+                        type="file"
+                        class="form-control bg-light border-0 py-2"
+                        accept="image/*"
+                        @change="seleccionarFoto"
+                        :class="{ 'is-invalid': formulario.errors.imagen_url }"
+                    />
+                    <div v-if="formulario.errors.imagen_url" class="invalid-feedback">
+                        {{ formulario.errors.imagen_url }}
+                    </div>
+                    <div v-if="formulario.imagen_url_preview || formulario.imagen_url" class="mt-2 text-center">
+                        <img :src="formulario.imagen_url_preview || formulario.imagen_url" class="img-thumbnail" style="max-height: 120px;" alt="Vista previa" />
+                    </div>
+                </div>
             </ModalCrud>
         </div>
     </AuthenticatedLayout>
@@ -154,6 +172,9 @@ export default {
                 nombre: '',
                 direccion: '',
                 telefono: '',
+                imagen_url: '', // Ruta actual en BD
+                imagen_url_file: null, // Archivo a subir
+                imagen_url_preview: null, // Previsualización local
                 errors: {},
                 processing: false,
             },
@@ -187,12 +208,23 @@ export default {
         },
     },
     methods: {
-        datosFormulario() {
-            return {
-                nombre: this.formulario.nombre,
-                direccion: this.formulario.direccion,
-                telefono: this.formulario.telefono,
+        seleccionarFoto(e) {
+            const archivos = e.target.files;
+            if (archivos && archivos.length > 0) {
+                this.formulario.imagen_url_file = archivos[0];
+                this.formulario.imagen_url_preview = URL.createObjectURL(archivos[0]);
             }
+        },
+        datosFormulario() {
+            const formData = new FormData();
+            formData.append('nombre', this.formulario.nombre);
+            formData.append('direccion', this.formulario.direccion);
+            formData.append('telefono', this.formulario.telefono);
+            
+            if (this.formulario.imagen_url_file) {
+                formData.append('imagen_url', this.formulario.imagen_url_file);
+            }
+            return formData;
         },
         obtenerSucursales() {
             this.cargando = true;
@@ -217,6 +249,12 @@ export default {
             this.formulario.nombre = '';
             this.formulario.direccion = '';
             this.formulario.telefono = '';
+            this.formulario.imagen_url = '';
+            this.formulario.imagen_url_file = null;
+            this.formulario.imagen_url_preview = null;
+            if (this.$refs.fotoInput) {
+                this.$refs.fotoInput.value = '';
+            }
             this.formulario.errors = {};
             this.mostrarModal = true;
         },
@@ -226,6 +264,12 @@ export default {
             this.formulario.nombre = sucursal.nombre;
             this.formulario.direccion = sucursal.direccion;
             this.formulario.telefono = sucursal.telefono;
+            this.formulario.imagen_url = sucursal.imagen_url;
+            this.formulario.imagen_url_file = null;
+            this.formulario.imagen_url_preview = null;
+            if (this.$refs.fotoInput) {
+                this.$refs.fotoInput.value = '';
+            }
             this.formulario.errors = {};
             this.mostrarModal = true;
         },
@@ -239,6 +283,9 @@ export default {
             this.formulario.nombre = '';
             this.formulario.direccion = '';
             this.formulario.telefono = '';
+            this.formulario.imagen_url = '';
+            this.formulario.imagen_url_file = null;
+            this.formulario.imagen_url_preview = null;
             this.formulario.errors = {};
             this.mostrarModal = false;
         },
@@ -246,8 +293,13 @@ export default {
             this.formulario.processing = true;
             this.formulario.errors = {};
             
+            const data = this.datosFormulario();
+
             if (this.modoEdicion) {
-                axios.put(`/api/sucursales/${this.sucursalEditando.id}`, this.datosFormulario())
+                data.append('_method', 'PUT');
+                axios.post(`/api/sucursales/${this.sucursalEditando.id}`, data, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                })
                 .then(() => { 
                     this.cerrarModal(); 
                     this.obtenerSucursales();
@@ -264,7 +316,9 @@ export default {
                     this.formulario.processing = false; 
                 });
             } else {
-                axios.post('/api/sucursales', this.datosFormulario())
+                axios.post('/api/sucursales', data, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                })
                 .then(() => { 
                     this.cerrarModal(); 
                     this.obtenerSucursales();

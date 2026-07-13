@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ActualizarSucursalRequest;
 use App\Http\Requests\GuardarSucursalRequest;
 use App\Models\Sucursal;
+use App\Traits\HandlesPhotoUploads;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class SucursalController extends Controller
 {
+    use HandlesPhotoUploads;
     public function listado(Request $request)
     {
 
@@ -51,6 +53,10 @@ class SucursalController extends Controller
         // Obtenemos los datos validados
         $data = $solicitud->validated();
 
+        if ($solicitud->hasFile('imagen_url')) {
+            $data['imagen_url'] = $this->procesarFoto($solicitud, 'imagen_url', 'sucursales/fotos');
+        }
+
         // Creamos la sucursal
         $sucursal = Sucursal::create($data);
 
@@ -63,7 +69,13 @@ class SucursalController extends Controller
     {
 
         // Obtenemos los datos validados
-        $sucursal->update($solicitud->validated());
+        $data = $solicitud->validated();
+
+        if ($solicitud->hasFile('imagen_url')) {
+            $data['imagen_url'] = $this->procesarFoto($solicitud, 'imagen_url', 'sucursales/fotos', $sucursal->imagen_url);
+        }
+
+        $sucursal->update($data);
 
         // Devolvemos la sucursal
         return response()->json($sucursal);
@@ -71,6 +83,7 @@ class SucursalController extends Controller
 
     public function eliminar(Sucursal $sucursal)
     {
+        $this->eliminarFotoFisica($sucursal->imagen_url);
 
         // Eliminamos la sucursal
         $sucursal->delete();

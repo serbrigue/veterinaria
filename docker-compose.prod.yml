@@ -126,12 +126,33 @@ services:
     networks:
       - vet_network
 
+  # -----------------------------------------------------------
+  # n8n: Automatización de flujos de trabajo
+  # -----------------------------------------------------------
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: vet_n8n_prod
+    restart: unless-stopped
+    ports:
+      - "${N8N_PORT:-5678}:5678"
+    env_file:
+      - .env
+    environment:
+      - N8N_PORT=5678
+      - NODE_ENV=production
+      - WEBHOOK_URL=${N8N_PROTOCOL:-http}://${N8N_HOST:-localhost}:${N8N_PORT:-5678}/
+    volumes:
+      - vet_n8n_data:/home/node/.n8n
+    networks:
+      - vet_network
+
 # =============================================================
 # Volúmenes
 # =============================================================
 volumes:
   vet_mysql_data:
   vet_redis_data:
+  vet_n8n_data:
   # Volumen para compartir assets entre app y nginx
   public_assets:
 

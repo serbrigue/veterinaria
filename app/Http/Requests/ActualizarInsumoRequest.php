@@ -21,6 +21,7 @@ class ActualizarInsumoRequest extends FormRequest
             'stock_actual' => 'sometimes|required|integer|min:0',
             'stock_minimo' => 'sometimes|required|integer|min:0',
             'estado' => 'sometimes|required|in:activo,inactivo',
+            'categoria_insumo_id' => 'sometimes|nullable|exists:categorias_insumos,id',
         ];
     }
 

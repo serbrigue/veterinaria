@@ -16,6 +16,31 @@ class TransaccionPolicy
         }
     }
 
+    public function verTodas(User $user): bool
+    {
+        return false;
+    }
+
+    public function ver(User $user, Transaccion $transaccion): bool
+    {
+        return false;
+    }
+
+    public function crear(User $user): bool
+    {
+        return false;
+    }
+
+    public function editar(User $user, Transaccion $transaccion): bool
+    {
+        return false;
+    }
+
+    public function eliminar(User $user, Transaccion $transaccion): bool
+    {
+        return false;
+    }
+
     // Verifica si el usuario tiene permiso para pagar la transacción
     public function pagar(User $user, Transaccion $transaccion): bool
     {

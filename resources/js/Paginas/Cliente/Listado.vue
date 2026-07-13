@@ -312,8 +312,8 @@ export default {
             filtroMascota: '',
             filtroSucursal: '',
             filtroEstadoPago: '',
-            clientesData: null,
-            clientesArray: [],
+            clientesData: this.clientes,
+            clientesArray: this.clientes?.data || [],
             formulario: {
                 nombre: '',
                 email: '',
@@ -360,10 +360,10 @@ export default {
         abrirModalEditar(cliente) {
             this.modoEdicion = true
             this.clienteEditando = cliente
-            this.formulario.nombre = cliente.nombre
-            this.formulario.email = cliente.email
-            this.formulario.telefono = cliente.telefono
-            this.formulario.direccion = cliente.direccion
+            this.formulario.nombre = cliente.usuario?.name || cliente.nombre || ''
+            this.formulario.email = cliente.usuario?.email || cliente.email || ''
+            this.formulario.telefono = cliente.telefono || ''
+            this.formulario.direccion = cliente.direccion || ''
             this.formulario.errors = {}
             this.mostrarModal = true
         },

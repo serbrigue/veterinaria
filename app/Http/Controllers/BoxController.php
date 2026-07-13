@@ -7,12 +7,14 @@ use App\Http\Requests\GuardarBoxRequest;
 use App\Models\Box;
 use App\Models\CategoriaPrestacion;
 use App\Models\Sucursal;
+use App\Traits\HandlesPhotoUploads;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 
 class BoxController extends Controller
 {
+    use HandlesPhotoUploads;
     public function listado(Request $request)
     {
         // Obtenemos todos los boxes con eager loading y lo cargamos en caché por 30 minutos
@@ -76,6 +78,10 @@ class BoxController extends Controller
         $data = $solicitud->validated();
         $data['creado_por'] = auth()->id();
 
+        if ($solicitud->hasFile('imagen_url')) {
+            $data['imagen_url'] = $this->procesarFoto($solicitud, 'imagen_url', 'boxes/fotos');
+        }
+
         // Creamos el box
         $box = Box::create($data);
 
@@ -84,8 +90,15 @@ class BoxController extends Controller
 
     public function actualizar(ActualizarBoxRequest $solicitud, Box $box)
     {
+        // Validamos la solicitud
+        $data = $solicitud->validated();
+
+        if ($solicitud->hasFile('imagen_url')) {
+            $data['imagen_url'] = $this->procesarFoto($solicitud, 'imagen_url', 'boxes/fotos', $box->imagen_url);
+        }
+
         // Actualizamos el box
-        $box->update($solicitud->validated());
+        $box->update($data);
 
         // Devolvemos el box
         return response()->json($box);
@@ -93,6 +106,8 @@ class BoxController extends Controller
 
     public function eliminar(Box $box)
     {
+        $this->eliminarFotoFisica($box->imagen_url);
+
         // Eliminamos el box
         $box->delete();
 

@@ -10,7 +10,7 @@ class Box extends Model
     use \App\Traits\ClearsCache;
 
     // Definimos las claves del cache
-    public $cacheKeys = ['boxes_full', 'sucursales_full'];
+    public $cacheKeys = ['boxes_full', 'boxes_simple', 'sucursales_full'];
 
     // Definimos los campos que se pueden llenar
     protected $fillable = [
@@ -18,6 +18,7 @@ class Box extends Model
         'descripcion',
         'sucursal_id',
         'categoria_prestacion_id',
+        'imagen_url',
     ];
 
     // Definimos las relaciones

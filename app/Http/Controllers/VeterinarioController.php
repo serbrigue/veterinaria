@@ -58,7 +58,7 @@ class VeterinarioController extends Controller
     public function detalle(Veterinario $veterinario)
     {
         // Cargamos las relaciones necesarias para el detalle
-        $veterinario->load(['usuario', 'sucursal', 'especialidad']);
+        $veterinario = Veterinario::with(['usuario', 'sucursal', 'especialidad'])->findOrFail($veterinario->id);
 
         $citasRealizadas = $veterinario->citas()
             ->where('estado', 'completada')
@@ -72,8 +72,9 @@ class VeterinarioController extends Controller
             ->where('estado', 'cancelada')
             ->count();
 
-        // Obtenemos los bloqueos del veterinario ordenados por fecha de inicio descendente
+        // Obtenemos los bloqueos del veterinario ordenados por fecha de inicio descendente con sus relaciones
         $bloqueos = $veterinario->bloqueos()
+            ->with(['especialidad', 'sucursal'])
             ->orderBy('fecha_inicio', 'desc')
             ->orderBy('hora_inicio', 'desc')
             ->get();
@@ -85,6 +86,8 @@ class VeterinarioController extends Controller
             'citasRealizadas' => $citasRealizadas,
             'citasPendientes' => $citasPendientes,
             'citasCanceladas' => $citasCanceladas,
+            'sucursales' => Sucursal::orderBy('nombre')->get(),
+            'especialidades' => Especialidad::orderBy('nombre')->get(),
         ]);
     }
 

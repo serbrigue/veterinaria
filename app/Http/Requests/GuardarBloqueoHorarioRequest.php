@@ -18,6 +18,8 @@ class GuardarBloqueoHorarioRequest extends FormRequest
             'fecha_fin' => 'required|date_format:Y-m-d|after_or_equal:fecha_inicio',
             'hora_inicio' => 'nullable|date_format:H:i',
             'hora_fin' => 'nullable|date_format:H:i',
+            'especialidad_id' => 'nullable|exists:especialidades,id',
+            'sucursal_id' => 'nullable|exists:sucursales,id',
             'motivo' => 'required|string|max:255',
         ];
     }

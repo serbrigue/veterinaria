@@ -30,7 +30,7 @@
                                 class="form-select form-select-sm" 
                                 id="filtroSucursal"
                                 v-model="filtroSucursal"
-                                @change="obtenerCitas()"
+                                @change="cambiarFiltroSucursal"
                             >
                                 <option value="">Todas</option>
                                 <option 
@@ -72,7 +72,7 @@
                             >
                                 <option value="">Todos los veterinarios</option>
                                 <option 
-                                    v-for="veterinario in veterinarios" 
+                                    v-for="veterinario in veterinariosFiltradosPorSucursal" 
                                     :key="veterinario.id" 
                                     :value="veterinario.id"
                                 >
@@ -293,15 +293,56 @@
                                                 <textarea id="descripcion" v-model="formulario.descripcion" class="form-control bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.descripcion }" rows="2" required placeholder="Motivo de la cita..."></textarea>
                                                 <div v-if="formulario.errors.descripcion" class="invalid-feedback">{{ formulario.errors.descripcion }}</div>
                                             </div>
-                                            <div v-if="$isSecretaria()" class="col-12">
-                                                <label for="cliente_id" class="form-label fw-semibold text-secondary small text-uppercase">Cliente</label>
-                                                <select id="cliente_id" v-model="formulario.cliente_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.cliente_id }" required @change="formulario.mascota_id = ''">
-                                                    <option value="" disabled>Selecciona un cliente</option>
-                                                    <option v-for="cliente in clientes" :key="cliente.id" :value="cliente.id">
-                                                        {{ cliente.nombre }} ({{ cliente.email }})
-                                                    </option>
-                                                </select>
-                                                <div v-if="formulario.errors.cliente_id" class="invalid-feedback">{{ formulario.errors.cliente_id }}</div>
+                                            <div v-if="$isSecretaria()" class="col-12 position-relative">
+                                                <label class="form-label fw-semibold text-secondary small text-uppercase mb-1">Cliente</label>
+                                                <div class="dropdown">
+                                                    <div 
+                                                        class="form-select bg-light border-0 py-2 d-flex justify-content-between align-items-center"
+                                                        :class="{ 'is-invalid': formulario.errors.cliente_id }"
+                                                        @click="mostrarDropdownCliente = !mostrarDropdownCliente"
+                                                        style="cursor: pointer;"
+                                                    >
+                                                        <span>{{ nombreClienteSeleccionado || 'Selecciona un cliente' }}</span>
+                                                    </div>
+                                                    <div v-if="formulario.errors.cliente_id" class="invalid-feedback d-block">{{ formulario.errors.cliente_id }}</div>
+                                                    
+                                                    <!-- Backdrop transparente para cerrar al hacer click fuera -->
+                                                    <div 
+                                                        v-if="mostrarDropdownCliente" 
+                                                        class="position-fixed top-0 start-0 w-100 h-100" 
+                                                        style="z-index: 1040; background: transparent;" 
+                                                        @click.stop="mostrarDropdownCliente = false"
+                                                    ></div>
+                                                    
+                                                    <div 
+                                                        v-if="mostrarDropdownCliente" 
+                                                        class="dropdown-menu show w-100 p-2 shadow border-0 mt-1 bg-white" 
+                                                        style="max-height: 250px; overflow-y: auto; z-index: 1050; display: block;"
+                                                    >
+                                                        <input 
+                                                            type="text" 
+                                                            class="form-control form-control-sm mb-2" 
+                                                            v-model="busquedaCliente" 
+                                                            placeholder="Escribe para buscar cliente..."
+                                                            @click.stop
+                                                        />
+                                                        <ul class="list-unstyled mb-0">
+                                                            <li v-for="cliente in clientesFiltradosPorBusqueda" :key="cliente.id">
+                                                                 <button 
+                                                                    type="button" 
+                                                                    class="dropdown-item py-2 rounded text-start"
+                                                                    :class="{ 'active bg-primary text-white': formulario.cliente_id === cliente.id }"
+                                                                    @click="seleccionarClienteDropdown(cliente)"
+                                                                 >
+                                                                     {{ cliente.nombre }} ({{ cliente.email }})
+                                                                 </button>
+                                                            </li>
+                                                            <li v-if="clientesFiltradosPorBusqueda.length === 0" class="text-muted small p-2 text-center">
+                                                                No se encontraron resultados
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
                                             </div>
 
                                             <div class="col-12">
@@ -314,15 +355,57 @@
                                                 </select>
                                                 <div v-if="formulario.errors.mascota_id" class="invalid-feedback">{{ formulario.errors.mascota_id }}</div>
                                             </div>
-                                            <div v-if="formulario.mascota_id" class="col-12">
-                                                <label for="prestacion_id" class="form-label fw-semibold text-secondary small text-uppercase">Prestación o Servicio</label>
-                                                <select id="prestacion_id" v-model="formulario.prestacion_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.prestacion_id }" required>
-                                                    <option value="" disabled>Selecciona una prestación</option>
-                                                    <option v-for="prestacion in prestaciones" :key="prestacion.id" :value="prestacion.id">
-                                                        {{ prestacion.nombre }} ({{ prestacion.sucursal?.nombre }})
-                                                    </option>
-                                                </select>
-                                                <div v-if="formulario.errors.prestacion_id" class="invalid-feedback">{{ formulario.errors.prestacion_id }}</div>
+                                            <div v-if="formulario.mascota_id" class="col-12 position-relative">
+                                                <label class="form-label fw-semibold text-secondary small text-uppercase mb-1">Prestación o Servicio</label>
+                                                
+                                                <div class="dropdown">
+                                                    <div 
+                                                        class="form-select bg-light border-0 py-2 d-flex justify-content-between align-items-center"
+                                                        :class="{ 'is-invalid': formulario.errors.prestacion_id }"
+                                                        @click="mostrarDropdownPrestacion = !mostrarDropdownPrestacion"
+                                                        style="cursor: pointer;"
+                                                    >
+                                                        <span>{{ nombrePrestacionSeleccionada || 'Selecciona una prestación o servicio' }}</span>
+                                                    </div>
+                                                    <div v-if="formulario.errors.prestacion_id" class="invalid-feedback d-block">{{ formulario.errors.prestacion_id }}</div>
+                                                    
+                                                    <!-- Backdrop transparente para cerrar al hacer click fuera -->
+                                                    <div 
+                                                        v-if="mostrarDropdownPrestacion" 
+                                                        class="position-fixed top-0 start-0 w-100 h-100" 
+                                                        style="z-index: 1040; background: transparent;" 
+                                                        @click.stop="mostrarDropdownPrestacion = false"
+                                                    ></div>
+                                                    
+                                                    <div 
+                                                        v-if="mostrarDropdownPrestacion" 
+                                                        class="dropdown-menu show w-100 p-2 shadow border-0 mt-1 bg-white" 
+                                                        style="max-height: 250px; overflow-y: auto; z-index: 1050; display: block;"
+                                                    >
+                                                        <input 
+                                                            type="text" 
+                                                            class="form-control form-control-sm mb-2" 
+                                                            v-model="busquedaPrestacion" 
+                                                            placeholder="Escribe para buscar..."
+                                                            @click.stop
+                                                        />
+                                                        <ul class="list-unstyled mb-0">
+                                                            <li v-for="prestacion in prestacionesFiltradasPorBusqueda" :key="prestacion.id">
+                                                                <button 
+                                                                    type="button" 
+                                                                    class="dropdown-item py-2 rounded text-start"
+                                                                    :class="{ 'active bg-primary text-white': formulario.prestacion_id === prestacion.id }"
+                                                                    @click="seleccionarPrestacionDropdown(prestacion)"
+                                                                >
+                                                                    {{ prestacion.nombre }} ({{ prestacion.sucursal?.nombre }})
+                                                                </button>
+                                                            </li>
+                                                            <li v-if="prestacionesFiltradasPorBusqueda.length === 0" class="text-muted small p-2 text-center">
+                                                                No se encontraron resultados
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
                                             </div>
 
                                             <div v-if="formulario.prestacion_id" class="col-12">
@@ -617,6 +700,10 @@ export default {
     data() {
         return {
             cargando: false,
+            busquedaPrestacion: '',
+            mostrarDropdownPrestacion: false,
+            busquedaCliente: '',
+            mostrarDropdownCliente: false,
             mostrarModal: false,
             modoEdicion: false,
             citaEditando: null,
@@ -704,6 +791,12 @@ export default {
                 return vet.especialidad_id === prestacion.especialidad_id;
             });
         },
+        veterinariosFiltradosPorSucursal() {
+            if (!this.filtroSucursal) {
+                return this.veterinarios;
+            }
+            return this.veterinarios.filter(v => Number(v.sucursal_id) === Number(this.filtroSucursal));
+        },
         boxesFiltrados() {
             if (!this.formulario.sucursal_id) return [];
             const sucursal = this.sucursales.find(s => s.id === this.formulario.sucursal_id);
@@ -733,6 +826,36 @@ export default {
         },
         sinResultadosFiltro() {
             return this.citas.length === 0 && this.hayFiltrosActivos;
+        },
+        prestacionesFiltradasPorBusqueda() {
+            if (!this.busquedaPrestacion) {
+                return this.prestaciones;
+            }
+            const term = this.busquedaPrestacion.toLowerCase();
+            return this.prestaciones.filter(p => {
+                if (p.id === this.formulario.prestacion_id) return true;
+                return p.nombre.toLowerCase().includes(term) || (p.sucursal?.nombre && p.sucursal.nombre.toLowerCase().includes(term));
+            });
+        },
+        nombrePrestacionSeleccionada() {
+            if (!this.formulario.prestacion_id) return '';
+            const prestacion = this.prestaciones.find(p => p.id === this.formulario.prestacion_id);
+            return prestacion ? `${prestacion.nombre} (${prestacion.sucursal?.nombre || ''})` : '';
+        },
+        clientesFiltradosPorBusqueda() {
+            if (!this.busquedaCliente) {
+                return this.clientes;
+            }
+            const term = this.busquedaCliente.toLowerCase();
+            return this.clientes.filter(c => {
+                if (c.id === this.formulario.cliente_id) return true;
+                return c.nombre.toLowerCase().includes(term) || (c.email && c.email.toLowerCase().includes(term));
+            });
+        },
+        nombreClienteSeleccionado() {
+            if (!this.formulario.cliente_id) return '';
+            const cliente = this.clientes.find(c => c.id === this.formulario.cliente_id);
+            return cliente ? `${cliente.nombre} (${cliente.email})` : '';
         },
     },
     watch: {
@@ -771,6 +894,26 @@ export default {
         },
     },
     methods: {
+        cambiarFiltroSucursal() {
+            if (this.filtroSucursal && this.filtroVeterinario) {
+                const vet = this.veterinarios.find(v => v.id === this.filtroVeterinario);
+                if (vet && Number(vet.sucursal_id) !== Number(this.filtroSucursal)) {
+                    this.filtroVeterinario = '';
+                }
+            }
+            this.obtenerCitas();
+        },
+        seleccionarPrestacionDropdown(prestacion) {
+            this.formulario.prestacion_id = prestacion.id;
+            this.mostrarDropdownPrestacion = false;
+            this.busquedaPrestacion = '';
+        },
+        seleccionarClienteDropdown(cliente) {
+            this.formulario.cliente_id = cliente.id;
+            this.formulario.mascota_id = '';
+            this.mostrarDropdownCliente = false;
+            this.busquedaCliente = '';
+        },
         abrirModalCrear() {
             this.modoEdicion = false;
             this.citaEditando = null;
@@ -786,6 +929,10 @@ export default {
             this.formulario.veterinario_id = '';
             this.formulario.box_id = '';
             this.formulario.cliente_id = '';
+            this.busquedaPrestacion = '';
+            this.mostrarDropdownPrestacion = false;
+            this.busquedaCliente = '';
+            this.mostrarDropdownCliente = false;
             this.formulario.errors = {};
             this.horariosNormales = [];
             this.horariosUrgencia = [];
@@ -812,25 +959,36 @@ export default {
         },
 
         abrirModalEditar(cita) {
+            this.evitarResetHorario = true;
             this.modoEdicion = true;
             this.citaEditando = cita;
             this.errorGeneral = null;
             this.formulario.titulo = cita.titulo;
             this.formulario.descripcion = cita.descripcion;
             this.formulario.fecha_hora = cita.fecha_hora;
+            if (cita.fecha_hora) {
+                this.formulario.fecha_seleccionada = cita.fecha_hora.substring(0, 10);
+            }
             this.formulario.mascota_id = cita.mascota_id;
             // Obtenemos el ID del cliente mapeado en el accessor o mascota
             this.formulario.cliente_id = cita.cliente?.id || cita.mascota?.cliente_id || '';
             this.formulario.prestacion_id = cita.prestacion_id || '';
+            this.busquedaPrestacion = '';
+            this.mostrarDropdownPrestacion = false;
+            this.busquedaCliente = '';
+            this.mostrarDropdownCliente = false;
             
-            // Allow watchers to run or simply assign:
+            const prestacion = this.prestaciones.find(p => p.id === cita.prestacion_id);
+            const sucursalId = prestacion ? prestacion.sucursal_id : (cita.box?.sucursal_id || '');
+            
+            this.formulario.sucursal_id = sucursalId;
+            this.formulario.veterinario_id = cita.veterinario_id || '';
+            this.formulario.box_id = cita.box_id || '';
+            
             this.$nextTick(() => {
-                this.formulario.sucursal_id = cita.box?.sucursal_id || '';
-                
+                this.cargarHorarios();
                 this.$nextTick(() => {
-                    this.formulario.veterinario_id = cita.veterinario_id;
-                    this.formulario.box_id = cita.box_id;
-                    this.cargarHorarios();
+                    this.evitarResetHorario = false;
                 });
             });
 
@@ -861,6 +1019,10 @@ export default {
             this.formulario.box_id='';
             this.formulario.mascota_id='';
             this.formulario.cliente_id='';
+            this.busquedaPrestacion='';
+            this.mostrarDropdownPrestacion=false;
+            this.busquedaCliente='';
+            this.mostrarDropdownCliente=false;
             this.formulario.errors={};
             this.horariosNormales=[];
             this.horariosUrgencia=[];

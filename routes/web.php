@@ -30,14 +30,18 @@ use Inertia\Inertia;
 */
 
 Route::get('/', function () {
-    return auth()->check()
-        ? redirect()->route('panel')
-        : Inertia::render('Publico/Bienvenido', [
-            'puedeIniciarSesion' => Route::has('iniciar-sesion'),
-            'puedeRegistrarse' => Route::has('registrarse'),
-            'laravelVersion' => Application::VERSION,
-            'phpVersion' => PHP_VERSION,
-        ]);
+    if (auth()->check()) {
+        return auth()->user()->isAdmin()
+            ? redirect()->route('panel')
+            : redirect()->route('perfil.editar');
+    }
+
+    return Inertia::render('Publico/Bienvenido', [
+        'puedeIniciarSesion' => Route::has('iniciar-sesion'),
+        'puedeRegistrarse' => Route::has('registrarse'),
+        'laravelVersion' => Application::VERSION,
+        'phpVersion' => PHP_VERSION,
+    ]);
 });
 
 Route::get('/panel', [PanelController::class, 'index'])
@@ -95,12 +99,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/insumos/{insumo}', [InsumoController::class, 'detalle'])->name('insumos.detalle')->middleware('can:ver,insumo');
 
     // Transacciones y Pagos
-    Route::get('/ingresos', [TransaccionController::class, 'listado'])->name('ingresos.listado');
+    Route::get('/ingresos', [TransaccionController::class, 'listado'])->name('ingresos.listado')->middleware('can:verTodas,App\Models\Transaccion');
 
     // Realizar Pagos (Liquidación de Personal Médico)
-    Route::get('/realizar-pagos', [PagoVeterinarioController::class, 'index'])->name('pagos.personal');
-    Route::get('/realizar-pagos/{usuario}', [PagoVeterinarioController::class, 'detalle'])->name('pagos.personal.detalle');
-    Route::post('/realizar-pagos/{usuario}/pagar', [PagoVeterinarioController::class, 'procesarPago'])->name('pagos.personal.pagar');
+    Route::get('/realizar-pagos', [PagoVeterinarioController::class, 'index'])->name('pagos.personal')->middleware('can:pagos-veterinarios.verTodas');
+    Route::get('/realizar-pagos/{usuario}', [PagoVeterinarioController::class, 'detalle'])->name('pagos.personal.detalle')->middleware('can:pagos-veterinarios.ver');
+    Route::post('/realizar-pagos/{usuario}/pagar', [PagoVeterinarioController::class, 'procesarPago'])->name('pagos.personal.pagar')->middleware('can:pagos-veterinarios.crear');
 
     Route::get('/transacciones/{transaccion}/checkout', [TransaccionController::class, 'checkout'])
         ->name('transacciones.checkout')
@@ -111,4 +115,4 @@ Route::middleware('auth')->group(function () {
         ->middleware('can:pagar,transaccion');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

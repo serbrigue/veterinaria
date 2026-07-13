@@ -262,41 +262,7 @@ class CitaController extends Controller
 
         // Recuperar el horario personalizado o usar el valor predeterminado
         $horarioCustom = $veterinario->horario;
-        $diaConfig = null;
-
-        // Buscamos el día de la semana en el horario personalizado
-        if ($horarioCustom && is_array($horarioCustom)) {
-            // Iteramos sobre el horario personalizado para encontrar el día de la semana
-            foreach ($horarioCustom as $dia) {
-                // Verificamos si el día de la semana tiene configuración
-                if (isset($dia['dia']) && (int) $dia['dia'] === $diaSemana) {
-                    // Asignamos la configuración del día
-                    $diaConfig = $dia;
-                    break;
-                }
-            }
-        }
-
-        // Verificamos si el día de la semana tiene configuración
-        if (! $diaConfig) {
-            // Configuración predeterminada (Lunes a Viernes activo, Fines de semana inactivo)
-            $esFinSemana = in_array($diaSemana, [6, 7]);
-
-            // Asignamos la configuración del día
-            $diaConfig = [
-                'dia' => $diaSemana,
-                'normal' => [
-                    'activo' => ! $esFinSemana,
-                    'inicio' => '09:00',
-                    'fin' => '18:00',
-                ],
-                'urgencia' => [
-                    'activo' => ! $esFinSemana,
-                    'inicio' => '18:00',
-                    'fin' => '21:30',
-                ],
-            ];
-        }
+        $diaConfig = $this->resolverConfiguracionDia($horarioCustom, $diaSemana, $fecha);
 
         $citasVeterinario = Cita::where('veterinario_id', $request->veterinario_id)
             ->whereDate('fecha_hora', $fecha)
@@ -397,6 +363,71 @@ class CitaController extends Controller
         }
 
         return $slots;
+    }
+
+    private function resolverConfiguracionDia(?array $horario, int $diaSemana, string $fecha): array
+    {
+        if ($horario && is_array($horario) && count($horario) > 0) {
+            $primerElemento = $horario[0];
+
+            if (isset($primerElemento['dias'])) {
+                return $this->buscarDiaEnPlanes($horario, $diaSemana, $fecha);
+            }
+
+            return $this->buscarDiaEnFormatoPlano($horario, $diaSemana);
+        }
+
+        return $this->configuracionDiaPorDefecto($diaSemana);
+    }
+
+    private function buscarDiaEnPlanes(array $planes, int $diaSemana, string $fecha): array
+    {
+        foreach ($planes as $plan) {
+            $fechaInicio = $plan['fecha_inicio'] ?? null;
+            $fechaFin = $plan['fecha_fin'] ?? null;
+
+            if ($fechaInicio && $fechaFin && ($fecha < $fechaInicio || $fecha > $fechaFin)) {
+                continue;
+            }
+
+            foreach ($plan['dias'] ?? [] as $dia) {
+                if (isset($dia['dia']) && (int) $dia['dia'] === $diaSemana) {
+                    return $dia;
+                }
+            }
+        }
+
+        return $this->configuracionDiaPorDefecto($diaSemana);
+    }
+
+    private function buscarDiaEnFormatoPlano(array $horario, int $diaSemana): array
+    {
+        foreach ($horario as $dia) {
+            if (isset($dia['dia']) && (int) $dia['dia'] === $diaSemana) {
+                return $dia;
+            }
+        }
+
+        return $this->configuracionDiaPorDefecto($diaSemana);
+    }
+
+    private function configuracionDiaPorDefecto(int $diaSemana): array
+    {
+        $esFinSemana = in_array($diaSemana, [6, 7]);
+
+        return [
+            'dia' => $diaSemana,
+            'normal' => [
+                'activo' => ! $esFinSemana,
+                'inicio' => '09:00',
+                'fin' => '18:00',
+            ],
+            'urgencia' => [
+                'activo' => ! $esFinSemana,
+                'inicio' => '18:00',
+                'fin' => '21:30',
+            ],
+        ];
     }
 
     public function cancelar(Request $request, Cita $cita)

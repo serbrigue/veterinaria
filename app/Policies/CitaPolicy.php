@@ -52,7 +52,7 @@ class CitaPolicy
 
         // Si es secretaria, puede ver las citas de los veterinarios de su sucursal
         if ($user->rol?->nombre_interno === 'secretaria') {
-            return $user->tienePermiso('ver-citas-sucursal') 
+            return $user->tienePermiso('ver-citas-sucursal')
                 && $cita->veterinario?->sucursal_id === $user->secretaria?->sucursal_id;
         }
 
@@ -77,8 +77,13 @@ class CitaPolicy
     public function actualizar(User $user, Cita $cita): bool
     {
         if ($user->rol?->nombre_interno === 'secretaria') {
-            return $user->tienePermiso('editar-citas-sucursal') 
+            return $user->tienePermiso('editar-citas-sucursal')
                 && $cita->veterinario?->sucursal_id === $user->secretaria?->sucursal_id;
+        }
+
+        if ($user->isCliente()) {
+            return $user->tienePermiso('editar-mis-citas')
+                && $cita->mascota?->cliente_id === $user->cliente?->id;
         }
 
         return false;
@@ -88,11 +93,12 @@ class CitaPolicy
     public function editarNotas(User $user, Cita $cita): bool
     {
         if ($user->isVeterinario()) {
-            return $cita->veterinario_id === $user->veterinario?->id;
+            return $user->tienePermiso('editar-citas-sucursal')
+                && $cita->veterinario?->sucursal_id === $user->veterinario?->sucursal_id;
         }
 
         if ($user->rol?->nombre_interno === 'secretaria') {
-            return $user->tienePermiso('editar-citas-sucursal') 
+            return $user->tienePermiso('editar-citas-sucursal')
                 && $cita->veterinario?->sucursal_id === $user->secretaria?->sucursal_id;
         }
 
@@ -103,11 +109,12 @@ class CitaPolicy
     public function editarEstado(User $user, Cita $cita): bool
     {
         if ($user->isVeterinario()) {
-            return $cita->veterinario_id === $user->veterinario?->id;
+            return $user->tienePermiso('editar-citas-sucursal')
+                && $cita->veterinario?->sucursal_id === $user->veterinario?->sucursal_id;
         }
 
         if ($user->rol?->nombre_interno === 'secretaria') {
-            return $user->tienePermiso('editar-citas-sucursal') 
+            return $user->tienePermiso('editar-citas-sucursal')
                 && $cita->veterinario?->sucursal_id === $user->secretaria?->sucursal_id;
         }
 
@@ -130,7 +137,7 @@ class CitaPolicy
 
         // Si es secretaria
         if ($user->rol?->nombre_interno === 'secretaria') {
-            return $user->tienePermiso('editar-citas-sucursal') 
+            return $user->tienePermiso('editar-citas-sucursal')
                 && $cita->veterinario?->sucursal_id === $user->secretaria?->sucursal_id;
         }
 

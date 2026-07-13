@@ -220,7 +220,7 @@
                                 class="form-select bg-light border-0 py-2"
                                 :class="{ 'is-invalid': formulario.errors.especie_id }"
                                 required
-                                @change="obtenerRazasPorEspecie(formulario.especie_id)"
+                                @change="alCambiarEspecieFormulario"
                             >
                                 <option value="" disabled>Seleccione una especie</option>
                                 <option
@@ -236,7 +236,7 @@
                             </div>
                         </div>
 
-                        <div class="mb-3" v-if="formulario.especie_id && razas.length > 0">
+                        <div class="mb-3" v-if="formulario.especie_id">
                             <label for="raza_id" class="form-label fw-semibold text-secondary small text-uppercase">Raza</label>
                             <select
                                 id="raza_id"
@@ -521,8 +521,16 @@ export default {
             this.formulario.descripcion = mascota.descripcion
             this.formulario.sexo = mascota.sexo
             this.formulario.fecha_nacimiento = this.$fechaInput(mascota.fecha_nacimiento)
-            this.formulario.especie_id = mascota.especie_id
-            this.formulario.raza_id = mascota.raza_id
+            
+            const especieId = mascota.especie_id || mascota.raza?.especie_id || ''
+            this.formulario.especie_id = especieId
+            this.formulario.raza_id = mascota.raza_id || ''
+            if (especieId) {
+                this.obtenerRazasPorEspecie(especieId)
+            } else {
+                this.razas = []
+            }
+
             this.formulario.cliente_id = mascota.cliente_id
             this.formulario.imagen_url = mascota.imagen_url
             this.formulario.foto = null
@@ -534,6 +542,14 @@ export default {
             this.formulario.esterilizado = !!mascota.esterilizado
             this.formulario.errors = {}
             this.mostrarModal = true
+        },
+        alCambiarEspecieFormulario() {
+            this.formulario.raza_id = ''
+            if (this.formulario.especie_id) {
+                this.obtenerRazasPorEspecie(this.formulario.especie_id)
+            } else {
+                this.razas = []
+            }
         },
         cerrarModal() {
             this.mostrarModal = false

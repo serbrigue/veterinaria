@@ -284,14 +284,16 @@
                             </div>
                             <div class="card-body p-4 pt-3">
                                 <div v-if="cita.box" class="d-flex align-items-center gap-3 mb-3">
-                                    <div class="bg-secondary bg-opacity-10 text-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                                        <i class="bi bi-door-open fs-4"></i>
-                                    </div>
+                                    <img :src="cita.box.imagen_url || '/images/default_box.png'" :alt="cita.box.nombre" class="rounded-circle object-fit-cover shadow-sm" style="width: 50px; height: 50px;">
                                     <div>
                                         <h4 class="h6 mb-1 fw-bold text-dark">
                                             {{ cita.box.nombre }}
                                         </h4>
-                                        <p class="text-muted small mb-0">Sucursal: {{ cita.box.sucursal?.nombre || 'N/A' }}</p>
+                                        <p class="text-muted small mb-0 d-flex align-items-center gap-1">
+                                            Sucursal: 
+                                            <img :src="cita.box.sucursal?.imagen_url || '/images/default_sucursal.png'" :alt="cita.box.sucursal?.nombre || 'Sucursal'" class="rounded-circle object-fit-cover shadow-sm" style="width: 20px; height: 20px;">
+                                            {{ cita.box.sucursal?.nombre || 'N/A' }}
+                                        </p>
                                     </div>
                                 </div>
                                 <div v-else class="text-muted text-center py-2 small mb-3">

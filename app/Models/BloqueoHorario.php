@@ -13,6 +13,8 @@ class BloqueoHorario extends Model
         'fecha_inicio',
         'fecha_fin',
         'hora_inicio',
+        'especialidad_id',
+        'sucursal_id',
         'hora_fin',
         'motivo',
     ];
@@ -25,5 +27,15 @@ class BloqueoHorario extends Model
     public function veterinario()
     {
         return $this->belongsTo(Veterinario::class, 'veterinario_id');
+    }
+
+    public function especialidad()
+    {
+        return $this->belongsTo(Especialidad::class, 'especialidad_id');
+    }
+
+    public function sucursal()
+    {
+        return $this->belongsTo(Sucursal::class, 'sucursal_id');
     }
 }
