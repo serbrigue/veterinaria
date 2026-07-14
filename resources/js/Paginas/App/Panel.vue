@@ -229,48 +229,8 @@
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Próximas Citas (Agenda General) -->
-                <div class="row g-4">
-                    <div class="col-12">
-                        <div class="card border-0 shadow-sm rounded-4 mb-4">
-                            <div class="card-header bg-white border-bottom p-4 d-flex justify-content-between align-items-center">
-                                <h2 class="h5 fw-bold mb-0">Próximas Citas (Agenda)</h2>
-                                <Link :href="route('citas.listado')" class="btn btn-sm btn-outline-primary rounded-pill px-3">Ver agenda completa</Link>
-                            </div>
-                            <div class="card-body p-0">
-                                <div v-if="!estadisticas.proximas_citas || estadisticas.proximas_citas.length === 0" class="p-5 text-center text-muted">
-                                    <i class="bi bi-calendar2-x display-4 d-block mb-3 opacity-50"></i>
-                                    <p class="mb-0 fw-medium">No hay citas agendadas próximas.</p>
-                                </div>
-                                <div v-else class="list-group list-group-flush">
-                                    <div v-for="cita in estadisticas.proximas_citas" :key="cita.id" class="list-group-item p-4 border-bottom-0 border-top transition-all hover-bg-light">
-                                        <div class="d-flex align-items-center">
-                                            <div class="bg-light rounded-3 p-3 text-center me-4" style="min-width: 80px;">
-                                                <span class="d-block fw-bold fs-5 text-primary">{{ formatearDia(cita.fecha_hora) }}</span>
-                                                <span class="d-block small text-uppercase fw-semibold text-secondary">{{ formatearMes(cita.fecha_hora) }}</span>
-                                            </div>
-                                            <div class="flex-grow-1">
-                                                <h4 class="h6 fw-bold mb-1">{{ cita.titulo || 'Cita Programada' }}</h4>
-                                                <div class="text-muted small mb-2">
-                                                    <i class="bi bi-clock me-1"></i> {{ formatearHora(cita.fecha_hora) }}
-                                                    <span class="mx-2">|</span>
-                                                    <i class="bi bi-person me-1"></i> {{ cita.veterinario?.usuario?.name || 'Dr. Asignado' }}
-                                                </div>
-                                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2 py-1"><i class="bi bi-bug me-1"></i> {{ cita.mascota?.nombre }}</span>
-                                            </div>
-                                            <div>
-                                                <Link :href="route('citas.detalle', cita.id)" class="btn btn-light btn-sm rounded-circle shadow-sm" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
-                                                    <i class="bi bi-chevron-right"></i>
-                                                </Link>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Panel Avanzado de BI KPIs -->
+                    <BiKpiDashboard v-if="estadisticas.bi_kpis" :biData="estadisticas.bi_kpis" />
                 </div>
             </div>
         </div>
@@ -281,12 +241,14 @@
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import { Chart } from 'chart.js';
+import BiKpiDashboard from '@/Paginas/App/Partials/BiKpiDashboard.vue';
 
 export default {
     components: {
         AuthenticatedLayout,
         Head,
-        Link
+        Link,
+        BiKpiDashboard
     },
     props: {
         estadisticas: {

@@ -14,6 +14,7 @@ use App\Http\Controllers\RazaController;
 use App\Http\Controllers\SucursalController;
 use App\Http\Controllers\TransaccionController;
 use App\Http\Controllers\VeterinarioController;
+use App\Http\Controllers\ImportController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -113,6 +114,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/transacciones/{transaccion}/pagar', [TransaccionController::class, 'procesarPago'])
         ->name('transacciones.pagar')
         ->middleware('can:pagar,transaccion');
+
+    // Importador Consolidado
+    Route::get('/importador-consolidado', function() {
+        return Inertia::render('ConsolidatedImport');
+    })->name('importador.index');
+    Route::post('/api/import/analyze', [ImportController::class, 'analyzeHeaders'])->name('import.analyze');
+    Route::post('/api/import/process', [ImportController::class, 'importData'])->name('import.process');
 });
 
 require __DIR__ . '/auth.php';

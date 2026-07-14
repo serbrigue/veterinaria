@@ -327,6 +327,23 @@ class CitaController extends Controller
     ): array {
         $inicio = Carbon::parse($fecha)->setTime($horaInicio, $minutoInicio);
         $fin = Carbon::parse($fecha)->setTime($horaFin, $minutoFin);
+        
+        // Evitar generar slots en el pasado para el día actual,
+        // redondeando la hora mínima a los próximos 30 minutos.
+        $ahora = now();
+        if ($inicio->isSameDay($ahora)) {
+            $minutosRestantes = 30 - ($ahora->minute % 30);
+            if ($minutosRestantes === 30) {
+                $minutosRestantes = 0;
+            }
+            $horaMinima = $ahora->copy()->addMinutes($minutosRestantes)->setSeconds(0);
+            
+            // Si la hora de inicio del turno es anterior a la hora actual redondeada, adelantamos el cursor
+            if ($inicio->lt($horaMinima)) {
+                $inicio = $horaMinima;
+            }
+        }
+
         $slots = [];
         $cursor = $inicio->copy();
 

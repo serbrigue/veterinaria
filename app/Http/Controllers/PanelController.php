@@ -7,6 +7,7 @@ use App\Models\Cliente;
 use App\Models\Insumo;
 use App\Models\Mascota;
 use App\Models\Transaccion;
+use App\Models\Box;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -35,11 +36,140 @@ class PanelController extends Controller
             'ingresos_sucursales' => $this->getIngresosSucursales(),
             'veterinarios_estadisticas' => $this->getVeterinariosEstadisticas(),
             'proximas_citas' => $proximasCitas,
+            'bi_kpis' => $this->getBiKpis(),
         ];
 
         return Inertia::render('App/Panel', [
             'estadisticas' => $estadisticas,
         ]);
+    }
+
+    private function getBiKpis()
+    {
+        // 1. KPIs Operación Clínica y Eficiencia
+        $totalCitas = Cita::count();
+        $totalBoxes = Box::count();
+        $citasCanceladas = Cita::whereIn('estado', ['cancelada', 'no_asistio'])->count();
+
+        // Asumiendo una ocupación calculada basada en un estándar de 8 hrs diarias, 20 días hábiles
+        // Estimamos un promedio de 30 mins por cita (0.5 hrs).
+        // Total hrs ocupadas mes actual:
+        $citasMesActual = Cita::whereMonth('fecha_hora', Carbon::now()->month)->count();
+        $horasOcupadas = $citasMesActual * 0.5;
+        $horasDisponibles = $totalBoxes * 20 * 8; // 20 días, 8 horas
+        $tasaOcupacion = $horasDisponibles > 0 ? min(100, round(($horasOcupadas / $horasDisponibles) * 100, 2)) : 0;
+
+        $citasFacturadas = Transaccion::where('estado', 'pagado')->count();
+        $ingresosPagados = Transaccion::where('estado', 'pagado')->sum('monto_total');
+        $ticketPromedio = $citasFacturadas > 0 ? round($ingresosPagados / $citasFacturadas, 2) : 0;
+        
+        $tasaAusentismo = $totalCitas > 0 ? round(($citasCanceladas / $totalCitas) * 100, 2) : 0;
+
+        $productividadVeterinarios = Veterinario::with('usuario')->get()->map(function ($vet) {
+            $ingresos = Transaccion::whereHas('cita', function($q) use ($vet) {
+                $q->where('veterinario_id', $vet->id);
+            })->where('estado', 'pagado')->sum('monto_total');
+            $citas = Cita::where('veterinario_id', $vet->id)->count();
+            return [
+                'nombre' => $vet->usuario?->name ?? 'Dr. ' . $vet->id,
+                'citas_atendidas' => $citas,
+                'ingresos_generados' => $ingresos,
+            ];
+        });
+
+        // 2. KPIs Financieros y de Rentabilidad
+        $ingresosTotalesBrutos = $ingresosPagados;
+        $costoNominaVariable = CitaCargo::sum('pago_vet');
+
+        $sucursales = Sucursal::all();
+        $margenNetoSucursales = $sucursales->map(function ($sucursal) {
+            $ingresos = Transaccion::where('transacciones.estado', 'pagado')
+                ->join('citas', 'transacciones.cita_id', '=', 'citas.id')
+                ->join('boxes', 'citas.box_id', '=', 'boxes.id')
+                ->where('boxes.sucursal_id', $sucursal->id)
+                ->sum('transacciones.monto_total');
+
+            // Costo Nómina
+            $costoNomina = CitaCargo::join('citas', 'citas_cargo.cita_id', '=', 'citas.id')
+                ->join('boxes', 'citas.box_id', '=', 'boxes.id')
+                ->where('boxes.sucursal_id', $sucursal->id)
+                ->sum('citas_cargo.pago_vet');
+
+            $margen = $ingresos - $costoNomina; // Simplified margen
+            $margenPorcentaje = $ingresos > 0 ? round(($margen / $ingresos) * 100, 2) : 0;
+
+            return [
+                'nombre' => $sucursal->nombre,
+                'ingresos' => $ingresos,
+                'costos' => $costoNomina,
+                'margen_neto' => $margen,
+                'margen_porcentaje' => $margenPorcentaje
+            ];
+        });
+
+        // 3. KPIs Logística e Inventario
+        $rotacionInsumos = CitaCargo::whereNotNull('insumo_id')
+            ->select('insumo_id', DB::raw('SUM(cantidad) as total_usado'))
+            ->groupBy('insumo_id')
+            ->with('insumo')
+            ->get()->map(function ($cargo) {
+                $stockActual = $cargo->insumo?->stock_actual ?? 1;
+                $indice = $stockActual > 0 ? round($cargo->total_usado / $stockActual, 2) : $cargo->total_usado;
+                return [
+                    'insumo' => $cargo->insumo?->nombre ?? 'Insumo ' . $cargo->insumo_id,
+                    'indice_rotacion' => $indice,
+                    'total_usado' => $cargo->total_usado
+                ];
+            });
+
+        $alertasStock = Insumo::whereColumn('stock_actual', '<=', 'stock_minimo')->get()->map(function($i) {
+            return [
+                'id' => $i->id,
+                'nombre' => $i->nombre,
+                'stock_actual' => $i->stock_actual,
+                'stock_minimo' => $i->stock_minimo,
+            ];
+        });
+
+        // Merma requeriría una tabla "mermas", por ahora devolvemos array vacío o dummy
+        $mermaInventario = []; 
+
+        // 4. KPIs Clientes y Fidelización
+        $totalClientes = Cliente::count();
+        $ltv = $totalClientes > 0 ? round($ingresosTotalesBrutos / $totalClientes, 2) : 0;
+
+        $totalMascotas = Mascota::count();
+        // Frecuencia = Promedio citas por mascota en el último año
+        $citasUltimoAno = Cita::where('fecha_hora', '>=', Carbon::now()->subYear())->count();
+        $frecuenciaVisita = $totalMascotas > 0 ? round($citasUltimoAno / $totalMascotas, 2) : 0;
+
+        // Tasa conversión: Clientes que han agendado al menos una cita
+        $clientesConCita = Cliente::whereHas('mascotas.citas')->count();
+        $tasaConversion = $totalClientes > 0 ? round(($clientesConCita / $totalClientes) * 100, 2) : 0;
+
+        return [
+            'operacion' => [
+                'tasa_ocupacion_boxes' => $tasaOcupacion,
+                'ticket_promedio' => $ticketPromedio,
+                'tasa_ausentismo' => $tasaAusentismo,
+                'productividad_veterinarios' => $productividadVeterinarios,
+            ],
+            'financiero' => [
+                'ingresos_brutos' => $ingresosTotalesBrutos,
+                'costo_nomina_variable' => $costoNominaVariable,
+                'margen_neto_sucursal' => $margenNetoSucursales,
+            ],
+            'inventario' => [
+                'rotacion_insumos' => $rotacionInsumos,
+                'alertas_stock' => $alertasStock,
+                'merma_inventario' => $mermaInventario,
+            ],
+            'clientes' => [
+                'ltv' => $ltv,
+                'frecuencia_visita' => $frecuenciaVisita,
+                'tasa_conversion' => $tasaConversion,
+            ]
+        ];
     }
 
     private function getFinancieroStats()

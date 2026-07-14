@@ -85,6 +85,20 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                <!-- Importador Consolidado (Solo Admin/Secretaria) -->
+                                <div class="accordion-item bg-transparent border-0" v-if="$isAdmin() || $isSecretaria()">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button bg-transparent fw-semibold text-primary px-1 py-3" :class="{'collapsed': tabActiva !== 'importador'}" type="button" @click="tabActiva = tabActiva === 'importador' ? '' : 'importador'">
+                                            <i class="bi bi-cloud-arrow-up-fill me-2"></i> Importador de Datos
+                                        </button>
+                                    </h2>
+                                    <div class="accordion-collapse collapse" :class="{'show': tabActiva === 'importador'}">
+                                        <div class="accordion-body px-1 pt-2 pb-0">
+                                            <ConsolidatedImport />
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -116,6 +130,7 @@ import DashboardCliente from './Partials/DashboardCliente.vue';
 import DashboardVeterinario from './Partials/DashboardVeterinario.vue';
 import DashboardAdmin from './Partials/DashboardAdmin.vue';
 import DashboardSecretaria from './Partials/DashboardSecretaria.vue';
+import ConsolidatedImport from './Partials/ConsolidatedImport.vue';
 import { Head } from '@inertiajs/vue3';
 
 export default {
@@ -129,6 +144,7 @@ export default {
         DashboardVeterinario,
         DashboardAdmin,
         DashboardSecretaria,
+        ConsolidatedImport,
         Head,
     },
     props: {

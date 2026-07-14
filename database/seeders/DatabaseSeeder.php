@@ -451,28 +451,24 @@ class DatabaseSeeder extends Seeder
         $especieCanino = Especie::create([
             'nombre' => 'Caninos',
             'descripcion' => 'Perros de todas las razas y tamaños.',
-            'creado_por' => $admin->id,
             'imagen_url' => 'https://i.pinimg.com/736x/bd/24/5e/bd245e2bb67ba4879cf54fa736768792.jpg',
         ]);
 
         $especieFelino = Especie::create([
             'nombre' => 'Felinos',
             'descripcion' => 'Gatos domésticos y otras especies felinas.',
-            'creado_por' => $admin->id,
             'imagen_url' => 'https://i.pinimg.com/236x/d7/9d/cb/d79dcbfe0e185dbcb4ae2d4422889d62.jpg',
         ]);
 
         $especieAve = Especie::create([
             'nombre' => 'Aves',
             'descripcion' => 'Aves domésticas y exóticas.',
-            'creado_por' => $admin->id,
             'imagen_url' => 'https://i.pinimg.com/736x/5d/c6/1b/5dc61bc7b92d92e0cbce81dd5816b143.jpg',
         ]);
 
         $especieRoedor = Especie::create([
             'nombre' => 'Roedores',
             'descripcion' => 'Hámsters, cobayas, chinchillas, etc.',
-            'creado_por' => $admin->id,
             'imagen_url' => 'https://i.pinimg.com/736x/96/69/87/966987a0588593eeb74c55732aad0647.jpg',
         ]);
 
@@ -480,7 +476,6 @@ class DatabaseSeeder extends Seeder
             'nombre' => 'Pug',
             'descripcion' => 'Raza canina de aspecto pequeño y braquicéfalo.',
             'especie_id' => $especieCanino->id,
-            'creado_por' => $admin->id,
             'imagen_url' => 'https://i.pinimg.com/webp87/736x/61/37/a1/6137a1feae4f909f89cc0a1ac3693c3f.webp',
         ]);
 
@@ -488,7 +483,6 @@ class DatabaseSeeder extends Seeder
             'nombre' => 'Persa',
             'descripcion' => 'Raza felina de pelo largo y cara ancha.',
             'especie_id' => $especieFelino->id,
-            'creado_por' => $admin->id,
             'imagen_url' => 'https://i.pinimg.com/736x/f7/4b/92/f74b9222fa0da54389bcc25cdb61ce3f.jpg',
         ]);
 
@@ -496,7 +490,6 @@ class DatabaseSeeder extends Seeder
             'nombre' => 'Golden Retriever',
             'descripcion' => 'Perro de raza grande, amigable y familiar.',
             'especie_id' => $especieCanino->id,
-            'creado_por' => $admin->id,
             'imagen_url' => 'https://i.pinimg.com/736x/23/cf/fd/23cffd3e0a849b971ca8ccc2e61a1032.jpg',
         ]);
 
@@ -504,7 +497,6 @@ class DatabaseSeeder extends Seeder
             'nombre' => 'Siamés',
             'descripcion' => 'Gato oriental con ojos azules distintivos.',
             'especie_id' => $especieFelino->id,
-            'creado_por' => $admin->id,
             'imagen_url' => 'https://i.pinimg.com/736x/8b/49/79/8b4979bb9e40c3bc0020070e2bab1fa1.jpg',
         ]);
 
@@ -512,7 +504,6 @@ class DatabaseSeeder extends Seeder
             'nombre' => 'Canario',
             'descripcion' => 'Pequeño pájaro cantor.',
             'especie_id' => $especieAve->id,
-            'creado_por' => $admin->id,
             'imagen_url' => 'https://i.pinimg.com/736x/a0/9b/5e/a09b5e53113b50492091aeb6a4c5fae2.jpg',
         ]);
 
@@ -520,7 +511,6 @@ class DatabaseSeeder extends Seeder
             'nombre' => 'Hámster Sirio',
             'descripcion' => 'Hámster común de tamaño mediano.',
             'especie_id' => $especieRoedor->id,
-            'creado_por' => $admin->id,
             'imagen_url' => 'https://i.pinimg.com/736x/af/62/bf/af62bfb98458f1a4b975499a88b1a0dd.jpg',
         ]);
 
@@ -782,7 +772,7 @@ class DatabaseSeeder extends Seeder
         // 13. Generar Clientes extra con Transacciones Pendientes (Para pruebas masivas de correo)
         for ($i = 1; $i <= 5; $i++) {
             $userExtra = User::create([
-                'name' => 'Cliente Deuda '.$i,
+                'name' => 'Cliente Deuda ' . $i,
                 'email' => "cliente.deuda{$i}@prueba.com",
                 'password' => Hash::make('password123'),
                 'rol_id' => $rolCliente->id,
@@ -790,13 +780,13 @@ class DatabaseSeeder extends Seeder
 
             $clienteExtra = Cliente::create([
                 'user_id' => $userExtra->id,
-                'telefono' => '+5690000000'.$i,
+                'telefono' => '+5690000000' . $i,
                 'direccion' => "Calle Falsa 12{$i}, Viña del Mar",
                 'foto_perfil_url' => "https://i.pravatar.cc/150?u=deuda{$i}",
             ]);
 
             $mascotaExtra = Mascota::create([
-                'nombre' => 'Mascota Morosa '.$i,
+                'nombre' => 'Mascota Morosa ' . $i,
                 'descripcion' => 'Paciente generado masivamente',
                 'sexo' => $i % 2 == 0 ? 'Macho' : 'Hembra',
                 'fecha_nacimiento' => Carbon::create(2021, 1, $i),
@@ -875,57 +865,92 @@ class DatabaseSeeder extends Seeder
         // — Nuevas prestaciones Viña del Mar —
         DB::table('prestaciones')->insert([
             [
-                'nombre' => 'Vacunación Antirrábica', 'descripcion' => 'Vacuna antirrábica anual obligatoria.',
-                'precio_base' => 12000.00, 'sucursal_id' => $sucursalVina->id,
-                'especialidad_id' => null, 'comision_vet' => 40.00, 'comision_equipo' => 0.00,
+                'nombre' => 'Vacunación Antirrábica',
+                'descripcion' => 'Vacuna antirrábica anual obligatoria.',
+                'precio_base' => 12000.00,
+                'sucursal_id' => $sucursalVina->id,
+                'especialidad_id' => null,
+                'comision_vet' => 40.00,
+                'comision_equipo' => 0.00,
                 'categoria_prestacion_id' => $catPrestConsultaId,
-                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
             [
-                'nombre' => 'Limpieza Dental', 'descripcion' => 'Destartarización y profilaxis dental bajo sedación leve.',
-                'precio_base' => 55000.00, 'sucursal_id' => $sucursalVina->id,
-                'especialidad_id' => null, 'comision_vet' => 45.00, 'comision_equipo' => 0.00,
+                'nombre' => 'Limpieza Dental',
+                'descripcion' => 'Destartarización y profilaxis dental bajo sedación leve.',
+                'precio_base' => 55000.00,
+                'sucursal_id' => $sucursalVina->id,
+                'especialidad_id' => null,
+                'comision_vet' => 45.00,
+                'comision_equipo' => 0.00,
                 'categoria_prestacion_id' => $catPrestConsultaId,
-                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
             [
-                'nombre' => 'Esterilización Quirúrgica', 'descripcion' => 'Esterilización con anestesia general.',
-                'precio_base' => 80000.00, 'sucursal_id' => $sucursalVina->id,
-                'especialidad_id' => $especialidadCirugia->id, 'comision_vet' => 40.00, 'comision_equipo' => 15.00,
+                'nombre' => 'Esterilización Quirúrgica',
+                'descripcion' => 'Esterilización con anestesia general.',
+                'precio_base' => 80000.00,
+                'sucursal_id' => $sucursalVina->id,
+                'especialidad_id' => $especialidadCirugia->id,
+                'comision_vet' => 40.00,
+                'comision_equipo' => 15.00,
                 'categoria_prestacion_id' => $catPrestCirugiaId,
-                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
             [
-                'nombre' => 'Atención Urgencia', 'descripcion' => 'Consulta de emergencia con prioridad inmediata.',
-                'precio_base' => 35000.00, 'sucursal_id' => $sucursalVina->id,
-                'especialidad_id' => null, 'comision_vet' => 50.00, 'comision_equipo' => 10.00,
+                'nombre' => 'Atención Urgencia',
+                'descripcion' => 'Consulta de emergencia con prioridad inmediata.',
+                'precio_base' => 35000.00,
+                'sucursal_id' => $sucursalVina->id,
+                'especialidad_id' => null,
+                'comision_vet' => 50.00,
+                'comision_equipo' => 10.00,
                 'categoria_prestacion_id' => $catPrestUrgenciaId,
-                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
         ]);
 
         // — Nuevas prestaciones Valparaíso —
         DB::table('prestaciones')->insert([
             [
-                'nombre' => 'Vacunación Antirrábica', 'descripcion' => 'Vacuna antirrábica anual obligatoria.',
-                'precio_base' => 12000.00, 'sucursal_id' => $sucursalValparaiso->id,
-                'especialidad_id' => null, 'comision_vet' => 40.00, 'comision_equipo' => 0.00,
+                'nombre' => 'Vacunación Antirrábica',
+                'descripcion' => 'Vacuna antirrábica anual obligatoria.',
+                'precio_base' => 12000.00,
+                'sucursal_id' => $sucursalValparaiso->id,
+                'especialidad_id' => null,
+                'comision_vet' => 40.00,
+                'comision_equipo' => 0.00,
                 'categoria_prestacion_id' => $catPrestConsultaId,
-                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
             [
-                'nombre' => 'Baño y Secado', 'descripcion' => 'Baño completo con secado profesional.',
-                'precio_base' => 12000.00, 'sucursal_id' => $sucursalValparaiso->id,
-                'especialidad_id' => $especialidadPeluqueria->id, 'comision_vet' => 50.00, 'comision_equipo' => 0.00,
+                'nombre' => 'Baño y Secado',
+                'descripcion' => 'Baño completo con secado profesional.',
+                'precio_base' => 12000.00,
+                'sucursal_id' => $sucursalValparaiso->id,
+                'especialidad_id' => $especialidadPeluqueria->id,
+                'comision_vet' => 50.00,
+                'comision_equipo' => 0.00,
                 'categoria_prestacion_id' => $catPrestEsteticaId,
-                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
             [
-                'nombre' => 'Cirugía Ortopédica', 'descripcion' => 'Intervención ortopédica de alta complejidad.',
-                'precio_base' => 200000.00, 'sucursal_id' => $sucursalValparaiso->id,
-                'especialidad_id' => $especialidadCirugia->id, 'comision_vet' => 35.00, 'comision_equipo' => 20.00,
+                'nombre' => 'Cirugía Ortopédica',
+                'descripcion' => 'Intervención ortopédica de alta complejidad.',
+                'precio_base' => 200000.00,
+                'sucursal_id' => $sucursalValparaiso->id,
+                'especialidad_id' => $especialidadCirugia->id,
+                'comision_vet' => 35.00,
+                'comision_equipo' => 20.00,
                 'categoria_prestacion_id' => $catPrestCirugiaId,
-                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
         ]);
 
@@ -938,33 +963,48 @@ class DatabaseSeeder extends Seeder
         // — Nuevos boxes Viña del Mar —
         DB::table('boxes')->insert([
             [
-                'nombre' => 'Box Consulta 2', 'descripcion' => 'Segundo box de atención general para consultas.',
-                'sucursal_id' => $sucursalVina->id, 'categoria_prestacion_id' => $catPrestConsultaId,
-                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+                'nombre' => 'Box Consulta 2',
+                'descripcion' => 'Segundo box de atención general para consultas.',
+                'sucursal_id' => $sucursalVina->id,
+                'categoria_prestacion_id' => $catPrestConsultaId,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
             [
-                'nombre' => 'Box Urgencias', 'descripcion' => 'Box destinado a atenciones de urgencia y emergencias.',
-                'sucursal_id' => $sucursalVina->id, 'categoria_prestacion_id' => $catPrestUrgenciaId,
-                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+                'nombre' => 'Box Urgencias',
+                'descripcion' => 'Box destinado a atenciones de urgencia y emergencias.',
+                'sucursal_id' => $sucursalVina->id,
+                'categoria_prestacion_id' => $catPrestUrgenciaId,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
             [
-                'nombre' => 'Quirófano B', 'descripcion' => 'Segundo quirófano para cirugías mayores y ortopedia.',
-                'sucursal_id' => $sucursalVina->id, 'categoria_prestacion_id' => $catPrestCirugiaId,
-                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+                'nombre' => 'Quirófano B',
+                'descripcion' => 'Segundo quirófano para cirugías mayores y ortopedia.',
+                'sucursal_id' => $sucursalVina->id,
+                'categoria_prestacion_id' => $catPrestCirugiaId,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
         ]);
 
         // — Nuevos boxes Valparaíso —
         DB::table('boxes')->insert([
             [
-                'nombre' => 'Box Consulta 2 Valparaíso', 'descripcion' => 'Segundo box de atención clínica en Valparaíso.',
-                'sucursal_id' => $sucursalValparaiso->id, 'categoria_prestacion_id' => $catPrestConsultaId,
-                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+                'nombre' => 'Box Consulta 2 Valparaíso',
+                'descripcion' => 'Segundo box de atención clínica en Valparaíso.',
+                'sucursal_id' => $sucursalValparaiso->id,
+                'categoria_prestacion_id' => $catPrestConsultaId,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
             [
-                'nombre' => 'Quirófano Valparaíso', 'descripcion' => 'Box quirúrgico para procedimientos de alta complejidad.',
-                'sucursal_id' => $sucursalValparaiso->id, 'categoria_prestacion_id' => $catPrestCirugiaId,
-                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+                'nombre' => 'Quirófano Valparaíso',
+                'descripcion' => 'Box quirúrgico para procedimientos de alta complejidad.',
+                'sucursal_id' => $sucursalValparaiso->id,
+                'categoria_prestacion_id' => $catPrestCirugiaId,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
         ]);
 
@@ -972,12 +1012,16 @@ class DatabaseSeeder extends Seeder
         // 15. Catálogo de Categorías de Insumo
         // ─────────────────────────────────────────────────────────────────────
         $catInsumoMedicamentoId = DB::table('categorias_insumos')->insertGetId([
-            'nombre' => 'Medicamento', 'descripcion' => 'Fármacos, anestésicos y soluciones inyectables.',
-            'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+            'nombre' => 'Medicamento',
+            'descripcion' => 'Fármacos, anestésicos y soluciones inyectables.',
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now(),
         ]);
         $catInsumoMaterialId = DB::table('categorias_insumos')->insertGetId([
-            'nombre' => 'Material Quirúrgico', 'descripcion' => 'Instrumental, suturas y material estéril de un solo uso.',
-            'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+            'nombre' => 'Material Quirúrgico',
+            'descripcion' => 'Instrumental, suturas y material estéril de un solo uso.',
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now(),
         ]);
         DB::table('categorias_insumos')->insert([
             ['nombre' => 'Vacuna', 'descripcion' => 'Vacunas obligatorias y opcionales.', 'created_at' => Carbon::now(), 'updated_at' => Carbon::now()],
@@ -993,25 +1037,40 @@ class DatabaseSeeder extends Seeder
         // — Nuevos insumos con categoría asignada —
         DB::table('insumos')->insert([
             [
-                'nombre' => 'Ketamina 10mg/ml', 'descripcion' => 'Anestésico disociativo de uso veterinario.',
-                'precio_venta' => 8000.00, 'sucursal_id' => $sucursalVina->id,
-                'stock_actual' => 60, 'stock_minimo' => 10, 'estado' => 'activo',
+                'nombre' => 'Ketamina 10mg/ml',
+                'descripcion' => 'Anestésico disociativo de uso veterinario.',
+                'precio_venta' => 8000.00,
+                'sucursal_id' => $sucursalVina->id,
+                'stock_actual' => 60,
+                'stock_minimo' => 10,
+                'estado' => 'activo',
                 'categoria_insumo_id' => $catInsumoMedicamentoId,
-                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
             [
-                'nombre' => 'Hilo de Sutura 3-0', 'descripcion' => 'Sutura absorbible de uso quirúrgico.',
-                'precio_venta' => 3500.00, 'sucursal_id' => $sucursalVina->id,
-                'stock_actual' => 80, 'stock_minimo' => 15, 'estado' => 'activo',
+                'nombre' => 'Hilo de Sutura 3-0',
+                'descripcion' => 'Sutura absorbible de uso quirúrgico.',
+                'precio_venta' => 3500.00,
+                'sucursal_id' => $sucursalVina->id,
+                'stock_actual' => 80,
+                'stock_minimo' => 15,
+                'estado' => 'activo',
                 'categoria_insumo_id' => $catInsumoMaterialId,
-                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
             [
-                'nombre' => 'Guantes Estériles M', 'descripcion' => 'Guantes de látex estériles talla mediana.',
-                'precio_venta' => 800.00, 'sucursal_id' => $sucursalValparaiso->id,
-                'stock_actual' => 200, 'stock_minimo' => 30, 'estado' => 'activo',
+                'nombre' => 'Guantes Estériles M',
+                'descripcion' => 'Guantes de látex estériles talla mediana.',
+                'precio_venta' => 800.00,
+                'sucursal_id' => $sucursalValparaiso->id,
+                'stock_actual' => 200,
+                'stock_minimo' => 30,
+                'estado' => 'activo',
                 'categoria_insumo_id' => $catInsumoMaterialId,
-                'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
         ]);
 
