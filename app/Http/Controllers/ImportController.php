@@ -83,10 +83,10 @@ class ImportController extends Controller
                 $headings[] = 'Motivo de Descarte';
                 
                 $fileName = 'importaciones_descartadas_' . time() . '.xlsx';
-                // Guardamos en storage/app/public/
-                Excel::store(new DiscardedImportExport($import->descartados, $headings), 'public/' . $fileName);
+                // Guardamos en storage/app/temp_imports/
+                Excel::store(new DiscardedImportExport($import->descartados, $headings), 'temp_imports/' . $fileName);
                 
-                $response['download_url'] = asset('storage/' . $fileName);
+                $response['download_url'] = route('import.download', ['fileName' => $fileName]);
                 $response['message'] = 'Importación parcial completada. Algunas filas fueron descartadas.';
             }
 
@@ -99,5 +99,22 @@ class ImportController extends Controller
                 'message' => $e->getMessage()
             ], 422); // 422 Unprocessable Entity es más adecuado para errores de validación de datos
         }
+    }
+
+    public function downloadDiscarded($fileName)
+    {
+        // Validar nombre para evitar vulnerabilidad de Path Traversal
+        if (!preg_match('/^importaciones_descartadas_\d+\.xlsx$/', $fileName)) {
+            abort(404);
+        }
+
+        $path = storage_path('app/temp_imports/' . $fileName);
+
+        if (!file_exists($path)) {
+            abort(404, 'El archivo ya no está disponible o ya fue descargado.');
+        }
+
+        // Descarga el archivo y automáticamente lo elimina del servidor cuando termine la transferencia.
+        return response()->download($path)->deleteFileAfterSend(true);
     }
 }

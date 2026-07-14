@@ -6,18 +6,19 @@ Este repositorio contiene el ecosistema de software e infraestructura para la pl
 
 - **Proyecto:** `vaaladev/veterinaria-aprendizaje`
 - **Stack Principal:** Laravel 12 + Vue 3 + Inertia.js + Bootstrap 5
-- **Fecha de Auditoría:** 2026-07-07
-- **Estado del Arte:** Consolidado Técnico Global
+- **Fecha de Auditoría:** 2026-07-14
+- **Estado del Arte:** Consolidado Técnico Global (Rev. 2)
 
 ---
 
 ## 1. Resumen Ejecutivo y Arquitectura Global
 
-La plataforma es una solución monolítica híbrida diseñada para resolver los flujos clínicos, logísticos y administrativos de una red de clínicas veterinarias. Su estructura permite la interacción de tres actores principales:
+La plataforma es una solución monolítica híbrida diseñada para resolver los flujos clínicos, logísticos y administrativos de una red de clínicas veterinarias. Su estructura permite la interacción de cuatro actores principales:
 
 1. **Clientes:** Autogestión de fichas de mascotas y reserva/pago de citas médicas.
 2. **Veterinarios:** Gestión de consultas de la sucursal, actualización de historial clínico y control de inventario base.
-3. **Administradores:** Supervisión total de métricas operativas, control financiero global y reportería transaccional.
+3. **Secretarias:** Agendamiento interactivo de citas mediante calendario FullCalendar, gestión operativa de la sucursal asignada.
+4. **Administradores:** Supervisión total de métricas operativas, control financiero global, reportería transaccional, importación masiva de datos y panel de inteligencia de negocios (BI).
 
 ### 1.1 Stack Tecnológico Exhaustivo
 
@@ -55,7 +56,7 @@ La arquitectura se desacopla en el cliente pero se centraliza en el backend grac
 
 ### 2.1 Estructura del Modelo de Persistencia (Base de Datos)
 
-El sistema opera con **21 modelos relacionales** vinculados bajo estrictas políticas de integridad de datos y llaves foráneas en MySQL:
+El sistema opera con **23 modelos relacionales** vinculados bajo estrictas políticas de integridad de datos y llaves foráneas en MySQL:
 
 | Modelo                  | Tabla                     | Campos Clave / Foráneos de Interés                                                             | Traits Empleados                      |
 | :---------------------- | :------------------------ | :--------------------------------------------------------------------------------------------- | :------------------------------------ |
@@ -80,6 +81,8 @@ El sistema opera con **21 modelos relacionales** vinculados bajo estrictas polí
 | **PagoVeterinario**     | `pago_veterinarios`       | `mes`, `anio`, `monto_total`, `estado`, `veterinario_id`, `usuario_id`                         | —                                     |
 | **CategoriaPrestacion** | `categorias_prestaciones` | `nombre`, `descripcion`                                                                        | `ClearsCache`                         |
 | **CategoriaInsumo**     | `categorias_insumos`      | `nombre`, `descripcion`                                                                        | `ClearsCache`                         |
+| **Secretaria**          | `secretarias`             | `user_id`, `sucursal_id`, `telefono`                                                           | —                                     |
+| **BloqueoHorario**      | `bloqueos_horario`        | `fecha_inicio`, `fecha_fin`, `hora_inicio`, `hora_fin`, `motivo`, `veterinario_id`, `especialidad_id`, `sucursal_id` | —             |
 
 ### 2.2 Traits de Comportamiento Reutilizables
 
@@ -92,7 +95,88 @@ El sistema opera con **21 modelos relacionales** vinculados bajo estrictas polí
 - **`CitaObserver`:** Diseñado como disparador de lógica asíncrona. Escucha el evento `created` para distribuir alertas de confirmación a clientes y veterinarios por correo. En el evento `updated`, si muta la columna `estado`, gatilla de forma automatizada los flujos de correo correspondientes a cancelaciones o reprogramaciones.
 - **Catálogo de Mailables:** `CitaAgendadaMail`, `CitaCanceladaMail`, `CitaEstadoActualizadoMail`, `NotificacionMasivaMail` y `PagoConfirmadoMail`.
 
-### 2.4 Catálogo Completo de Endpoints
+### 2.4 Sistema de Importación Consolidada de Datos (Excel)
+
+El módulo de importación permite la carga masiva de datos desde archivos Excel (`.xlsx`, `.xls`, `.csv`) con un flujo transaccional de dos fases:
+
+#### Arquitectura del Flujo
+
+```
+[ Archivo Excel ] → [ Fase 1: Análisis ] → [ Fase 2: Procesamiento Transaccional ] → [ Reporte de Descartados ]
+                         ↓                            ↓                                       ↓
+                   analyzeHeaders()              DB::transaction()                  DiscardedImportExport
+                   (Pre-lectura)             (ConsolidatedImport)                 (Excel descargable)
+```
+
+#### Componentes del Sistema
+
+| Clase | Responsabilidad |
+| :--- | :--- |
+| **`ImportController`** | Orquesta el flujo de importación: análisis de headers (`analyzeHeaders`), procesamiento transaccional (`importData`) y descarga de descartados (`downloadDiscarded`) |
+| **`ConsolidatedImport`** | Implementa `ToCollection` de Laravel Excel. Procesa filas secuencialmente creando/actualizando Clientes, Mascotas y Citas con resolución inteligente de relaciones |
+| **`DiscardedImportExport`** | Genera un archivo Excel con las filas rechazadas y su motivo de descarte para revisión del usuario |
+| **`AnalyzeImportRequest`** | Valida el archivo (formatos permitidos, máx. 10 MB) |
+| **`ProcessImportRequest`** | Valida archivo, mapping JSON y módulos seleccionados |
+
+#### Reglas de Negocio Implementadas
+
+- **RF-02 Pre-lectura Estructural:** Extrae encabezados y muestra de datos antes del procesamiento.
+- **RF-04/RF-05 Upsert Inteligente:** `User::updateOrCreate` + `Cliente::updateOrCreate` evitan duplicados por email.
+- **RF-06 Resolución Relacional:** Fallback automático de Raza/Especie a registros comodín "No Especificada" cuando la referencia no existe.
+- **RNF-01 Integridad Transaccional:** Todo el procesamiento se envuelve en `DB::transaction()`. Si falla una fila, se captura como descartada sin abortar la transacción completa.
+- **RNF-02 Validación de Tamaño:** Archivos limitados a 10 MB.
+- **RNF-03 Feedback UX:** Las filas con errores (ej. solapamiento de citas) se acumulan en un array `$descartados` y se exportan como Excel descargable.
+- **Lógica de Estados Dinámicos:** Citas importadas con fecha pasada se marcan automáticamente como `completada` (si tienen valor asociado) o `cancelada` (sin valor). Citas futuras se validan contra solapamientos existentes.
+- **Limpieza Automática:** Los archivos de descartados se eliminan del servidor tras la descarga (`deleteFileAfterSend(true)`).
+- **Protección Path Traversal:** El nombre del archivo descargable se valida con regex antes de servirlo.
+
+#### Rutas del Importador
+
+| Método | Ruta | Acción | Middleware |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/importador-consolidado` | Renderiza la SPA del importador | `auth`, `can:importar-datos` |
+| `POST` | `/api/import/analyze` | Pre-lectura de headers | `auth`, `can:importar-datos` |
+| `POST` | `/api/import/process` | Procesamiento transaccional | `auth`, `can:importar-datos` |
+| `GET` | `/api/import/download/{fileName}` | Descarga y elimina reporte de descartados | `auth`, `can:importar-datos` |
+
+### 2.5 Panel de Inteligencia de Negocios (BI)
+
+El `PanelController` expone un conjunto de KPIs avanzados organizados en 4 dimensiones analíticas, calculados en tiempo real y renderizados por el componente `BiKpiDashboard.vue`:
+
+| Dimensión | KPIs Calculados |
+| :--- | :--- |
+| **Operación Clínica** | Tasa de ocupación de boxes (%), ticket promedio por cita ($), tasa de ausentismo (%), productividad por veterinario (citas + ingresos generados) |
+| **Financiero** | Ingresos brutos totales, costo nómina variable (comisiones), margen neto por sucursal ($ y %) |
+| **Logística e Inventario** | Índice de rotación de insumos (Top 3), alertas de stock bajo (insumos bajo mínimo), merma de inventario (placeholder para módulo futuro) |
+| **Clientes y Fidelización** | LTV — Valor de Vida del Cliente ($), frecuencia de visita anual (citas/mascota), tasa de conversión registro → cita (%) |
+
+Además se mantienen las estadísticas operativas previas: gráficos de ingresos por sucursal (últimos 6 meses), top 5 prestaciones y top 5 insumos, y comisiones acumuladas por veterinario.
+
+### 2.6 Gestión de Bloqueos de Horario
+
+El `BloqueoHorarioController` permite a los administradores registrar períodos de indisponibilidad para veterinarios con granularidad especializada:
+
+- **Bloqueo por rango de fechas:** Soporta bloqueos de día completo o parciales (con `hora_inicio`/`hora_fin`).
+- **Bloqueo por especialidad:** Filtra solo citas cuya prestación coincida con la `especialidad_id` indicada.
+- **Bloqueo por sucursal:** Filtra citas asociadas a boxes o prestaciones de una sucursal específica.
+- **Cancelación automática:** Al registrar un bloqueo, todas las citas pendientes que se solapen en el rango son marcadas como `cancelada` con nota explicativa automática.
+- **Validación de conflictos:** Impide bloqueos duplicados y valida coherencia de horas.
+
+### 2.7 API REST de Autenticación
+
+El `AuthApiController` expone endpoints JSON para consumo desde clientes externos o integraciones (ej. chatbot n8n):
+
+| Método | Ruta API | Acción |
+| :--- | :--- | :--- |
+| `POST` | `/api/registrarse` | Registro de usuario (crea User + Cliente automáticamente) |
+| `POST` | `/api/iniciar-sesion` | Autenticación por credenciales |
+| `POST` | `/api/cerrar-sesion` | Invalidación de sesión (protegido) |
+| `POST` | `/api/recuperar-contrasena` | Envío de link de recuperación |
+| `POST` | `/api/restablecer-contrasena` | Mutación de contraseña con token |
+| `POST` | `/api/confirmar-contrasena` | Confirmación de contraseña activa (protegido) |
+| `POST` | `/api/verificacion/enviar` | Reenvío de email de verificación (protegido) |
+
+### 2.8 Catálogo Completo de Endpoints
 
 #### Rutas de Autenticación (`routes/auth.php`) — Vistas e Interacciones Web
 
@@ -137,7 +221,12 @@ El sistema opera con **21 modelos relacionales** vinculados bajo estrictas polí
 - `GET /realizar-pagos/{usuario}` &rarr; `PagoVeterinarioController@detalle`
 - `POST /realizar-pagos/{usuario}/pagar` &rarr; `PagoVeterinarioController@procesarPago`
 - `GET /transacciones/{t}/checkout` &rarr; `TransaccionController@checkout` `[can:pagar,transaccion]`
-- `POST /transacciones/{t}/pagar` &rarr; `TransaccionController@procesarPago` `[can:pagar,transaccion]`
+- `POST /transacciones/{t}/pagar` → `TransaccionController@procesarPago` `[can:pagar,transaccion]`
+- `GET /secretaria/calendario` → `CitaController@agendaSecretaria` `[auth]` (Vista de calendario interactivo)
+- `GET /importador-consolidado` → Inertia `ConsolidatedImport` `[can:importar-datos]`
+- `POST /api/import/analyze` → `ImportController@analyzeHeaders` `[can:importar-datos]`
+- `POST /api/import/process` → `ImportController@importData` `[can:importar-datos]`
+- `GET /api/import/download/{fileName}` → `ImportController@downloadDiscarded` `[can:importar-datos]`
 
 #### Rutas de Mutación API (`routes/api.php`) — Endpoints JSON Protegidos por Sanctum
 
@@ -158,13 +247,21 @@ Todas las interacciones operan bajo el middleware `auth:sanctum`. El comportamie
 | **Cargos Cita**   | —                     | `POST .../{id}/cargo`  | `PUT .../{id}` | `DELETE .../{id}`     | Control de tarifas asociadas a la ficha                         |
 | **Equipo Médico** | `GET .../{id}/equipo` | `POST .../{id}/equipo` | —              | `DELETE .../{id}/{m}` | Asignación de arsenaleros/cirujanos de apoyo                    |
 
-### 2.5 Sistema de Roles y Permisos (RBAC)
+### 2.9 Sistema de Roles y Permisos (RBAC)
 
 El control de acceso opera sobre un esquema estricto de roles mapeados en base de datos interconectados por medio de una relación muchos a muchos (`permiso_rol`):
 
-1. **`admin` (Administrador Supremo):** Posee bypass total de seguridad estructurado vía el método `before()` en todas las Policies del sistema, lo que otorga acceso irrestricto sin evaluar permisos atómicos.
+1. **`admin` (Administrador Supremo):** Posee bypass total de seguridad estructurado vía el método `before()` en todas las Policies del sistema, lo que otorga acceso irrestricto sin evaluar permisos atómicos. Incluye acceso al importador de datos y al panel BI.
 2. **`veterinario` (Personal Clínico):** Dispone de **26 permisos** (ej: `ver-mascotas-sucursal`, `crear-recetas`, `gestionar-cargos-sucursal`, `ver-boxes`, `ver-insumos`). Está acotado a la manipulación de datos de su sucursal de pertenencia.
-3. **`cliente` (Propietario de Mascotas):** Dispone de **9 permisos** (ej: `ver-mis-mascotas`, `crear-mis-mascotas`, `agendar-cita`, `pagar-transacciones`). Su acceso está rígidamente condicionado por validaciones de propiedad de registros (_Owner Checks_).
+3. **`secretaria` (Asistente Administrativo):** Gestión operativa de agendamiento con acceso al calendario interactivo de citas de la sucursal asignada. Vista panorámica de citas por estado (pendientes, en curso, completadas, urgencias).
+4. **`cliente` (Propietario de Mascotas):** Dispone de **9 permisos** (ej: `ver-mis-mascotas`, `crear-mis-mascotas`, `agendar-cita`, `pagar-transacciones`). Su acceso está rígidamente condicionado por validaciones de propiedad de registros (_Owner Checks_).
+
+#### Policies Agregadas
+
+| Policy | Recurso Protegido | Notas |
+| :--- | :--- | :--- |
+| `BloqueoHorarioPolicy` | `BloqueoHorario` | Creación y eliminación restringida a administradores (bypass `before()`) |
+| `PagosVeterinariosPolicy` | `PagoVeterinario` | CRUD completo restringido a administradores |
 
 ---
 
@@ -186,19 +283,74 @@ resources/js/
 ├── bootstrap.js              # Configuración por defecto de Axios (Headers) + Bootstrap JS Core
 ├── alertas.js                # Definición de wrappers reutilizables de SweetAlert2
 ├── fechas.js                 # Manejadores de formateo temporal (Moment.js)
-├── Componentes/              # 21 componentes atómicos reutilizables (Paginadores, Modales, Inputs)
+├── Componentes/              # 26 componentes atómicos reutilizables (Paginadores, Modales, Inputs, Calendario, Chatbot)
 ├── Disenos/                  # 3 Layouts base (AppLayout, LayoutAutenticado, LayoutInvitado)
-└── Paginas/                  # 16 módulos de negocio divididos en 38 vistas estructuradas
+└── Paginas/                  # 20 módulos de negocio divididos en 46 vistas estructuradas
 ```
 
 ### 3.3 Catálogo de Componentes Reutilizables Destacados
+
+#### Componentes Base (Existentes)
 
 - `TieneRol`: Filtro declarativo en el template encargado de evaluar accesos en la interfaz. Oculta el slot default si el rol del usuario no hace match con los parámetros.
 - `ModalCrud`: Estructura genérica de formulario flotante con soporte nativo para spinners de carga, validaciones asíncronas y adaptabilidad para estados de inserción o actualización.
 - `TarjetaEntidad`: Mapeo estándar en cuadrícula para catálogos con slots integrados para acciones CRUD y soporte de carga de imágenes fluidas.
 - `Paginador`: Componente de control encargado de iterar y mapear los metadatos de paginación nativos distribuidos por Eloquent/Laravel.
 
-### 3.4 Consumo de Datos y Estrategia de Caché en Redis
+#### Componentes Agregados
+
+| Componente | Descripción |
+| :--- | :--- |
+| `BarraAccionesAgenda` | Barra de acciones contextuales para la vista de calendario de secretaría |
+| `BarraFiltros` | Filtrado genérico por búsqueda textual y propiedades dinámicas para listados |
+| `ModalBloqueoHorario` | Modal especializado para la creación de bloqueos de horario con campos de especialidad y sucursal |
+| `ModalGestionHorario` | Modal avanzado para la gestión de planes de horario JSON de veterinarios con soporte multi-segmento |
+| `BotonChatbotn8n` | FAB flotante con ventana de chat embebida que integra un webhook de n8n. Incluye animación de pulso, glassmorphism y carga dinámica del SDK `@n8n/chat` |
+| `EstadoVacio` | Placeholder visual para vistas sin datos, con slot para acciones |
+| `IndicadorCarga` | Spinner de carga reutilizable con estilos consistentes |
+| `SinResultados` | Componente de feedback para búsquedas sin coincidencias |
+
+### 3.4 Vistas de Módulos Nuevos
+
+#### Calendario de Secretaría (`Paginas/Secretaria/Calendario.vue`)
+
+Calendario interactivo construido con **FullCalendar** (plugins: `dayGridPlugin`, `timeGridPlugin`, `interactionPlugin`) que permite:
+
+- Visualización de citas en vistas de mes, semana y día con codificación cromática por estado.
+- Panel de estadísticas rápidas (pendientes, en curso, completadas, urgencias).
+- Creación de citas desde clic en fecha/hora del calendario con pre-selección de horario.
+- Modal de detalle con información completa (paciente, cliente, veterinario, box, prestación, notas).
+- Dropdown con búsqueda textual para selección de clientes y prestaciones.
+- Acordeón de disponibilidad por veterinario cuando no se pre-selecciona uno específico.
+- Diferenciación visual de horarios normales vs. urgencias (fuera de horario).
+
+#### Importador Consolidado (`Pages/ConsolidatedImport.vue` + `Paginas/Perfil/Partials/ConsolidatedImport.vue`)
+
+Interfaz de importación en dos fases: (1) carga y análisis del archivo Excel con vista previa de encabezados, (2) mapeo interactivo de columnas a campos del sistema y selección de módulos a importar (Clientes, Mascotas, Citas). Muestra reporte de filas descartadas con link de descarga.
+
+#### Dashboard BI (`Paginas/App/Partials/BiKpiDashboard.vue`)
+
+Componente de panel analítico con 4 tarjetas de KPIs: operación clínica, financiero, clientes y logística. Renderiza datos calculados en `PanelController::getBiKpis()` con formato monetario localizado (es-CL).
+
+#### Dashboards por Rol (`Paginas/Perfil/Partials/Dashboard*.vue`)
+
+| Dashboard | Rol | Contenido |
+| :--- | :--- | :--- |
+| `DashboardAdmin.vue` | Administrador | Accesos rápidos a módulos de gestión |
+| `DashboardVeterinario.vue` | Veterinario | Citas del día, próximas citas, estadísticas personales |
+| `DashboardSecretaria.vue` | Secretaria | Resumen operativo de la sucursal asignada |
+| `DashboardCliente.vue` | Cliente | Mascotas registradas, próximas citas, historial de pagos |
+
+### 3.5 Integración con Chatbot n8n
+
+El componente `BotonChatbotn8n` implementa un botón flotante (FAB) con ventana de chat embebida que se conecta a un workflow de **n8n** mediante webhook:
+
+- **Carga diferida:** El SDK `@n8n/chat` se importa dinámicamente solo cuando el usuario abre el chat por primera vez.
+- **Contexto de usuario:** Envía el `usuario_id` de la sesión activa como metadata al webhook para personalización de respuestas.
+- **Diseño premium:** Glassmorphism, animación de pulso en el FAB, transiciones suaves de apertura/cierre, header personalizado con indicador de estado online.
+- **Configuración:** El webhook URL se recibe como prop, permitiendo configuración por entorno sin hardcodear.
+
+### 3.6 Consumo de Datos y Estrategia de Caché en Redis
 
 El backend optimiza los tiempos de respuesta de la SPA almacenando datos transversales en Redis mediante `Cache::remember()` por un TTL por defecto de 30 minutos:
 
@@ -303,3 +455,31 @@ La raíz cuenta con una infraestructura contenerizada y dividida en 5 microservi
     docker compose exec app php artisan storage:link
     docker compose exec app php artisan migrate --seed
     ```
+
+---
+
+## 5. Migraciones Relevantes (Changelog Estructural)
+
+Migraciones añadidas desde la última auditoría documental:
+
+| Migración | Descripción |
+| :--- | :--- |
+| `2026_07_02_140339_change_box_id_to_citas_table` | Modifica la relación `box_id` en `citas` para hacerla nullable (citas sin box asignado) |
+| `2026_07_02_155852_add_horario_to_veterinarios_table` | Añade columna JSON `horario` a `veterinarios` para almacenar planes de horario personalizados |
+| `2026_07_02_165203_create_bloqueos_horario_table` | Crea tabla `bloqueos_horario` con soporte para rangos de fechas, horas y motivos |
+| `2026_07_07_160022_create_secretarias_table` | Crea tabla `secretarias` con relación a `users` y `sucursales` |
+| `2026_07_09_140053_add_especialidad_id_and_sucursal_id_to_bloqueos_horario_table` | Añade filtros de especialidad y sucursal a bloqueos de horario |
+| `2026_07_13_133840_add_imagen_to_boxes_table` | Añade columna `imagen_url` a `boxes` para soporte de imágenes |
+| `2026_07_13_133853_add_imagen_to_sucursales_table` | Añade columna `imagen_url` a `sucursales` para soporte de imágenes |
+| `2026_07_13_203435_drop_creado_por_column_to_especies_table` | Elimina columna legacy `creado_por` de `especies` |
+| `2026_07_13_203450_drop_creado_por_column_to_razas_table` | Elimina columna legacy `creado_por` de `razas` |
+
+---
+
+## 6. Dependencias de Terceros Añadidas
+
+| Paquete | Uso |
+| :--- | :--- |
+| `maatwebsite/excel` | Importación y exportación de archivos Excel (`.xlsx`, `.xls`, `.csv`) |
+| `@fullcalendar/vue3` + plugins | Calendario interactivo para la vista de secretaría (dayGrid, timeGrid, interaction) |
+| `@n8n/chat` (CDN) | SDK del chatbot n8n cargado dinámicamente desde jsDelivr |

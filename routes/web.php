@@ -116,11 +116,14 @@ Route::middleware('auth')->group(function () {
         ->middleware('can:pagar,transaccion');
 
     // Importador Consolidado
-    Route::get('/importador-consolidado', function() {
-        return Inertia::render('ConsolidatedImport');
-    })->name('importador.index');
-    Route::post('/api/import/analyze', [ImportController::class, 'analyzeHeaders'])->name('import.analyze');
-    Route::post('/api/import/process', [ImportController::class, 'importData'])->name('import.process');
+    Route::group(['middleware' => ['can:importar-datos']], function () {
+        Route::get('/importador-consolidado', function() {
+            return Inertia::render('ConsolidatedImport');
+        })->name('importador.index');
+        Route::post('/api/import/analyze', [ImportController::class, 'analyzeHeaders'])->name('import.analyze');
+        Route::post('/api/import/process', [ImportController::class, 'importData'])->name('import.process');
+        Route::get('/api/import/download/{fileName}', [ImportController::class, 'downloadDiscarded'])->name('import.download');
+    });
 });
 
 require __DIR__ . '/auth.php';

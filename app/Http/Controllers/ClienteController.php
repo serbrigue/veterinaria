@@ -164,8 +164,8 @@ class ClienteController extends Controller
     public function enviarCorreoMasivo(Request $request)
     {
 
-        // Verificamos que el usuario sea administrador o veterinario
-        if (! auth()->user()->isAdmin() && ! auth()->user()->isVeterinario()) {
+        // Verificamos que el usuario sea administrador o secretaria
+        if (! auth()->user()->isAdmin() || ! auth()->user()->isSecretaria()) {
             return response()->json(['error' => 'No autorizado para realizar esta acción.'], 403);
         }
 
