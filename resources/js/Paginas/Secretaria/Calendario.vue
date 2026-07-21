@@ -163,6 +163,23 @@
                                 <span class="d-block small text-muted mb-1 fw-bold">Notas Clínicas / Administrativas</span>
                                 <p class="mb-0 small text-dark">{{ citaSeleccionada.notas }}</p>
                             </div>
+
+                            <!-- Alertas para Secretaría -->
+                            <div v-if="citaSeleccionada.alertas_secretaria?.length" class="mt-3 p-3 bg-danger bg-opacity-10 rounded-3 border border-danger border-opacity-25">
+                                <span class="d-block small text-danger mb-2 fw-bold">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>Alertas pendientes
+                                </span>
+                                <div class="d-flex flex-column gap-1">
+                                    <div
+                                        v-for="alerta in citaSeleccionada.alertas_secretaria"
+                                        :key="alerta.tipo"
+                                        class="d-flex align-items-center gap-2 small text-danger"
+                                    >
+                                        <i class="bi" :class="alerta.icono"></i>
+                                        <span>{{ alerta.mensaje }}</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer border-top-0 pt-0 pb-4 d-flex justify-content-between">
@@ -813,7 +830,7 @@ export default {
 
                 return {
                     id: cita.id,
-                    title: `${cita.mascota?.nombre || 'Paciente'} - ${cita.prestacion?.nombre || 'Consulta'}`,
+                    title: `${cita.alertas_secretaria?.length ? '⚠ ' : ''}${cita.mascota?.nombre || 'Paciente'} - ${cita.prestacion?.nombre || 'Consulta'}`,
                     start: cita.fecha_hora,
                     end: cita.hora_termino || null,
                     backgroundColor: colorBg,

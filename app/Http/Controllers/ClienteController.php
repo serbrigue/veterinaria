@@ -18,7 +18,7 @@ class ClienteController extends Controller
     public function listado(Request $request)
     {
         // Obtenemos los datos del query
-        $query = Cliente::with(['usuario', 'mascotas']);
+        $query = Cliente::where('id', '!=', 999)->with(['usuario', 'mascotas']);
 
         // Verificamos si el usuario es administrador, veterinario o secretaria
         if (auth()->user()->isAdmin() || auth()->user()->isVeterinario() || auth()->user()->isSecretaria()) {
@@ -83,10 +83,15 @@ class ClienteController extends Controller
         ]);
 
         // Obtenemos las transacciones
-        $transacciones = $cliente->transacciones()
-            ->with('cita.prestacion')
-            ->orderByDesc('created_at')
-            ->paginate(5);
+        $transaccionesQuery = $cliente->transacciones()
+            ->with('cita.prestacion');
+
+        if ($request->filled('estado')) {
+            $transaccionesQuery->where('estado', $request->estado);
+        }
+
+        $transacciones = $transaccionesQuery->orderByDesc('created_at')
+            ->paginate(5)->withQueryString();
 
         // Obtenemos la deuda total
         $deudaTotal = $cliente->transacciones()->where('estado', 'pendiente')->sum('monto_total');
@@ -198,5 +203,30 @@ class ClienteController extends Controller
         }
 
         return response()->json(['mensaje' => 'Correos enviados correctamente a ' . $clientes->count() . ' clientes.']);
+    }
+
+    public function enviarCorreoMora(Request $request, Cliente $cliente)
+    {
+        // Verificamos que el usuario sea administrador o secretaria
+        if (! auth()->user()->isAdmin() && ! auth()->user()->isSecretaria()) {
+            return response()->json(['error' => 'No autorizado para realizar esta acción.'], 403);
+        }
+
+        // Validamos la solicitud
+        $validated = $request->validate([
+            'transacciones_ids' => 'required|array',
+            'transacciones_ids.*' => 'exists:transacciones,id',
+        ]);
+
+        // Obtenemos las transacciones seleccionadas
+        $transacciones = $cliente->transacciones()->whereIn('id', $validated['transacciones_ids'])->with('cita')->get();
+        
+        $email = $cliente->usuario?->email;
+        if ($email) {
+            // Enviamos el correo
+            Mail::to($email)->send(new \App\Mail\MoraPagoMail($cliente, $transacciones));
+        }
+
+        return response()->json(['mensaje' => 'Correo de mora de pago enviado correctamente.']);
     }
 }

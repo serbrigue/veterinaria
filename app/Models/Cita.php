@@ -81,4 +81,60 @@ class Cita extends Model
             'email' => $cliente->usuario?->email,
         ];
     }
+
+    /**
+     * Calcula las alertas visibles solo para secretarias.
+     * Retorna un array de objetos {tipo, mensaje, icono}.
+     */
+    public function getAlertasSecretariaAttribute(): array
+    {
+        $alertas = [];
+
+        if ($this->necesitaBoxAsignado()) {
+            $alertas[] = [
+                'tipo' => 'sin_box',
+                'mensaje' => 'Sin box asignado',
+                'icono' => 'bi-door-closed',
+            ];
+        }
+
+        if ($this->faltaEquipoQuirofano()) {
+            $alertas[] = [
+                'tipo' => 'sin_equipo',
+                'mensaje' => 'Falta equipo médico para quirófano',
+                'icono' => 'bi-people',
+            ];
+        }
+
+        return $alertas;
+    }
+
+    private function necesitaBoxAsignado(): bool
+    {
+        return is_null($this->box_id)
+            && in_array($this->estado, ['pendiente', 'en_curso']);
+    }
+
+    private function faltaEquipoQuirofano(): bool
+    {
+        $esCirugia = $this->prestacion
+            ?->categoriaPrestacion
+            ?->nombre === 'Cirugia';
+
+        if (! $esCirugia) {
+            return false;
+        }
+
+        if (in_array($this->estado, ['completada', 'cancelada'])) {
+            return false;
+        }
+
+        $equipo = $this->relationLoaded('equipoMedico')
+            ? $this->equipoMedico
+            : $this->equipoMedico()->with('rol')->get();
+
+        return ! $equipo->contains(
+            fn ($miembro) => $miembro->rol?->nombre_interno === 'arsenalero'
+        );
+    }
 }

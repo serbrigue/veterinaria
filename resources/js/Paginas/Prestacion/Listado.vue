@@ -7,6 +7,14 @@
                 <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <h1 class="h5 mb-0">Catálogo de Prestaciones</h1>
                     <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <template v-if="$isAdmin() || $isSecretaria()">
+                            <a href="/api/export/prestaciones" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-download me-1"></i> Exportar
+                            </a>
+                            <button type="button" class="btn btn-sm btn-outline-primary" @click="mostrarModalImportar = true">
+                                <i class="bi bi-upload me-1"></i> Importar
+                            </button>
+                        </template>
                         <button v-if="esAdmin" type="button" class="btn btn-sm btn-primary" @click="abrirModalCrear">
                             + Nueva Prestación
                         </button>
@@ -202,6 +210,14 @@
                 </div>
             </div>
             <div v-if="mostrarModal" class="modal-backdrop fade show"></div>
+
+            <ModalImportarSimple
+                :visible="mostrarModalImportar"
+                entidad="prestaciones"
+                etiqueta="Prestaciones"
+                @cerrar="mostrarModalImportar = false"
+                @importado="obtenerPrestaciones()"
+            />
         </div>
     </AuthenticatedLayout>
 </template>
@@ -214,6 +230,7 @@ import BarraFiltros from '@/Componentes/BarraFiltros.vue';
 import IndicadorCarga from '@/Componentes/IndicadorCarga.vue';
 import EstadoVacio from '@/Componentes/EstadoVacio.vue';
 import SinResultados from '@/Componentes/SinResultados.vue';
+import ModalImportarSimple from '@/Componentes/ModalImportarSimple.vue';
 
 export default {
     components: {
@@ -224,6 +241,7 @@ export default {
         IndicadorCarga,
         EstadoVacio,
         SinResultados,
+        ModalImportarSimple,
     },
     props: {
         prestaciones: {
@@ -247,6 +265,7 @@ export default {
         return {
             cargando: false,
             mostrarModal: false,
+            mostrarModalImportar: false,
             modoEdicion: false,
             prestacionEditando: null,
             filtros: {

@@ -5,11 +5,21 @@
             <div class="card shadow-sm border-0 rounded-4">
                 <div class="card-header bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
                     <h1 class="h4 mb-0 text-primary fw-bold">Veterinarios</h1>
-                    <TieneRol rol="admin">
-                        <button type="button" class="btn btn-primary rounded-pill shadow-sm px-4" @click="abrirModalCrear">
-                            <i class="bi bi-person-plus me-1"></i> Registrar Veterinario
-                        </button>
-                    </TieneRol>
+                    <div class="d-flex gap-2">
+                        <template v-if="$isAdmin() || $isSecretaria()">
+                            <a href="/api/export/veterinarios" class="btn btn-outline-success rounded-pill shadow-sm px-4">
+                                <i class="bi bi-download me-1"></i> Exportar
+                            </a>
+                            <button type="button" class="btn btn-outline-primary rounded-pill shadow-sm px-4" @click="mostrarModalImportar = true">
+                                <i class="bi bi-upload me-1"></i> Importar
+                            </button>
+                        </template>
+                        <TieneRol rol="admin">
+                            <button type="button" class="btn btn-primary rounded-pill shadow-sm px-4" @click="abrirModalCrear">
+                                <i class="bi bi-person-plus me-1"></i> Registrar Veterinario
+                            </button>
+                        </TieneRol>
+                    </div>
                 </div>
 
                 <div class="card-body p-4">
@@ -216,6 +226,14 @@
                     </div>
                 </div>
             </ModalCrud>
+
+            <ModalImportarSimple
+                :visible="mostrarModalImportar"
+                entidad="veterinarios"
+                etiqueta="Veterinarios"
+                @cerrar="mostrarModalImportar = false"
+                @importado="obtenerVeterinarios()"
+            />
         </div>
     </AuthenticatedLayout>
 </template>
@@ -228,6 +246,7 @@ import IndicadorCarga from '@/Componentes/IndicadorCarga.vue';
 import EstadoVacio from '@/Componentes/EstadoVacio.vue';
 import SinResultados from '@/Componentes/SinResultados.vue';
 import ModalCrud from '@/Componentes/ModalCrud.vue';
+import ModalImportarSimple from '@/Componentes/ModalImportarSimple.vue';
 
 export default {
     components: {
@@ -238,6 +257,7 @@ export default {
         EstadoVacio,
         SinResultados,
         ModalCrud,
+        ModalImportarSimple,
     },
     props: {
         veterinarios: {
@@ -257,6 +277,7 @@ export default {
         return {
             cargando: false,
             mostrarModal: false,
+            mostrarModalImportar: false,
             modoEdicion: false,
             vetEditando: null,
             vetAEliminar: null,

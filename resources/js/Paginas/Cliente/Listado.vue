@@ -14,11 +14,19 @@
 
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h1 class="h5 mb-0">Gestión de Clientes</h1>
-                    <TieneRol :rol="['admin', 'secretaria']">
-                        <button type="button" class="btn btn-primary" @click="abrirModalCrear">
-                            + Nuevo Cliente
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <template v-if="$isAdmin() || $isSecretaria()">
+                            <a href="/api/export/clientes" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-download me-1"></i> Exportar
+                            </a>
+                            <button type="button" class="btn btn-sm btn-outline-primary" @click="mostrarModalImportar = true">
+                                <i class="bi bi-upload me-1"></i> Importar Consolidado
+                            </button>
+                        </template>
+                        <button v-if="$isAdmin() || $isSecretaria()" type="button" class="btn btn-sm btn-primary shadow-sm px-3" @click="abrirModalCrear">
+                            <i class="bi bi-person-plus me-1"></i> Nuevo Cliente
                         </button>
-                    </TieneRol>
+                    </div>
                 </div>
 
                 <div class="card-body">
@@ -106,9 +114,14 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="cliente in clientesArray" :key="cliente.id" :class="{ 'table-active': ($isAdmin() || $isSecretaria()) && selectedClientes.includes(cliente.id) }">
+                                <tr v-for="cliente in clientesArray" :key="cliente.id" 
+                                    :class="{ 'table-active': ($isAdmin() || $isSecretaria()) && selectedClientes.includes(cliente.id) }"
+                                    @click="irADetalle(cliente.id)"
+                                    style="cursor: pointer;"
+                                    class="row-hover"
+                                >
                                     <td v-if="$isAdmin() || $isSecretaria()" class="ps-3">
-                                        <input type="checkbox" class="form-check-input" :value="cliente.id" v-model="selectedClientes">
+                                        <input type="checkbox" class="form-check-input" :value="cliente.id" v-model="selectedClientes" @click.stop>
                                     </td>
                                     <td :class="{ 'ps-3': !($isAdmin() || $isSecretaria()) }">
                                         <div class="d-flex align-items-center gap-2">
@@ -150,12 +163,13 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <div class="d-flex justify-content-center gap-2">
+                                        <div class="d-flex justify-content-center gap-2 align-items-center">
                                             <TieneRol :rol="['admin', 'secretaria']">
-                                                <button class="btn btn-sm btn-outline-primary rounded-pill px-3 hover-opacity" @click="abrirModalEditar(cliente)">
+                                                <button class="btn btn-sm btn-outline-primary rounded-pill px-3 hover-opacity" @click.stop="abrirModalEditar(cliente)">
                                                     Editar
                                                 </button>
                                             </TieneRol>
+                                            <i class="bi bi-chevron-right text-muted fs-5 ms-2"></i>
                                         </div>
                                     </td>
                                 </tr>
@@ -168,6 +182,12 @@
                 </div>
             </div>
         </div>
+
+        <ModalImportarConsolidado
+            :visible="mostrarModalImportar"
+            @cerrar="mostrarModalImportar = false"
+            @importado="obtenerClientes()"
+        />
             
             <ModalCrud
                 :visible="mostrarModal"
@@ -268,11 +288,12 @@
 
 <script>
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
 import IndicadorCarga from '@/Componentes/IndicadorCarga.vue';
 import EstadoVacio from '@/Componentes/EstadoVacio.vue';
 import SinResultados from '@/Componentes/SinResultados.vue';
+import ModalImportarConsolidado from '@/Componentes/ModalImportarConsolidado.vue';
 import Paginador from '@/Componentes/Paginador.vue';
 import ModalCrud from '@/Componentes/ModalCrud.vue';
 import BarraFiltros from '@/Componentes/BarraFiltros.vue';
@@ -285,6 +306,7 @@ export default {
         IndicadorCarga,
         EstadoVacio,
         SinResultados,
+        ModalImportarConsolidado,
         Paginador,
         ModalCrud,
         BarraFiltros,
@@ -302,6 +324,8 @@ export default {
     data() {
         return {
             cargando: false,
+            mostrarModalImportar: false,
+            clientesLocal: this.clientes.data,
             mostrarModal: false,
             modoEdicion: false,
             clienteEditando: null,
@@ -344,7 +368,9 @@ export default {
         },
     },
     methods: {
-
+        irADetalle(id) {
+            router.visit(route('clientes.detalle', id));
+        },
         // TODO: Abrir modal para crear un nuevo cliente
         abrirModalCrear() {
             this.modoEdicion = false
@@ -561,5 +587,9 @@ export default {
 }
 .hover-opacity:hover {
     opacity: 0.8;
+}
+.row-hover:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.03) !important;
+    transition: background-color 0.2s ease-in-out;
 }
 </style>

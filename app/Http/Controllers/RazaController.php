@@ -21,14 +21,14 @@ class RazaController extends Controller
         // Obtenemos el filtro de especie
         $filtroEspecie = $request->input('especie_id');
 
-        // Obtenemos todas las razas con su especie, y lo cacheamos por 30 minutos
-        $razasCached = Cache::remember('razas_full', now()->addMinutes(30), function () {
-            return Raza::with('especie')->get();
+        // Obtenemos todas las razas con su especie, excluyendo comodín
+        $razasCached = Cache::remember('razas_full_filt', now()->addMinutes(30), function () {
+            return Raza::where('id', '!=', 999)->with('especie')->get();
         });
 
-        // Obtenemos todas las especies, y lo cacheamos por 30 minutos
-        $especiesCached = Cache::remember('especies_simple', now()->addMinutes(30), function () {
-            return Especie::all();
+        // Obtenemos todas las especies, excluyendo comodín
+        $especiesCached = Cache::remember('especies_simple_filt', now()->addMinutes(30), function () {
+            return Especie::where('id', '!=', 999)->get();
         });
 
         // Si la peticion es JSON
@@ -57,8 +57,8 @@ class RazaController extends Controller
     public function obtenerTodas()
     {
 
-        // Obtenemos todas las razas ordenadas por nombre
-        return Raza::orderBy('nombre')->get();
+        // Obtenemos todas las razas ordenadas por nombre, excluyendo comodín
+        return Raza::where('id', '!=', 999)->orderBy('nombre')->get();
     }
 
     public function crear(GuardarRazaRequest $solicitud)

@@ -10,6 +10,16 @@ use Exception;
 use App\Http\Requests\AnalyzeImportRequest;
 use App\Http\Requests\ProcessImportRequest;
 use App\Exports\DiscardedImportExport;
+use App\Imports\EspeciesImport;
+use App\Imports\RazasImport;
+use App\Imports\EspecialidadesImport;
+use App\Imports\CategoriasPrestacionImport;
+use App\Imports\CategoriasInsumoImport;
+use App\Imports\SucursalesImport;
+use App\Imports\BoxesImport;
+use App\Imports\VeterinariosImport;
+use App\Imports\PrestacionesImport;
+use App\Imports\InsumosImport;
 use Illuminate\Support\Facades\Storage;
 
 class ImportController extends Controller
@@ -116,5 +126,52 @@ class ImportController extends Controller
 
         // Descarga el archivo y automáticamente lo elimina del servidor cuando termine la transferencia.
         return response()->download($path)->deleteFileAfterSend(true);
+    }
+
+    private function resolverImportadorSimple(string $entidad): ?string
+    {
+        $importadores = [
+            'especies'              => EspeciesImport::class,
+            'razas'                 => RazasImport::class,
+            'especialidades'        => EspecialidadesImport::class,
+            'categorias-prestacion' => CategoriasPrestacionImport::class,
+            'categorias-insumo'     => CategoriasInsumoImport::class,
+            'sucursales'            => SucursalesImport::class,
+            'boxes'                 => BoxesImport::class,
+            'veterinarios'          => VeterinariosImport::class,
+            'prestaciones'          => PrestacionesImport::class,
+            'insumos'               => InsumosImport::class,
+        ];
+
+        return $importadores[$entidad] ?? null;
+    }
+
+    public function importarSimple(Request $request, string $entidad)
+    {
+        $claseImport = $this->resolverImportadorSimple($entidad);
+
+        if (!$claseImport) {
+            return response()->json(['success' => false, 'message' => 'Entidad no válida.'], 404);
+        }
+
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
+        ]);
+
+        try {
+            DB::transaction(function () use ($request, $claseImport) {
+                Excel::import(new $claseImport(), $request->file('file'));
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Importación de ' . str_replace('-', ' ', $entidad) . ' completada con éxito.',
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al importar: ' . $e->getMessage(),
+            ], 422);
+        }
     }
 }

@@ -17,7 +17,7 @@ class EspecieController extends Controller
     {
 
         // Iniciamos la consulta
-        $query = Especie::query();
+        $query = Especie::query()->where('id', '!=', 999);
 
         // Filtramos por texto
         if ($request->filled('texto')) {
@@ -42,8 +42,8 @@ class EspecieController extends Controller
 
     public function obtenerTodas()
     {
-        // Obtenemos todas las especies ordenadas por nombre
-        $especies = Especie::orderBy('nombre')->get();
+        // Obtenemos todas las especies ordenadas por nombre excluyendo el comodin
+        $especies = Especie::where('id', '!=', 999)->orderBy('nombre')->get();
 
         // Si la petición es JSON
         if (request()->wantsJson()) {
@@ -103,10 +103,10 @@ class EspecieController extends Controller
 
     public function detalle(Especie $especie)
     {
-        // Cargamos las razas de la especie y devolvemos la vista
+        // Cargamos las razas excluyendo el comodín y devolvemos la vista
         return Inertia::render('Especie/Detalle', [
             'especie' => $especie,
-            'razas' => $especie->razas,
+            'razas' => $especie->razas()->where('id', '!=', 999)->get(),
         ]);
     }
 }

@@ -5,9 +5,19 @@
             <div class="card shadow-sm border-0 rounded-4">
                 <div class="card-header bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
                     <h1 class="h4 mb-0 text-primary fw-bold">Boxes de Atención</h1>
-                    <button v-if="esAdmin" type="button" class="btn btn-primary rounded-pill shadow-sm px-4" @click="abrirModalCrear">
-                        <i class="bi bi-plus-lg me-1"></i> Nuevo Box
-                    </button>
+                    <div class="d-flex gap-2">
+                        <template v-if="$isAdmin() || $isSecretaria()">
+                            <a href="/api/export/boxes" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-download me-1"></i> Exportar
+                            </a>
+                            <button type="button" class="btn btn-sm btn-outline-primary" @click="mostrarModalImportar = true">
+                                <i class="bi bi-upload me-1"></i> Importar
+                            </button>
+                        </template>
+                        <button v-if="esAdmin" type="button" class="btn btn-primary rounded-pill shadow-sm px-4" @click="abrirModalCrear">
+                            <i class="bi bi-plus-lg me-1"></i> Nuevo Box
+                        </button>
+                    </div>
                 </div>
 
                 <div class="card-body p-4">
@@ -164,6 +174,14 @@
                     </div>
                 </div>
             </ModalCrud>
+
+            <ModalImportarSimple
+                :visible="mostrarModalImportar"
+                entidad="boxes"
+                etiqueta="Boxes"
+                @cerrar="mostrarModalImportar = false"
+                @importado="obtenerBoxes()"
+            />
     </AuthenticatedLayout>
 </template>
 
@@ -176,6 +194,7 @@ import SinResultados from '@/Componentes/SinResultados.vue';
 import ModalCrud from '@/Componentes/ModalCrud.vue';
 import BarraFiltros from '@/Componentes/BarraFiltros.vue';
 import TarjetaEntidad from '@/Componentes/TarjetaEntidad.vue';
+import ModalImportarSimple from '@/Componentes/ModalImportarSimple.vue';
 
 export default {
     components: {
@@ -188,6 +207,7 @@ export default {
         ModalCrud,
         BarraFiltros,
         TarjetaEntidad,
+        ModalImportarSimple,
     },
     props: {
         boxes: {
@@ -211,6 +231,7 @@ export default {
             boxEditando: null,
             filtroTexto: '',
             boxAEliminar: null,
+            mostrarModalImportar: false,
             formulario: {
                 nombre: '',
                 descripcion: '',

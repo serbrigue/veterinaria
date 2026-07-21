@@ -5,9 +5,19 @@
             <div class="card shadow-sm">
                 <div class="card-header d-flex justify-content-between align-items-center bg-white py-3">
                     <h1 class="h5 mb-0 fw-bold text-primary">Listado de Especies</h1>
-                    <button v-if="esVeterinario" type="button" class="btn btn-sm btn-primary px-3" @click="abrirModalCrear">
-                        <i class="bi bi-plus-lg me-1"></i> Nueva Especie
-                    </button>
+                    <div class="d-flex gap-2">
+                        <template v-if="$isAdmin() || $isSecretaria()">
+                            <a href="/api/export/especies" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-download me-1"></i> Exportar
+                            </a>
+                            <button type="button" class="btn btn-sm btn-outline-primary" @click="mostrarModalImportar = true">
+                                <i class="bi bi-upload me-1"></i> Importar
+                            </button>
+                        </template>
+                        <button v-if="esVeterinario" type="button" class="btn btn-sm btn-primary px-3" @click="abrirModalCrear">
+                            <i class="bi bi-plus-lg me-1"></i> Nueva Especie
+                        </button>
+                    </div>
                 </div>
 
                 <div class="card-body">
@@ -135,6 +145,14 @@
                     </div>
                 </div>
             </ModalCrud>
+
+            <ModalImportarSimple
+                :visible="mostrarModalImportar"
+                entidad="especies"
+                etiqueta="Especies"
+                @cerrar="mostrarModalImportar = false"
+                @importado="obtenerEspecies()"
+            />
         </div>
     </AuthenticatedLayout>
 </template>
@@ -148,6 +166,7 @@ import SinResultados from '@/Componentes/SinResultados.vue';
 import ModalCrud from '@/Componentes/ModalCrud.vue';
 import BarraFiltros from '@/Componentes/BarraFiltros.vue';
 import TarjetaEntidad from '@/Componentes/TarjetaEntidad.vue';
+import ModalImportarSimple from '@/Componentes/ModalImportarSimple.vue';
 
 export default {
     components: {
@@ -160,6 +179,7 @@ export default {
         ModalCrud,
         BarraFiltros,
         TarjetaEntidad,
+        ModalImportarSimple,
     },
     props: {
         especies: {
@@ -175,6 +195,7 @@ export default {
             especieEditando: null,
             filtroTexto: '',
             especieAEliminar: null,
+            mostrarModalImportar: false,
             formulario: {
                 nombre: '',
                 descripcion: '',

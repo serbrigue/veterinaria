@@ -15,6 +15,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RazaController;
 use App\Http\Controllers\SucursalController;
 use App\Http\Controllers\VeterinarioController;
+use App\Http\Controllers\TransaccionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -68,6 +69,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // MÓDULO 4 — Clientes: GET/POST /clientes, PUT/DELETE /clientes/{cliente}
     Route::post('/clientes/enviar-correo', [ClienteController::class, 'enviarCorreoMasivo']);
+    Route::post('/clientes/{cliente}/enviar-mora', [ClienteController::class, 'enviarCorreoMora']);
+    Route::get('/clientes/{cliente}/transacciones', [TransaccionController::class, 'porCliente']);
     Route::get('/clientes', [ClienteController::class, 'obtenerTodas'])
 
         ->middleware('can:verTodas,App\Models\Cliente');

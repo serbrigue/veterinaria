@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\PagoConfirmadoMail;
 use App\Models\Sucursal;
 use App\Models\Transaccion;
+use App\Models\Cliente;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -113,5 +114,18 @@ class TransaccionController extends Controller
 
         // Devolvemos la respuesta JSON
         return response()->json(['message' => 'Pago procesado con éxito.', 'transaccion' => $transaccion]);
+    }
+
+    public function porCliente(Request $request, Cliente $cliente)
+    {
+        $query = $cliente->transacciones()->with('cita.prestacion');
+
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->estado);
+        }
+
+        $transacciones = $query->orderByDesc('created_at')->paginate(5);
+
+        return response()->json($transacciones);
     }
 }

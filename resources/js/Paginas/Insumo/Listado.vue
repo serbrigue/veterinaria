@@ -19,6 +19,14 @@
                             <option value="activo">Activos</option>
                             <option value="inactivo">Inactivos</option>
                         </select>
+                        <template v-if="$isAdmin() || $isSecretaria()">
+                            <a href="/api/export/insumos" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-download me-1"></i> Exportar
+                            </a>
+                            <button type="button" class="btn btn-sm btn-outline-primary" @click="mostrarModalImportar = true">
+                                <i class="bi bi-upload me-1"></i> Importar
+                            </button>
+                        </template>
                         <button v-if="esAdmin" type="button" class="btn btn-sm btn-primary" @click="abrirModalCrear">+ Nuevo Insumo</button>
                     </div>
                 </div>
@@ -169,6 +177,14 @@
                     </div>
                 </div>
             </ModalCrud>
+
+            <ModalImportarSimple
+                :visible="mostrarModalImportar"
+                entidad="insumos"
+                etiqueta="Insumos"
+                @cerrar="mostrarModalImportar = false"
+                @importado="obtenerInsumos()"
+            />
         </div>
     </AuthenticatedLayout>
 </template>
@@ -181,6 +197,7 @@ import IndicadorCarga from '@/Componentes/IndicadorCarga.vue';
 import EstadoVacio from '@/Componentes/EstadoVacio.vue';
 import SinResultados from '@/Componentes/SinResultados.vue';
 import ModalCrud from '@/Componentes/ModalCrud.vue';
+import ModalImportarSimple from '@/Componentes/ModalImportarSimple.vue';
 
 export default {
     components: {
@@ -191,6 +208,7 @@ export default {
         EstadoVacio,
         SinResultados,
         ModalCrud,
+        ModalImportarSimple,
     },
     props: {
         insumos: { type: Array, default: () => [] },
@@ -201,6 +219,7 @@ export default {
         return {
             cargando: false,
             mostrarModal: false,
+            mostrarModalImportar: false,
             modoEdicion: false,
             insumoEditando: null,
             filtroEstado: '',

@@ -15,6 +15,7 @@ use App\Http\Controllers\SucursalController;
 use App\Http\Controllers\TransaccionController;
 use App\Http\Controllers\VeterinarioController;
 use App\Http\Controllers\ImportController;
+use App\Http\Controllers\ExportController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -115,14 +116,21 @@ Route::middleware('auth')->group(function () {
         ->name('transacciones.pagar')
         ->middleware('can:pagar,transaccion');
 
-    // Importador Consolidado
+    // Importador y Exportador de Datos
     Route::group(['middleware' => ['can:importar-datos']], function () {
+        // Importador Consolidado
         Route::get('/importador-consolidado', function() {
             return Inertia::render('ConsolidatedImport');
         })->name('importador.index');
         Route::post('/api/import/analyze', [ImportController::class, 'analyzeHeaders'])->name('import.analyze');
         Route::post('/api/import/process', [ImportController::class, 'importData'])->name('import.process');
         Route::get('/api/import/download/{fileName}', [ImportController::class, 'downloadDiscarded'])->name('import.download');
+
+        // Importador Simple (entidades individuales)
+        Route::post('/api/import/simple/{entidad}', [ImportController::class, 'importarSimple'])->name('import.simple');
+
+        // Exportador Universal
+        Route::get('/api/export/{entidad}', [ExportController::class, 'exportar'])->name('export.entidad');
     });
 });
 

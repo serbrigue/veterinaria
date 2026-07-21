@@ -6,9 +6,19 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h1 class="h5 mb-0">Mis Citas</h1>
 
-                    <button v-if="$isCliente() || $isAdmin() || $isSecretaria()" type="button" class="btn btn-primary" @click="abrirModalCrear">
-                        + Nueva Cita
-                    </button>
+                    <div class="d-flex gap-2">
+                        <template v-if="$isAdmin() || $isSecretaria()">
+                            <a href="/api/export/citas" class="btn btn-outline-success">
+                                <i class="bi bi-download me-1"></i> Exportar
+                            </a>
+                            <button type="button" class="btn btn-outline-primary" @click="mostrarModalImportar = true">
+                                <i class="bi bi-upload me-1"></i> Importar Consolidado
+                            </button>
+                        </template>
+                        <button v-if="$isCliente() || $isAdmin() || $isSecretaria()" type="button" class="btn btn-primary" @click="abrirModalCrear">
+                            + Nueva Cita
+                        </button>
+                    </div>
                 </div>
 
                 <div class="card-body">
@@ -90,7 +100,8 @@
                                 v-model="filtroEstado"
                                 @change="obtenerCitas()"
                             >
-                                <option value="">Todos</option>
+                                <option value="">Activas (Oculta canceladas)</option>
+                                <option value="todos">Mostrar Todas</option>
                                 <option value="pendiente">Pendiente</option>
                                 <option value="en_curso">En curso</option>
                                 <option value="completada">Completada</option>
@@ -130,7 +141,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="cita in citas" :key="cita.id">
+                                <tr v-for="cita in citas" :key="cita.id" @click="irADetalle(cita.id)" style="cursor: pointer;" class="row-hover transition-all">
                                     <td class="ps-3">
                                         <div class="d-flex flex-column">
                                             <Link :href="route('citas.detalle', cita.id)" class="text-dark fw-bold text-decoration-none mb-1">
@@ -148,6 +159,21 @@
                                                     'bg-primary': cita.estado === 'en_curso'
                                                 }">
                                                     {{ cita.estado ? cita.estado.charAt(0).toUpperCase() + cita.estado.slice(1) : 'Pendiente' }}
+                                                </span>
+                                            </div>
+                                            <div v-if="cita.alertas_secretaria?.length" class="d-flex flex-wrap gap-2 mt-2">
+                                                <span
+                                                    v-for="alerta in cita.alertas_secretaria"
+                                                    :key="alerta.tipo"
+                                                    class="badge rounded-pill d-inline-flex align-items-center shadow-sm border"
+                                                    :class="{
+                                                        'bg-danger bg-opacity-10 text-danger border-danger border-opacity-25': alerta.tipo === 'sin_equipo',
+                                                        'bg-warning bg-opacity-10 text-dark border-warning border-opacity-50': alerta.tipo === 'sin_box'
+                                                    }"
+                                                    style="font-size: 0.7rem; padding: 0.35rem 0.65rem;"
+                                                >
+                                                    <i class="bi me-1" :class="alerta.icono"></i>
+                                                    {{ alerta.mensaje }}
                                                 </span>
                                             </div>
                                         </div>
@@ -182,7 +208,7 @@
                                                     v-if="$isAdmin() || $isSecretaria() || $isCliente()"
                                                     type="button"
                                                     class="btn btn-sm btn-outline-primary rounded-pill px-3 transition-all hover-opacity"
-                                                    @click="abrirModalEditar(cita)"
+                                                    @click.stop="abrirModalEditar(cita)"
                                                 >
                                                     Editar
                                                 </button>
@@ -190,11 +216,12 @@
                                                     v-if="$isAdmin() || $isSecretaria() || $isCliente()"
                                                     type="button"
                                                     class="btn btn-sm btn-outline-warning rounded-pill px-3 transition-all hover-opacity"
-                                                    @click="confirmarCancelar(cita)"
+                                                    @click.stop="confirmarCancelar(cita)"
                                                 >
                                                     <i class="bi bi-x-circle me-1"></i> Cancelar
                                                 </button>
                                             </template>
+                                            <i class="bi bi-chevron-right text-muted fs-5 ms-2 d-none d-md-block"></i>
                                         </div>
                                     </td>
                                 </tr>
@@ -654,18 +681,25 @@
             </div>
         
             <div v-if="mostrarConfirmacion" class="modal-backdrop fade show"></div>
+
+            <ModalImportarConsolidado
+                :visible="mostrarModalImportar"
+                @cerrar="mostrarModalImportar = false"
+                @importado="obtenerCitas()"
+            />
     </AuthenticatedLayout>
 </template>
 
 <script>
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import Paginador from '@/Componentes/Paginador.vue';
 import BarraFiltros from '@/Componentes/BarraFiltros.vue';
 import IndicadorCarga from '@/Componentes/IndicadorCarga.vue';
 import EstadoVacio from '@/Componentes/EstadoVacio.vue';
 import SinResultados from '@/Componentes/SinResultados.vue';
 import ModalCrud from '@/Componentes/ModalCrud.vue';
+import ModalImportarConsolidado from '@/Componentes/ModalImportarConsolidado.vue';
 
 export default {
     components: {
@@ -678,6 +712,7 @@ export default {
         EstadoVacio,
         SinResultados,
         ModalCrud,
+        ModalImportarConsolidado,
     },
     props: {
         mascotas: {
@@ -705,6 +740,7 @@ export default {
             busquedaCliente: '',
             mostrarDropdownCliente: false,
             mostrarModal: false,
+            mostrarModalImportar: false,
             modoEdicion: false,
             citaEditando: null,
             mostrarConfirmacion: false,
@@ -894,6 +930,9 @@ export default {
         },
     },
     methods: {
+        irADetalle(id) {
+            router.visit(route('citas.detalle', id));
+        },
         cambiarFiltroSucursal() {
             if (this.filtroSucursal && this.filtroVeterinario) {
                 const vet = this.veterinarios.find(v => v.id === this.filtroVeterinario);
@@ -1240,5 +1279,9 @@ export default {
         width: 100%;
         background-color: white;
     }
+}
+.row-hover:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.03) !important;
+    transition: background-color 0.2s ease-in-out;
 }
 </style>

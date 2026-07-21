@@ -103,7 +103,7 @@
                             </div>
                             <div v-else class="row g-3">
                                 <div v-for="mascota in cliente.mascotas" :key="mascota.id" class="col-md-6">
-                                    <div class="d-flex align-items-center gap-3 p-3 border rounded-3 hover-shadow transition-all bg-white h-100 position-relative">
+                                    <div class="d-flex align-items-center gap-3 p-3 border rounded-3 hover-shadow transition-all bg-white h-100 position-relative" @click="irAMascota(mascota.id)" style="cursor: pointer;">
                                         <div class="bg-danger bg-opacity-10 text-danger rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 50px; height: 50px;">
                                             <img v-if="mascota.imagen_url" :src="mascota.imagen_url" class="rounded-circle object-fit-cover w-100 h-100">
                                             <i v-else class="bi bi-heart-fill fs-5"></i>
@@ -120,7 +120,7 @@
                                                 type="button"
                                                 class="btn btn-sm btn-outline-primary p-0 rounded-circle d-flex align-items-center justify-content-center"
                                                 style="width: 28px; height: 28px;"
-                                                @click.prevent="abrirModalEditar(mascota)"
+                                                @click.stop.prevent="abrirModalEditar(mascota)"
                                                 title="Editar"
                                             >
                                                 <i class="bi bi-pencil small">Editar</i>
@@ -130,12 +130,12 @@
                                                 type="button"
                                                 class="btn btn-sm btn-outline-danger p-0 rounded-circle d-flex align-items-center justify-content-center"
                                                 style="width: 28px; height: 28px;"
-                                                @click.prevent="confirmarEliminar(mascota)"
+                                                @click.stop.prevent="confirmarEliminar(mascota)"
                                                 title="Eliminar"
                                             >
                                                 <i class="bi bi-trash small">Eliminar</i>
                                             </button>
-                                            <Link :href="route('mascotas.detalle', mascota.id)" class="btn btn-sm btn-link text-muted p-0 ms-1" title="Ver detalle">
+                                            <Link :href="route('mascotas.detalle', mascota.id)" class="btn btn-sm btn-link text-muted p-0 ms-1" title="Ver detalle" @click.stop>
                                                 <i class="bi bi-chevron-right fs-5"></i>
                                             </Link>
                                         </div>
@@ -147,13 +147,32 @@
 
                     <!-- SECCIÓN: HISTORIAL DE PAGOS / TRANSACCIONES -->
                     <div class="card border-0 shadow-sm rounded-4">
-                        <div class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+                        <div class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center flex-wrap gap-3">
                             <h3 class="h5 mb-0 fw-bold text-dark d-flex align-items-center gap-2">
                                 <i class="bi bi-receipt-cutoff text-success"></i> Historial de Transacciones
                             </h3>
+                            <div class="d-flex align-items-center gap-2">
+                                <button 
+                                    v-if="($isAdmin() || $isSecretaria()) && transaccionesSeleccionadas.length > 0"
+                                    class="btn btn-warning btn-sm shadow-sm d-flex align-items-center gap-1"
+                                    @click="enviarCorreoMora"
+                                    :disabled="enviandoMora"
+                                >
+                                    <i class="bi bi-envelope-exclamation"></i> 
+                                    <span v-if="enviandoMora">Enviando...</span>
+                                    <span v-else>Notificar Mora</span>
+                                </button>
+                                <select v-model="estadoFiltro" class="form-select form-select-sm" style="width: auto;" @change="filtrarTransacciones">
+                                    <option value="">Todos los estados</option>
+                                    <option value="pendiente">Pendientes</option>
+                                    <option value="pagado">Pagados</option>
+                                    <option value="abonado">Abonados</option>
+                                    <option value="anulado">Anulados</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="card-body p-4">
-                            <div v-if="!transacciones.data || transacciones.data.length === 0" class="text-center py-4 bg-light rounded-3">
+                            <div v-if="!transaccionesData.data || transaccionesData.data.length === 0" class="text-center py-4 bg-light rounded-3">
                                 <i class="bi bi-wallet2 text-muted fs-2 d-block mb-2"></i>
                                 <span class="text-muted small">No hay registro de transacciones para este cliente.</span>
                             </div>
@@ -161,14 +180,31 @@
                                 <table class="table table-hover align-middle mb-0">
                                     <thead class="table-light">
                                         <tr>
-                                            <th class="text-secondary small fw-bold text-uppercase border-0 rounded-start">Fecha</th>
+                                            <th v-if="$isAdmin() || $isSecretaria()" class="text-center border-0 rounded-start" style="width: 40px;">
+                                                <input class="form-check-input" type="checkbox" @change="toggleTodasTransacciones" :checked="todasSeleccionadas && transaccionesPendientesActuales.length > 0" :disabled="transaccionesPendientesActuales.length === 0">
+                                            </th>
+                                            <th class="text-secondary small fw-bold text-uppercase border-0" :class="{'rounded-start': !($isAdmin() || $isSecretaria())}">Fecha</th>
                                             <th class="text-secondary small fw-bold text-uppercase border-0">Concepto</th>
                                             <th class="text-secondary small fw-bold text-uppercase border-0 text-end">Monto</th>
                                             <th class="text-secondary small fw-bold text-uppercase border-0 text-center rounded-end">Estado</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr v-for="tx in transacciones.data" :key="tx.id">
+                                        <tr v-for="tx in transaccionesData.data" :key="tx.id"
+                                            :class="{'row-hover transition-all': tx.cita}"
+                                            :style="tx.cita ? 'cursor: pointer;' : ''"
+                                            @click="tx.cita ? irACita(tx.cita.id) : null"
+                                        >
+                                            <td v-if="$isAdmin() || $isSecretaria()" class="text-center">
+                                                <input 
+                                                    v-if="tx.estado === 'pendiente'"
+                                                    class="form-check-input" 
+                                                    type="checkbox" 
+                                                    :value="tx.id" 
+                                                    v-model="transaccionesSeleccionadas"
+                                                    @click.stop
+                                                >
+                                            </td>
                                             <td>
                                                 <span class="d-block fw-medium text-dark small">{{ formatearFechaCorta(tx.created_at) }}</span>
                                             </td>
@@ -199,25 +235,25 @@
                             </div>
 
                             <!-- Controles de Paginación -->
-                            <div v-if="transacciones.last_page > 1" class="d-flex justify-content-between align-items-center mt-4">
+                            <div v-if="transaccionesData.last_page > 1" class="d-flex justify-content-between align-items-center mt-4">
                                 <div class="text-muted small">
-                                    Mostrando {{ transacciones.from }} a {{ transacciones.to }} de {{ transacciones.total }}
+                                    Mostrando {{ transaccionesData.from }} a {{ transaccionesData.to }} de {{ transaccionesData.total }}
                                 </div>
                                 <nav aria-label="Navegación de páginas">
                                     <ul class="pagination pagination-sm mb-0">
-                                        <li class="page-item" :class="{ disabled: !transacciones.prev_page_url }">
-                                            <Link class="page-link" :href="transacciones.prev_page_url || '#'" preserve-scroll>Anterior</Link>
+                                        <li class="page-item" :class="{ disabled: !transaccionesData.prev_page_url }">
+                                            <a class="page-link" href="#" @click.prevent="cargarTransacciones(transaccionesData.prev_page_url)">Anterior</a>
                                         </li>
                                         <li 
-                                            v-for="link in transacciones.links.slice(1, -1)" 
+                                            v-for="link in transaccionesData.links.slice(1, -1)" 
                                             :key="link.label" 
                                             class="page-item" 
                                             :class="{ active: link.active }"
                                         >
-                                            <Link class="page-link" :href="link.url || '#'" v-html="link.label" preserve-scroll></Link>
+                                            <a class="page-link" href="#" @click.prevent="cargarTransacciones(link.url)" v-html="link.label"></a>
                                         </li>
-                                        <li class="page-item" :class="{ disabled: !transacciones.next_page_url }">
-                                            <Link class="page-link" :href="transacciones.next_page_url || '#'" preserve-scroll>Siguiente</Link>
+                                        <li class="page-item" :class="{ disabled: !transaccionesData.next_page_url }">
+                                            <a class="page-link" href="#" @click.prevent="cargarTransacciones(transaccionesData.next_page_url)">Siguiente</a>
                                         </li>
                                     </ul>
                                 </nav>
@@ -447,7 +483,7 @@
 
 <script>
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import ModalCrud from '@/Componentes/ModalCrud.vue';
 
 export default {
@@ -501,15 +537,33 @@ export default {
                 esterilizado: false,
                 errors: {},
                 processing: false,
-            }
+            },
+            estadoFiltro: '',
+            transaccionesSeleccionadas: [],
+            enviandoMora: false,
+            transaccionesData: this.transacciones,
         };
     },
     computed: {
         tituloModal() {
             return this.modoEdicion ? 'Editar Mascota' : 'Nueva Mascota';
+        },
+        transaccionesPendientesActuales() {
+            return this.transaccionesData.data ? this.transaccionesData.data.filter(t => t.estado === 'pendiente') : [];
+        },
+        todasSeleccionadas() {
+            const pendientes = this.transaccionesPendientesActuales;
+            if (pendientes.length === 0) return false;
+            return pendientes.every(t => this.transaccionesSeleccionadas.includes(t.id));
         }
     },
     methods: {
+        irAMascota(id) {
+            router.visit(route('mascotas.detalle', id));
+        },
+        irACita(id) {
+            router.visit(route('citas.detalle', id));
+        },
         formatearDinero(monto) {
             return '$' + Math.round(monto).toLocaleString('es-CL');
         },
@@ -517,6 +571,66 @@ export default {
             if (!fechaStr) return 'N/A';
             const f = new Date(fechaStr);
             return f.toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' });
+        },
+        cargarTransacciones(url = null) {
+            let apiUrl = `/api/clientes/${this.cliente.id}/transacciones`;
+            let page = 1;
+            
+            if (url) {
+                try {
+                    const parsedUrl = new URL(url, window.location.origin);
+                    if (parsedUrl.searchParams.has('page')) {
+                        page = parsedUrl.searchParams.get('page');
+                    }
+                } catch (e) {}
+            }
+
+            axios.get(apiUrl, {
+                params: {
+                    estado: this.estadoFiltro,
+                    page: page
+                }
+            })
+            .then(response => {
+                this.transaccionesData = response.data;
+            });
+        },
+        filtrarTransacciones() {
+            this.cargarTransacciones();
+        },
+        toggleTodasTransacciones(e) {
+            const checked = e.target.checked;
+            const pendientes = this.transaccionesPendientesActuales;
+            
+            if (checked) {
+                pendientes.forEach(t => {
+                    if (!this.transaccionesSeleccionadas.includes(t.id)) {
+                        this.transaccionesSeleccionadas.push(t.id);
+                    }
+                });
+            } else {
+                this.transaccionesSeleccionadas = this.transaccionesSeleccionadas.filter(
+                    id => !pendientes.find(t => t.id === id)
+                );
+            }
+        },
+        enviarCorreoMora() {
+            if (this.transaccionesSeleccionadas.length === 0) return;
+            
+            this.enviandoMora = true;
+            axios.post(`/api/clientes/${this.cliente.id}/enviar-mora`, {
+                transacciones_ids: this.transaccionesSeleccionadas
+            })
+            .then(response => {
+                this.$alertaExito('Enviado', response.data.mensaje);
+                this.transaccionesSeleccionadas = [];
+            })
+            .catch(error => {
+                this.$alertaError('Error', error.response?.data?.error || 'No se pudo enviar el correo de mora.');
+            })
+            .finally(() => {
+                this.enviandoMora = false;
+            });
         },
         obtenerEspecies() {
             axios.get('/especies')
@@ -696,5 +810,9 @@ export default {
 }
 .transition-all {
     transition: all 0.3s ease;
+}
+.row-hover:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.03) !important;
+    transition: background-color 0.2s ease-in-out;
 }
 </style>

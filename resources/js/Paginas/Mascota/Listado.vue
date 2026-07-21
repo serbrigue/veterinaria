@@ -8,6 +8,14 @@
 
 
                     <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <template v-if="$isAdmin() || $isSecretaria()">
+                            <a href="/api/export/mascotas" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-download me-1"></i> Exportar
+                            </a>
+                            <button type="button" class="btn btn-sm btn-outline-primary" @click="mostrarModalImportar = true">
+                                <i class="bi bi-upload me-1"></i> Importar Consolidado
+                            </button>
+                        </template>
                         <button v-if="$isCliente() || $isAdmin() || $isSecretaria()" type="button" class="btn btn-sm btn-primary" @click="abrirModalCrear">
                             + Nueva Mascota
                         </button>
@@ -394,6 +402,13 @@
                 </div>
             </ModalCrud>
         </div>
+
+        <ModalImportarConsolidado
+            :visible="mostrarModalImportar"
+            @cerrar="mostrarModalImportar = false"
+            @importado="obtenerMascotas()"
+        />
+
     </AuthenticatedLayout>
 </template>
 
@@ -403,6 +418,7 @@ import { Head, Link } from '@inertiajs/vue3';
 import IndicadorCarga from '@/Componentes/IndicadorCarga.vue';
 import EstadoVacio from '@/Componentes/EstadoVacio.vue';
 import SinResultados from '@/Componentes/SinResultados.vue';
+import ModalImportarConsolidado from '@/Componentes/ModalImportarConsolidado.vue';
 import Paginador from '@/Componentes/Paginador.vue';
 import ModalCrud from '@/Componentes/ModalCrud.vue';
 import BarraFiltros from '@/Componentes/BarraFiltros.vue';
@@ -415,6 +431,7 @@ export default {
         IndicadorCarga,
         EstadoVacio,
         SinResultados,
+        ModalImportarConsolidado,
         Paginador,
         ModalCrud,
         BarraFiltros,
@@ -436,6 +453,8 @@ export default {
             razasFiltro: [], // Para el filtro
             cargando: false,
             mostrarModal: false,
+            mostrarModalImportar: false,
+            mostrarModalHistorial: false,
             modoEdicion: false,
             mascotaEditando: null,
             filtros: {
