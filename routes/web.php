@@ -32,12 +32,6 @@ use Inertia\Inertia;
 */
 
 Route::get('/', function () {
-    if (auth()->check()) {
-        return auth()->user()->isAdmin()
-            ? redirect()->route('panel')
-            : redirect()->route('perfil.editar');
-    }
-
     return Inertia::render('Publico/Bienvenido', [
         'puedeIniciarSesion' => Route::has('iniciar-sesion'),
         'puedeRegistrarse' => Route::has('registrarse'),

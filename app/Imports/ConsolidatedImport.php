@@ -80,10 +80,19 @@ class ConsolidatedImport implements ToCollection
                     $telefonoIndex = $telefonoColStr ? ($headerToIndex[$telefonoColStr] ?? null) : null;
                     $direccionIndex = $direccionColStr ? ($headerToIndex[$direccionColStr] ?? null) : null;
 
-                    $email = $emailIndex !== null ? $row[$emailIndex] : null;
-                    $nombre = $nombreIndex !== null && ! empty($row[$nombreIndex]) ? $row[$nombreIndex] : 'Cliente Sin Nombre';
+                    $email = $emailIndex !== null ? trim($row[$emailIndex]) : null;
+                    $nombre = $nombreIndex !== null && ! empty($row[$nombreIndex]) ? trim($row[$nombreIndex]) : 'Cliente Sin Nombre';
+
+                    // Validación estricta: Nombre no puede ser puramente numérico
+                    if ($nombre !== 'Cliente Sin Nombre' && is_numeric($nombre)) {
+                        throw new Exception("El nombre del cliente no puede ser un valor puramente numérico: {$nombre}");
+                    }
 
                     if ($email) {
+                        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                            throw new Exception("El email del cliente tiene un formato inválido: {$email}");
+                        }
+
                         // Upsert User
                         $user = User::updateOrCreate(
                             ['email' => $email],
@@ -123,10 +132,14 @@ class ConsolidatedImport implements ToCollection
                     $nombreMascotaIndex = $nombreMascotaColStr ? ($headerToIndex[$nombreMascotaColStr] ?? null) : null;
                     $razaIndex = $razaColStr ? ($headerToIndex[$razaColStr] ?? null) : null;
 
-                    $nombreMascota = $nombreMascotaIndex !== null ? $row[$nombreMascotaIndex] : null;
-                    $razaNombre = $razaIndex !== null ? $row[$razaIndex] : null;
+                    $nombreMascota = $nombreMascotaIndex !== null ? trim($row[$nombreMascotaIndex]) : null;
+                    $razaNombre = $razaIndex !== null ? trim($row[$razaIndex]) : null;
 
                     if ($nombreMascota && $clienteId) {
+                        if (is_numeric($nombreMascota)) {
+                            throw new Exception("El nombre de la mascota no puede ser un valor puramente numérico: {$nombreMascota}");
+                        }
+                        
                         $razaId = $this->resolverRaza($razaNombre);
 
                         $mascotaId = $this->resolverMascota(

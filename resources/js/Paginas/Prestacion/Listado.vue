@@ -111,10 +111,10 @@
                                             <span class="fs-5 fw-bold text-success">${{ Math.round(prestacion.precio_base).toLocaleString('es-CL') }}</span>
                                         </div>
                                         <div v-if="esAdmin"   class="btn-group btn-group-sm bg-white shadow-sm rounded">
-                                            <button type="button" class="btn btn-outline-primary border-0" @click="abrirModalEditar(prestacion)" title="Editar Prestación">
+                                            <button type="button" class="btn btn-outline-primary border-0" @click.prevent.stop="abrirModalEditar(prestacion)" title="Editar Prestación">
                                                 <i class="bi bi-pencil-fill"> Editar</i>
                                             </button>
-                                            <button type="button" class="btn btn-outline-danger border-0" @click="confirmarEliminar(prestacion)" title="Eliminar Prestación">
+                                            <button type="button" class="btn btn-outline-danger border-0" @click.prevent.stop="confirmarEliminar(prestacion)" title="Eliminar Prestación">
                                                 <i class="bi bi-trash-fill"> Eliminar</i>
                                             </button>
                                         </div>

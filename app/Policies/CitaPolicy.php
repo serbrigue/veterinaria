@@ -47,7 +47,7 @@ class CitaPolicy
 
         // Si es veterinario, solo puede ver sus propias citas
         if ($user->isVeterinario()) {
-            return $cita->veterinario_id === $user->veterinario?->id;
+            return $cita->veterinario_id == $user->veterinario?->id;
         }
 
         // Si es secretaria, puede ver las citas de los veterinarios de su sucursal
@@ -93,8 +93,10 @@ class CitaPolicy
     public function editarNotas(User $user, Cita $cita): bool
     {
         if ($user->isVeterinario()) {
-            return $user->tienePermiso('editar-citas-sucursal')
-                && $cita->veterinario?->sucursal_id === $user->veterinario?->sucursal_id;
+            // Veterinario puede editar si la cita es suya
+            // O si tiene permiso para editar todas las de la sucursal
+            return ($cita->veterinario_id == $user->veterinario?->id)
+                || ($user->tienePermiso('editar-citas-sucursal') && $cita->veterinario?->sucursal_id == $user->veterinario?->sucursal_id);
         }
 
         if ($user->rol?->nombre_interno === 'secretaria') {
@@ -109,8 +111,8 @@ class CitaPolicy
     public function editarEstado(User $user, Cita $cita): bool
     {
         if ($user->isVeterinario()) {
-            return $user->tienePermiso('editar-citas-sucursal')
-                && $cita->veterinario?->sucursal_id === $user->veterinario?->sucursal_id;
+            return ($cita->veterinario_id == $user->veterinario?->id)
+                || ($user->tienePermiso('editar-citas-sucursal') && $cita->veterinario?->sucursal_id == $user->veterinario?->sucursal_id);
         }
 
         if ($user->rol?->nombre_interno === 'secretaria') {

@@ -587,6 +587,18 @@ class DatabaseSeeder extends Seeder
             'telefono' => '+56999999999',
         ]);
 
+        $userSecretaria2 = User::create([
+            'name' => 'Secretaria Maria',
+            'email' => 'secretaria2@prueba.com',
+            'password' => Hash::make('password123'),
+            'rol_id' => $rolSecretaria->id,
+        ]);
+        Secretaria::create([
+            'user_id' => $userSecretaria2->id,
+            'sucursal_id' => $sucursalValparaiso->id,
+            'telefono' => '+56988888888',
+        ]);
+
         // 8. Crear Clientes y sus Perfiles
         $userCliente1 = User::create([
             'name' => 'Carlos Pérez',
@@ -782,12 +794,12 @@ class DatabaseSeeder extends Seeder
                 'user_id' => $userExtra->id,
                 'telefono' => '+5690000000' . $i,
                 'direccion' => "Calle Falsa 12{$i}, Viña del Mar",
-                'foto_perfil_url' => "https://i.pravatar.cc/150?u=deuda{$i}",
+                'foto_perfil_url' => "https://i.pinimg.com/736x/53/3c/2b/533c2b6bfe218a71ee974f9ac0067986.jpg",
             ]);
 
             $mascotaExtra = Mascota::create([
-                'nombre' => 'Mascota Morosa ' . $i,
-                'descripcion' => 'Paciente generado masivamente',
+                'nombre' => 'Pepito ' . $i,
+                'descripcion' => 'Pobre pug:(' . $i,
                 'sexo' => $i % 2 == 0 ? 'Macho' : 'Hembra',
                 'fecha_nacimiento' => Carbon::create(2021, 1, $i),
                 'peso_kg' => 5.0 + $i,
@@ -795,7 +807,7 @@ class DatabaseSeeder extends Seeder
                 'esterilizado' => true,
                 'cliente_id' => $clienteExtra->id,
                 'raza_id' => $razaPug->id,
-                'imagen_url' => 'https://ui-avatars.com/api/?name=Mascota&background=random',
+                'imagen_url' => 'https://i.pinimg.com/1200x/59/16/bb/5916bb541cdfbdc3d4a46712f198444a.jpg',
             ]);
 
             $citaExtra = Cita::create([

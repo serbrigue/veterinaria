@@ -24,17 +24,17 @@
                 <div class="card-body">
                     <!-- Barra de búsqueda y filtros -->
                     <BarraFiltros
-                        :deshabilitar-limpiar="!filtroTitulo && !filtroSucursal && !filtroMascota && !filtroVeterinario && !filtroEstado"
+                        :deshabilitar-limpiar="!filtroTitulo && !filtroSucursal && !filtroMascota && !filtroVeterinario && !filtroEstado && !filtroCliente"
                         clase-boton-contenedor="col-12 col-lg-2 d-flex gap-2 justify-content-lg-end"
                         @limpiar="limpiarFiltros"
                     >
                         <!-- Buscar por Título -->
                         <div class="col-12 col-md-6 col-lg-3">
                             <label class="form-label small fw-bold text-secondary mb-1" for="filtroTitulo">Buscar por Título</label>
-                            <input type="text" class="form-control form-control-sm" id="filtroTitulo" placeholder="Ej: Control mensual" v-model="filtroTitulo" @keyup.enter="obtenerCitas">
+                            <input type="text" class="form-control form-control-sm" id="filtroTitulo" placeholder="Ej: Control mensual" v-model="filtroTitulo" @keyup.enter="obtenerCitas()">
                         </div>
                         <!-- Buscar por Sucursal -->
-                        <div class="col-12 col-md-4 col-lg-2">
+                        <div v-if="!$isVeterinario()" class="col-12 col-md-4 col-lg-2">
                             <label class="form-label small fw-bold text-secondary mb-1" for="filtroSucursal">Sucursal</label>
                             <select 
                                 class="form-select form-select-sm" 
@@ -52,27 +52,19 @@
                                 </option>
                             </select>
                         </div>
+                        <!-- Buscar por Cliente -->
+                        <div v-if="$isAdmin() || $isSecretaria() || $isVeterinario()" class="col-12 col-md-4 col-lg-2">
+                            <label class="form-label small fw-bold text-secondary mb-1" for="filtroCliente">Buscar por Cliente</label>
+                            <input type="text" class="form-control form-control-sm" id="filtroCliente" placeholder="Ej: Juan Pérez" v-model="filtroCliente" @keyup.enter="obtenerCitas()">
+                        </div>
+
                         <!-- Buscar por Mascota -->
                         <div class="col-12 col-md-4 col-lg-2">
                             <label class="form-label small fw-bold text-secondary mb-1" for="filtroMascota">Buscar por Mascota</label>
-                            <select 
-                                class="form-select form-select-sm" 
-                                id="filtroMascota"
-                                v-model="filtroMascota"
-                                @change="obtenerCitas()"
-                            >
-                                <option value="">Todas las mascotas</option>
-                                <option 
-                                    v-for="mascota in mascotas" 
-                                    :key="mascota.id" 
-                                    :value="mascota.id"
-                                >
-                                    {{ mascota.nombre }}
-                                </option>
-                            </select>
+                            <input type="text" class="form-control form-control-sm" id="filtroMascota" placeholder="Nombre de mascota..." v-model="filtroMascota" @keyup.enter="obtenerCitas()">
                         </div>
                         <!-- Buscar por Veterinario -->
-                        <div class="col-12 col-md-4 col-lg-2">
+                        <div v-if="!$isVeterinario()" class="col-12 col-md-4 col-lg-2">
                             <label class="form-label small fw-bold text-secondary mb-1" for="filtroVeterinario">Buscar por Veterinario</label>
                             <select 
                                 class="form-select form-select-sm"
@@ -299,7 +291,7 @@
                 @cerrar="cerrarModal"
                 @guardar="guardar"
             >
-                <div class="row g-0">
+                <div class="row g-0" style="min-height: 65vh;">
 
                                     <!-- Columna izquierda: datos de la cita -->
                                     <div class="col-md-5 p-3 border-end">
@@ -344,7 +336,7 @@
                                                     <div 
                                                         v-if="mostrarDropdownCliente" 
                                                         class="dropdown-menu show w-100 p-2 shadow border-0 mt-1 bg-white" 
-                                                        style="max-height: 250px; overflow-y: auto; z-index: 1050; display: block;"
+                                                        style="max-height: 350px; overflow-y: auto; z-index: 1050; display: block;"
                                                     >
                                                         <input 
                                                             type="text" 
@@ -407,7 +399,7 @@
                                                     <div 
                                                         v-if="mostrarDropdownPrestacion" 
                                                         class="dropdown-menu show w-100 p-2 shadow border-0 mt-1 bg-white" 
-                                                        style="max-height: 250px; overflow-y: auto; z-index: 1050; display: block;"
+                                                        style="max-height: 350px; overflow-y: auto; z-index: 1050; display: block;"
                                                     >
                                                         <input 
                                                             type="text" 
@@ -1074,11 +1066,12 @@ export default {
             if (!url) return;
             this.cargando=true;
             axios.get(url,{params:{
-                mascota_id:this.filtroMascota,
+                mascota:this.filtroMascota,
                 veterinario_id:this.filtroVeterinario,
                 titulo:this.filtroTitulo,
                 estado:this.filtroEstado,
-                sucursal_id:this.filtroSucursal
+                sucursal_id:this.filtroSucursal,
+                cliente:this.filtroCliente
             }})
                 .then(response => {
                     if (response.data.citas.data) {

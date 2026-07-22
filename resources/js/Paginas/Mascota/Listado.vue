@@ -119,7 +119,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="mascota in mascotasVisibles" :key="mascota.id">
+                                <tr v-for="mascota in mascotasVisibles" :key="mascota.id" @click="irADetalle(mascota.id)" class="row-hover cursor-pointer transition-all">
                                     <td>
                                         <Link :href="`/mascotas/${mascota.id}`">
                                             {{ mascota.nombre }}
@@ -145,14 +145,14 @@
                                             <button
                                                 type="button"
                                                 class="btn btn-primary"
-                                                @click="abrirModalEditar(mascota)"
+                                                @click.stop="abrirModalEditar(mascota)"
                                             >
                                                 Editar
                                             </button>
                                             <button
                                                 type="button"
                                                 class="btn btn-danger"
-                                                @click="confirmarEliminar(mascota)"
+                                                @click.stop="confirmarEliminar(mascota)"
                                             >
                                                 Eliminar
                                             </button>
@@ -414,7 +414,7 @@
 
 <script>
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import IndicadorCarga from '@/Componentes/IndicadorCarga.vue';
 import EstadoVacio from '@/Componentes/EstadoVacio.vue';
 import SinResultados from '@/Componentes/SinResultados.vue';
@@ -732,6 +732,9 @@ export default {
                         .catch(() => this.$alertaError('Error', 'No se pudo eliminar la mascota.'))
                 })
         },
+        irADetalle(id) {
+            router.get(`/mascotas/${id}`);
+        }
     },
     mounted() {
         this.obtenerEspecies()
@@ -739,3 +742,15 @@ export default {
     },
 }
 </script>
+
+<style scoped>
+.row-hover:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.03) !important;
+}
+.cursor-pointer {
+    cursor: pointer;
+}
+.transition-all {
+    transition: all 0.2s ease-in-out;
+}
+</style>

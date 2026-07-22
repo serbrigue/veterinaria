@@ -66,7 +66,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="insumo in insumosVisibles" :key="insumo.id" :class="{'table-warning': insumo.stock_actual <= insumo.stock_minimo}">
+                                <tr v-for="insumo in insumosVisibles" :key="insumo.id" :class="{'table-warning': insumo.stock_actual <= insumo.stock_minimo, 'row-hover cursor-pointer transition-all': true}" @click="irADetalle(insumo.id)">
                                     <td class="fw-semibold">
                                         <Link :href="route('insumos.detalle', insumo.id)" class="text-decoration-none">{{ insumo.nombre }}</Link>
                                     </td>
@@ -91,10 +91,10 @@
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm">
-                                            <button type="button" class="btn btn-primary" @click="abrirModalEditar(insumo)">
+                                            <button type="button" class="btn btn-primary" @click.stop="abrirModalEditar(insumo)">
                                                 Editar
                                             </button>
-                                            <button type="button" class="btn btn-danger" @click="confirmarEliminar(insumo)">
+                                            <button type="button" class="btn btn-danger" @click.stop="confirmarEliminar(insumo)">
                                                 Eliminar
                                             </button>
                                         </div>
@@ -191,7 +191,7 @@
 
 <script>
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import axios from 'axios';
 import IndicadorCarga from '@/Componentes/IndicadorCarga.vue';
 import EstadoVacio from '@/Componentes/EstadoVacio.vue';
@@ -231,9 +231,9 @@ export default {
                 categoria_insumo_id: null,
                 nombre: '',
                 descripcion: '',
-                precio_venta: 0,
-                stock_actual: 0,
-                stock_minimo: 5,
+                precio_venta: null,
+                stock_actual: null,
+                stock_minimo: null,
                 estado: 'activo',
                 errors: {},
                 processing: false,
@@ -281,9 +281,9 @@ export default {
             this.formulario.categoria_insumo_id = null;
             this.formulario.nombre = '';
             this.formulario.descripcion = '';
-            this.formulario.precio_venta = 0;
-            this.formulario.stock_actual = 0;
-            this.formulario.stock_minimo = 5;
+            this.formulario.precio_venta = null;
+            this.formulario.stock_actual = null;
+            this.formulario.stock_minimo = null;
             this.formulario.estado = 'activo';
             this.formulario.errors = {};
             this.mostrarModal = true;
@@ -376,6 +376,9 @@ export default {
                         .catch(() => this.$alertaError('Error', 'No se pudo eliminar el insumo.'));
                 });
         },
+        irADetalle(id) {
+            router.get(route('insumos.detalle', id));
+        }
     },
     mounted() {
         if (this.listaInsumos.length === 0) {
@@ -384,3 +387,15 @@ export default {
     },
 }
 </script>
+
+<style scoped>
+.row-hover:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.03) !important;
+}
+.cursor-pointer {
+    cursor: pointer;
+}
+.transition-all {
+    transition: all 0.2s ease-in-out;
+}
+</style>

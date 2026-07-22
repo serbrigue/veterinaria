@@ -23,11 +23,11 @@
                 <div class="card-body p-4">
                     <!-- Barra de búsqueda -->
                     <BarraFiltros 
-                        :deshabilitar-limpiar="!filtroTexto" 
-                        clase-boton-contenedor="col-12 col-md-4 col-lg-6 d-flex justify-content-md-end"
+                        :deshabilitar-limpiar="!filtroTexto && !filtroCategoria" 
+                        clase-boton-contenedor="col-12 col-md-4 col-lg-4 d-flex justify-content-md-end"
                         @limpiar="limpiarFiltros"
                     >
-                        <div class="col-12 col-md-8 col-lg-6">
+                        <div class="col-12 col-md-4 col-lg-4">
                             <div class="input-group">
                                 <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
                                 <input 
@@ -38,6 +38,16 @@
                                     placeholder="Buscar box por nombre..."
                                 >
                             </div>
+                        </div>
+                        <div class="col-12 col-md-4 col-lg-4">
+                            <select 
+                                v-model="filtroCategoria" 
+                                @change="obtenerBoxes()" 
+                                class="form-select"
+                            >
+                                <option value="">Todas las categorías</option>
+                                <option v-for="cat in categoriasPrestacion" :key="cat.id" :value="cat.id">{{ cat.nombre }}</option>
+                            </select>
                         </div>
                         <template #texto-limpiar>
                             Limpiar Filtro
@@ -230,6 +240,7 @@ export default {
             modoEdicion: false,
             boxEditando: null,
             filtroTexto: '',
+            filtroCategoria: '',
             boxAEliminar: null,
             mostrarModalImportar: false,
             formulario: {
@@ -259,8 +270,8 @@ export default {
         textoBotonGuardar() { return this.modoEdicion ? 'Guardar Cambios' : 'Crear Box'; },
         tituloModal()       { return this.modoEdicion ? 'Editar Box' : 'Nuevo Box'; },
         totalBoxes()        { return this.boxesVisibles.length; },
-        listaVacia()        { return this.boxesVisibles.length === 0 && this.filtroTexto === ''; },
-        sinResultadosFiltro() { return this.boxesVisibles.length === 0 && this.filtroTexto !== ''; },
+        listaVacia()        { return this.boxesVisibles.length === 0 && this.filtroTexto === '' && this.filtroCategoria === ''; },
+        sinResultadosFiltro() { return this.boxesVisibles.length === 0 && (this.filtroTexto !== '' || this.filtroCategoria !== ''); },
     },
     methods: {
         badgeCategoria(nombre) {
@@ -326,7 +337,7 @@ export default {
         },
         obtenerBoxes() {
             this.cargando = true;
-            axios.get('/boxes', { params: { texto: this.filtroTexto } })
+            axios.get('/boxes', { params: { texto: this.filtroTexto, categoria_prestacion_id: this.filtroCategoria } })
                 .then(response => {
                     this.boxesVisibles = response.data.boxes;
                 })
@@ -339,6 +350,7 @@ export default {
         },
         limpiarFiltros() {
             this.filtroTexto = '';
+            this.filtroCategoria = '';
             this.obtenerBoxes();
         },
         cerrarModal() {

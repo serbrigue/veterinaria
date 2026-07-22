@@ -94,7 +94,7 @@ class ImportController extends Controller
                 
                 $fileName = 'importaciones_descartadas_' . time() . '.xlsx';
                 // Guardamos en storage/app/temp_imports/
-                Excel::store(new DiscardedImportExport($import->descartados, $headings), 'temp_imports/' . $fileName);
+                Excel::store(new DiscardedImportExport($import->descartados, $headings), 'temp_imports/' . $fileName, 'local');
                 
                 $response['download_url'] = route('import.download', ['fileName' => $fileName]);
                 $response['message'] = 'Importación parcial completada. Algunas filas fueron descartadas.';

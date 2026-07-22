@@ -9,7 +9,18 @@ use Illuminate\Support\Str;
 trait HandlesPhotoUploads
 {
     /**
-     * Procesa y almacena una foto en el disco público.
+     * Obtiene el disco de almacenamiento configurado.
+     * En desarrollo: 'public' (local).
+     * En producción: 's3' (AWS S3).
+     * Controlado por la variable de entorno FILESYSTEM_DISK.
+     */
+    protected function getStorageDisk(): string
+    {
+        return config('filesystems.default');
+    }
+
+    /**
+     * Procesa y almacena una foto en el disco configurado (public o s3).
      */
     protected function procesarFoto(Request $request, string $nombreInput, string $subcarpeta, ?string $urlAnterior = null): ?string
     {
@@ -21,33 +32,41 @@ trait HandlesPhotoUploads
             $this->eliminarFotoFisica($urlAnterior);
         }
 
+        $disk = $this->getStorageDisk();
         $archivo = $request->file($nombreInput);
         $nombreArchivo = Str::uuid().'.'.$archivo->getClientOriginalExtension();
-        $ruta = $archivo->storeAs($subcarpeta, $nombreArchivo, 'public');
+        $ruta = $archivo->storeAs($subcarpeta, $nombreArchivo, $disk);
 
-        return Storage::disk('public')->url($ruta);
+        return Storage::disk($disk)->url($ruta);
     }
 
+    /**
+     * Elimina una foto del disco configurado.
+     * Soporta tanto URLs locales (/storage/...) como URLs de S3.
+     */
     protected function eliminarFotoFisica(?string $urlFoto): void
     {
         if (! $urlFoto) {
             return;
         }
 
-        // Remueve la parte de la URL absoluta si existe
-        $rutaRelativa = str_replace(asset('storage/'), '', $urlFoto);
+        $disk = $this->getStorageDisk();
 
-        // También remueve '/storage/' si es una ruta de web relativa
-        $rutaRelativa = str_replace('/storage/', '', $rutaRelativa);
+        if ($disk === 's3') {
+            // Para S3, extraer la ruta relativa de la URL completa
+            $parsedUrl = parse_url($urlFoto);
+            $rutaRelativa = ltrim($parsedUrl['path'] ?? '', '/');
+        } else {
+            // Para disco local: extraer ruta relativa de la URL
+            $rutaRelativa = str_replace(asset('storage/'), '', $urlFoto);
+            $rutaRelativa = str_replace('/storage/', '', $rutaRelativa);
+            $rutaRelativa = ltrim($rutaRelativa, '/');
 
-        // Remueve cualquier '/' sobrante al inicio
-        $rutaRelativa = ltrim($rutaRelativa, '/');
-
-        // Si por alguna razón comienza con 'storage/', lo removemos
-        if (str_starts_with($rutaRelativa, 'storage/')) {
-            $rutaRelativa = substr($rutaRelativa, 8);
+            if (str_starts_with($rutaRelativa, 'storage/')) {
+                $rutaRelativa = substr($rutaRelativa, 8);
+            }
         }
 
-        Storage::disk('public')->delete($rutaRelativa);
+        Storage::disk($disk)->delete($rutaRelativa);
     }
 }

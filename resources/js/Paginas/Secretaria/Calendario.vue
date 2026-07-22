@@ -216,7 +216,7 @@
             @cerrar="cerrarModal"
             @guardar="guardar"
         >
-            <div class="row g-0">
+            <div class="row g-0" style="min-height: 70vh;">
                 <!-- Columna izquierda: datos de la cita -->
                 <div class="col-md-5 p-3 border-end">
                     <div class="row g-3">
@@ -260,7 +260,7 @@
                                 <div 
                                     v-if="mostrarDropdownCliente" 
                                     class="dropdown-menu show w-100 p-2 shadow border-0 mt-1 bg-white" 
-                                    style="max-height: 250px; overflow-y: auto; z-index: 1050; display: block;"
+                                    style="max-height: 350px; overflow-y: auto; z-index: 1050; display: block;"
                                 >
                                     <input 
                                         type="text" 
@@ -322,7 +322,7 @@
                                 <div 
                                     v-if="mostrarDropdownPrestacion" 
                                     class="dropdown-menu show w-100 p-2 shadow border-0 mt-1 bg-white" 
-                                    style="max-height: 250px; overflow-y: auto; z-index: 1050; display: block;"
+                                    style="max-height: 350px; overflow-y: auto; z-index: 1050; display: block;"
                                 >
                                     <input 
                                         type="text" 

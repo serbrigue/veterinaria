@@ -113,13 +113,13 @@
                                         <div v-if="$isAdmin()" class="d-flex gap-2 pt-3 border-top mt-auto justify-content-between">
                                             <button 
                                                 class="btn btn-sm btn-light text-primary border border-primary-subtle flex-grow-1 btn-hover-primary transition-all rounded-pill" 
-                                                @click.prevent="abrirModalEditar(vet)"
+                                                @click.prevent.stop="abrirModalEditar(vet)"
                                             >
                                                 <i class="bi bi-pencil me-1"></i> Editar
                                             </button>
                                             <button 
                                                 class="btn btn-sm btn-light text-danger border border-danger-subtle flex-grow-1 btn-hover-danger transition-all rounded-pill" 
-                                                @click.prevent="confirmarEliminar(vet)"
+                                                @click.prevent.stop="confirmarEliminar(vet)"
                                             >
                                                 <i class="bi bi-trash me-1"></i> Eliminar
                                             </button>

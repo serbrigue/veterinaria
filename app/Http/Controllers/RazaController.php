@@ -40,6 +40,13 @@ class RazaController extends Controller
                 $razas = $razas->where('especie_id', $filtroEspecie)->values();
             }
 
+            if ($request->input('texto')) {
+                $texto = strtolower($request->input('texto'));
+                $razas = $razas->filter(function($raza) use ($texto) {
+                    return str_contains(strtolower($raza->nombre), $texto);
+                })->values();
+            }
+
             // Devolvemos las razas y las especies
             return response()->json([
                 'razas' => $razas,

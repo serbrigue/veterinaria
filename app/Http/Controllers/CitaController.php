@@ -45,10 +45,14 @@ class CitaController extends Controller
             'prestacion.categoriaPrestacion',
             'equipoMedico.rol',
         ])
-            ->when($request->filled('mascota_id'), fn ($q) => $q->where('mascota_id', $request->mascota_id))
+            ->when($request->filled('mascota'), fn ($q) => $q->whereHas('mascota', fn($m) => $m->where('nombre', 'like', '%'.$request->mascota.'%')))
             ->when($request->filled('veterinario_id'), fn ($q) => $q->where('veterinario_id', $request->veterinario_id))
-            ->when($request->filled('sucursal_id'), fn ($q) => $q->whereHas('box', fn ($b) => $b->where('sucursal_id', $request->sucursal_id)))
+            ->when($request->filled('sucursal_id'), fn ($q) => $q->where(function ($subq) use ($request) {
+                $subq->whereHas('box', fn ($b) => $b->where('sucursal_id', $request->sucursal_id))
+                     ->orWhereHas('veterinario', fn ($v) => $v->where('sucursal_id', $request->sucursal_id));
+            }))
             ->when($request->filled('titulo'), fn ($q) => $q->where('titulo', 'like', '%'.$request->titulo.'%'))
+            ->when($request->filled('cliente'), fn ($q) => $q->whereHas('mascota.cliente.usuario', fn ($u) => $u->where('name', 'like', '%'.$request->cliente.'%')))
             ->when($request->filled('estado') && $request->estado !== 'todos', fn ($q) => $q->where('estado', $request->estado));
 
         // Aplicamos restricciones según el rol del usuario
@@ -658,6 +662,12 @@ class CitaController extends Controller
             abort(403, 'Acceso exclusivo para el personal de secretaría.');
         }
 
+        $secretaria = auth()->user()->secretaria;
+        if (!$secretaria || !$secretaria->sucursal_id) {
+            abort(403, 'No tienes una sucursal asignada para gestionar la agenda.');
+        }
+        $sucursalId = $secretaria->sucursal_id;
+
         $citas = Cita::with([
             'mascota.cliente.usuario',
             'veterinario.usuario',
@@ -666,15 +676,16 @@ class CitaController extends Controller
             'equipoMedico.rol',
         ])
             ->where('fecha_hora', '>=', Carbon::today())
+            ->whereHas('veterinario', fn ($q) => $q->where('sucursal_id', $sucursalId))
             ->orderBy('fecha_hora', 'asc')
             ->get();
 
         $this->adjuntarAlertasSecretaria($citas);
 
         $mascotas = Mascota::with('cliente.usuario', 'raza.especie')->get();
-        $sucursales = Sucursal::with(['veterinarios.usuario', 'boxes'])->orderBy('nombre')->get();
-        $prestaciones = Prestacion::with(['sucursal', 'especialidad'])->orderBy('nombre')->get();
-        $veterinarios = Veterinario::with('usuario')->get();
+        $sucursales = Sucursal::where('id', $sucursalId)->with(['veterinarios.usuario', 'boxes'])->orderBy('nombre')->get();
+        $prestaciones = Prestacion::where('sucursal_id', $sucursalId)->with(['sucursal', 'especialidad'])->orderBy('nombre')->get();
+        $veterinarios = Veterinario::where('sucursal_id', $sucursalId)->with('usuario')->get();
 
         return Inertia::render('Secretaria/Calendario', [
             'citas' => $citas,
