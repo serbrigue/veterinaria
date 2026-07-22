@@ -21,8 +21,10 @@ class GuardarInsumoRequest extends FormRequest
             'stock_actual' => 'required|integer|min:0',
             'stock_minimo' => 'required|integer|min:0',
             'estado' => 'required|in:activo,inactivo',
+            'categoria_insumo_id' => 'nullable|exists:categorias_insumos,id',
         ];
     }
+
     public function messages(): array
     {
         return [

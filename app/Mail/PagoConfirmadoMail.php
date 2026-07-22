@@ -30,7 +30,7 @@ class PagoConfirmadoMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Comprobante de Pago - ' . config('app.name'),
+            subject: 'Comprobante de Pago - '.config('app.name'),
         );
     }
 

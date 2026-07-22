@@ -114,10 +114,6 @@
                             <i class="bi bi-printer fs-4 me-2"></i> Imprimir Comprobante
                         </button>
                     </div>
-
-                    <div v-if="mensajeExito" class="alert alert-success border-0 shadow-sm rounded-3 mt-4 d-flex align-items-center d-print-none">
-                        <i class="bi bi-check-circle-fill me-2 fs-5"></i> {{ mensajeExito }}
-                    </div>
                 </div>
             </div>
 
@@ -127,7 +123,7 @@
 
 <script>
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import axios from 'axios';
 
 export default {
@@ -150,7 +146,6 @@ export default {
             total: this.total_inicial,
             estado: this.estado_inicial,
             cargando: false,
-            mensajeExito: '',
             meses: {
                 1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril', 5: 'Mayo', 6: 'Junio',
                 7: 'Julio', 8: 'Agosto', 9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
@@ -172,29 +167,33 @@ export default {
             const f = new Date(fechaStr);
             return f.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }) + ' ' + f.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
         },
-        async procesarPago() {
-            if (!confirm(`¿Estás seguro de registrar el pago de $${this.formatoDinero(this.total)} a ${this.personal.nombre}?`)) {
-                return;
-            }
+        procesarPago() {
+            const monto = this.formatoDinero(this.total);
+            const nombre = this.personal.nombre;
 
-            this.cargando = true;
-            this.mensajeExito = '';
+            this.$confirmar(
+                '¿Registrar pago?',
+                `Se registrará el pago de $${monto} a ${nombre}.`
+            ).then((resultado) => {
+                if (!resultado.isConfirmed) return;
 
-            try {
-                const response = await axios.post(route('pagos.personal.pagar', this.personal.id), {
+                this.cargando = true;
+                axios.post(route('pagos.personal.pagar', this.personal.id), {
                     mes: this.mes_inicial,
                     anio: this.anio_inicial,
                     monto_total: this.total
+                })
+                .then((response) => {
+                    this.estado = 'Pagado';
+                    this.$alertaExito('Pago registrado', response.data.mensaje || 'Pago registrado con éxito.');
+                })
+                .catch((error) => {
+                    this.$alertaError('Error', error.response?.data?.error || 'Ocurrió un error al procesar el pago.');
+                })
+                .finally(() => {
+                    this.cargando = false;
                 });
-                
-                this.estado = 'Pagado';
-                this.mensajeExito = response.data.mensaje || 'Pago registrado con éxito.';
-            } catch (error) {
-                console.error(error);
-                alert(error.response?.data?.error || 'Ocurrió un error al procesar el pago.');
-            } finally {
-                this.cargando = false;
-            }
+            });
         },
         imprimirComprobante() {
             window.print();

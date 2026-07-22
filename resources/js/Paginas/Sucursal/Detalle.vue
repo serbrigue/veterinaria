@@ -11,12 +11,13 @@
 
             <div class="card shadow border-0 overflow-hidden rounded-4">
                 <div class="row g-0">
-                    <!-- Columna de Imagen/Icono -->
-                    <div class="col-md-5 col-lg-4 bg-light position-relative">
-                        <div class="h-100 d-flex flex-column align-items-center justify-content-center bg-primary bg-opacity-10 text-primary p-5" style="min-height: 300px;">
-                            <i class="bi bi-shop fs-1 mb-3 hover-zoom transition-all"></i>
-                            <h2 class="h4 fw-bold text-center">{{ sucursal.nombre }}</h2>
-                            <span class="badge bg-primary mt-2">ID: #{{ sucursal.id }}</span>
+                    <!-- Columna de Imagen -->
+                    <div class="col-md-5 col-lg-4 position-relative p-0" style="min-height: 300px;">
+                        <img :src="sucursal.imagen_url || '/images/default_sucursal.png'" class="w-100 h-100 object-fit-cover position-absolute top-0 start-0" alt="Imagen de la sucursal" />
+                        <div class="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-50"></div>
+                        <div class="position-relative z-1 h-100 d-flex flex-column align-items-center justify-content-center text-white p-5">
+                            <h2 class="h3 fw-bold text-center text-shadow mb-3">{{ sucursal.nombre }}</h2>
+                            <span class="badge bg-primary shadow-sm fs-6 px-3 py-2">ID: #{{ sucursal.id }}</span>
                         </div>
                     </div>
 
@@ -148,5 +149,11 @@ export default {
 }
 .hover-zoom:hover {
     transform: scale(1.1);
+}
+.text-shadow {
+    text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+}
+.object-fit-cover {
+    object-fit: cover;
 }
 </style>

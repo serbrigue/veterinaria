@@ -13,7 +13,7 @@ test('horarios disponibles api returns correct slots and marks occupied slots co
 
     // Create an appointment for the veterinarian on a specific date and time
     // E.g. Tomorrow at 10:00 AM (which is in the 'normal' slot range 9:00 - 18:00)
-    $fecha = Carbon::now()->addDays(5)->format('Y-m-d');
+    $fecha = Carbon::now()->next(Carbon::TUESDAY)->format('Y-m-d');
     $fechaHora = Carbon::parse($fecha)->setTime(10, 0, 0);
     $horaTermino = Carbon::parse($fecha)->setTime(10, 30, 0);
 
@@ -35,11 +35,11 @@ test('horarios disponibles api returns correct slots and marks occupied slots co
         ->assertOk()
         ->assertJsonStructure([
             'normal',
-            'urgencia'
+            'urgencia',
         ]);
 
     $normalSlots = $response->json('normal');
-    
+
     // Find the slot at 10:00
     $slot10 = null;
     foreach ($normalSlots as $slot) {

@@ -14,9 +14,19 @@
 
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h1 class="h5 mb-0">Gestión de Clientes</h1>
-                    <button type="button" class="btn btn-primary" @click="abrirModalCrear">
-                        + Nuevo Cliente
-                    </button>
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <template v-if="$isAdmin() || $isSecretaria()">
+                            <a href="/api/export/clientes" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-download me-1"></i> Exportar
+                            </a>
+                            <button type="button" class="btn btn-sm btn-outline-primary" @click="mostrarModalImportar = true">
+                                <i class="bi bi-upload me-1"></i> Importar Consolidado
+                            </button>
+                        </template>
+                        <button v-if="$isAdmin() || $isSecretaria()" type="button" class="btn btn-sm btn-primary shadow-sm px-3" @click="abrirModalCrear">
+                            <i class="bi bi-person-plus me-1"></i> Nuevo Cliente
+                        </button>
+                    </div>
                 </div>
 
                 <div class="card-body">
@@ -73,7 +83,7 @@
 
                     <div v-if="!cargando && !listaVacia && !sinResultadosFiltro">
                         <!-- MENU DE ACCION RAPIDA (CORREO MASIVO) -->
-                        <div v-if="esAdmin && selectedClientes.length > 0" class="alert alert-info d-flex justify-content-between align-items-center mb-4 shadow-sm border border-info rounded-3 p-3">
+                        <div v-if="($isAdmin() || $isSecretaria()) && selectedClientes.length > 0" class="alert alert-info d-flex justify-content-between align-items-center mb-4 shadow-sm border border-info rounded-3 p-3">
                             <div class="d-flex align-items-center gap-2">
                                 <i class="bi bi-people-fill fs-5"></i>
                                 <span>Hay <strong>{{ selectedClientes.length }}</strong> cliente(s) seleccionado(s).</span>
@@ -93,10 +103,10 @@
                             <table class="table table-hover align-middle border">
                             <thead class="table-light">
                                 <tr>
-                                    <th v-if="esAdmin" class="ps-3" style="width: 45px;">
+                                    <th v-if="$isAdmin() || $isSecretaria()" class="ps-3" style="width: 45px;">
                                         <input type="checkbox" class="form-check-input" :checked="isAllSelected" @change="toggleSelectAll">
                                     </th>
-                                    <th class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7" :class="{ 'ps-3': !esAdmin }">Cliente</th>
+                                    <th class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7" :class="{ 'ps-3': !($isAdmin() || $isSecretaria()) }">Cliente</th>
                                     <th class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7">Contacto</th>
                                     <th class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7">Mascotas</th>
                                     <th class="text-uppercase text-secondary text-xs font-weight-bolder opacity-7">Estado Financiero</th>
@@ -104,11 +114,16 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="cliente in clientesArray" :key="cliente.id" :class="{ 'table-active': esAdmin && selectedClientes.includes(cliente.id) }">
-                                    <td v-if="esAdmin" class="ps-3">
-                                        <input type="checkbox" class="form-check-input" :value="cliente.id" v-model="selectedClientes">
+                                <tr v-for="cliente in clientesArray" :key="cliente.id" 
+                                    :class="{ 'table-active': ($isAdmin() || $isSecretaria()) && selectedClientes.includes(cliente.id) }"
+                                    @click="irADetalle(cliente.id)"
+                                    style="cursor: pointer;"
+                                    class="row-hover"
+                                >
+                                    <td v-if="$isAdmin() || $isSecretaria()" class="ps-3">
+                                        <input type="checkbox" class="form-check-input" :value="cliente.id" v-model="selectedClientes" @click.stop>
                                     </td>
-                                    <td :class="{ 'ps-3': !esAdmin }">
+                                    <td :class="{ 'ps-3': !($isAdmin() || $isSecretaria()) }">
                                         <div class="d-flex align-items-center gap-2">
                                             <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
                                                 <img v-if="cliente.foto_perfil_url" :src="cliente.foto_perfil_url" class="rounded-circle object-fit-cover" style="width: 40px; height: 40px;">
@@ -148,10 +163,13 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <div class="d-flex justify-content-center gap-2">
-                                            <button class="btn btn-sm btn-outline-primary rounded-pill px-3 hover-opacity" @click="abrirModalEditar(cliente)">
-                                                Editar
-                                            </button>
+                                        <div class="d-flex justify-content-center gap-2 align-items-center">
+                                            <TieneRol :rol="['admin', 'secretaria']">
+                                                <button class="btn btn-sm btn-outline-primary rounded-pill px-3 hover-opacity" @click.stop="abrirModalEditar(cliente)">
+                                                    Editar
+                                                </button>
+                                            </TieneRol>
+                                            <i class="bi bi-chevron-right text-muted fs-5 ms-2"></i>
                                         </div>
                                     </td>
                                 </tr>
@@ -164,6 +182,12 @@
                 </div>
             </div>
         </div>
+
+        <ModalImportarConsolidado
+            :visible="mostrarModalImportar"
+            @cerrar="mostrarModalImportar = false"
+            @importado="obtenerClientes()"
+        />
             
             <ModalCrud
                 :visible="mostrarModal"
@@ -264,11 +288,12 @@
 
 <script>
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
 import IndicadorCarga from '@/Componentes/IndicadorCarga.vue';
 import EstadoVacio from '@/Componentes/EstadoVacio.vue';
 import SinResultados from '@/Componentes/SinResultados.vue';
+import ModalImportarConsolidado from '@/Componentes/ModalImportarConsolidado.vue';
 import Paginador from '@/Componentes/Paginador.vue';
 import ModalCrud from '@/Componentes/ModalCrud.vue';
 import BarraFiltros from '@/Componentes/BarraFiltros.vue';
@@ -281,6 +306,7 @@ export default {
         IndicadorCarga,
         EstadoVacio,
         SinResultados,
+        ModalImportarConsolidado,
         Paginador,
         ModalCrud,
         BarraFiltros,
@@ -298,6 +324,8 @@ export default {
     data() {
         return {
             cargando: false,
+            mostrarModalImportar: false,
+            clientesLocal: this.clientes.data,
             mostrarModal: false,
             modoEdicion: false,
             clienteEditando: null,
@@ -308,8 +336,8 @@ export default {
             filtroMascota: '',
             filtroSucursal: '',
             filtroEstadoPago: '',
-            clientesData: null,
-            clientesArray: [],
+            clientesData: this.clientes,
+            clientesArray: this.clientes?.data || [],
             formulario: {
                 nombre: '',
                 email: '',
@@ -332,10 +360,6 @@ export default {
             if (this.clientesArray.length === 0) return false;
             return this.clientesArray.every(c => this.selectedClientes.includes(c.id));
         },
-        esAdmin() {
-            const user = this.$page.props.auth.user;
-            return user && (user.rol_id === 1 || (user.rol && user.rol.nombre_interno === 'admin'));
-        },
         listaVacia() {
             return !this.filtroNombre && !this.filtroMascota && !this.filtroSucursal && !this.filtroEstadoPago && this.clientesArray.length === 0;
         },
@@ -344,7 +368,9 @@ export default {
         },
     },
     methods: {
-
+        irADetalle(id) {
+            router.visit(route('clientes.detalle', id));
+        },
         // TODO: Abrir modal para crear un nuevo cliente
         abrirModalCrear() {
             this.modoEdicion = false
@@ -360,10 +386,10 @@ export default {
         abrirModalEditar(cliente) {
             this.modoEdicion = true
             this.clienteEditando = cliente
-            this.formulario.nombre = cliente.nombre
-            this.formulario.email = cliente.email
-            this.formulario.telefono = cliente.telefono
-            this.formulario.direccion = cliente.direccion
+            this.formulario.nombre = cliente.usuario?.name || cliente.nombre || ''
+            this.formulario.email = cliente.usuario?.email || cliente.email || ''
+            this.formulario.telefono = cliente.telefono || ''
+            this.formulario.direccion = cliente.direccion || ''
             this.formulario.errors = {}
             this.mostrarModal = true
         },
@@ -561,5 +587,9 @@ export default {
 }
 .hover-opacity:hover {
     opacity: 0.8;
+}
+.row-hover:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.03) !important;
+    transition: background-color 0.2s ease-in-out;
 }
 </style>

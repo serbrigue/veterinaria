@@ -7,8 +7,8 @@ use App\Models\User;
 
 class TransaccionPolicy
 {
-    #El filtro before se ejecuta antes de cualquier otro método de la Policy.
-    #Si el usuario es administrador supremo, le otorgamos acceso total automático (bypass).
+    // El filtro before se ejecuta antes de cualquier otro método de la Policy.
+    // Si el usuario es administrador supremo, le otorgamos acceso total automático (bypass).
     public function before(User $user, string $ability)
     {
         if ($user->isAdmin()) {
@@ -16,18 +16,43 @@ class TransaccionPolicy
         }
     }
 
-    #Verifica si el usuario tiene permiso para pagar la transacción
+    public function verTodas(User $user): bool
+    {
+        return false;
+    }
+
+    public function ver(User $user, Transaccion $transaccion): bool
+    {
+        return false;
+    }
+
+    public function crear(User $user): bool
+    {
+        return false;
+    }
+
+    public function editar(User $user, Transaccion $transaccion): bool
+    {
+        return false;
+    }
+
+    public function eliminar(User $user, Transaccion $transaccion): bool
+    {
+        return false;
+    }
+
+    // Verifica si el usuario tiene permiso para pagar la transacción
     public function pagar(User $user, Transaccion $transaccion): bool
     {
-        #Verificar si el rol del usuario tiene el permiso global en base de datos
-        if (!$user->tienePermiso('pagar-transacciones')) {
+        // Verificar si el rol del usuario tiene el permiso global en base de datos
+        if (! $user->tienePermiso('pagar-transacciones')) {
             return false;
         }
 
-        # Un cliente solo puede pagar sus propias transacciones
+        // Un cliente solo puede pagar sus propias transacciones
         if ($user->rol && $user->rol->nombre_interno === 'cliente') {
 
-            #Verificar si el cliente es el dueño de la transacción
+            // Verificar si el cliente es el dueño de la transacción
             return $user->cliente && $user->cliente->id === $transaccion->cliente_id;
         }
 

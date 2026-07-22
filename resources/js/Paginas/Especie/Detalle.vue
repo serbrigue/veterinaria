@@ -106,17 +106,20 @@
                         </div>
                     </div>
                 </div>
-                <div v-if="verModalImagen" class="modal fade show d-block" tabindex="-1" role="dialog" @click.self="cerrarImagenCompleta">
+                <!-- MODAL DE IMAGEN Sleek & Premium Lightbox -->
+                <div v-if="verModalImagen" class="modal fade show d-block" tabindex="-1" role="dialog" style="background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 1060;" @click.self="cerrarImagenCompleta">
                     <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-                        <div class="modal-content border-0 bg-transparent">
-                            <div class="modal-body p-0 card shadow-lg" @click.stop>
-                                <button type="button" class="btn-close position-absolute top-0 end-0 m-3" @click="cerrarImagenCompleta"></button>
-                                <h1 class="h4 mb-3 align-text-center">Especie: {{ especie.nombre }}</h1>
+                        <div class="modal-content border-0 bg-dark bg-opacity-75 text-white rounded-4 shadow-lg overflow-hidden">
+                            <div class="modal-header border-bottom border-secondary border-opacity-25 p-3 d-flex justify-content-between align-items-center">
+                                <h5 class="modal-title fw-bold text-white mb-0"><i class="bi bi-image me-2 text-primary"></i> Especie: {{ especie.nombre }}</h5>
+                                <button type="button" class="btn-close btn-close-white" @click="cerrarImagenCompleta" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body p-2 text-center bg-black bg-opacity-25 d-flex align-items-center justify-content-center" style="min-height: 300px;">
                                 <img 
                                     :src="especie.imagen_url" 
                                     :alt="especie.nombre" 
-                                    class="img-fluid m-0 p-4 rounded shadow-sm w-100" 
-                                    style="object-fit: contain; max-height: 80vh;"
+                                    class="img-fluid rounded shadow-lg" 
+                                    style="object-fit: contain; max-height: 70vh; max-width: 100%;"
                                 >
                             </div>
                         </div>

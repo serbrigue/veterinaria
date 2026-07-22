@@ -114,7 +114,7 @@
                                     </div>
                                 </td>
                             </tr>
-                            <tr v-for="t in transacciones" :key="t.id" v-else class="border-bottom">
+                            <tr v-for="t in transacciones" :key="t.id" v-else class="border-bottom row-hover cursor-pointer transition-all" @click="verComprobante(t)">
                                 <td class="ps-4">
                                     <span class="fw-bold text-dark">{{ formatearFecha(t.fecha_pago) }}</span>
                                     <span class="d-block text-muted small"><i class="bi bi-clock me-1"></i> {{ formatearHora(t.fecha_pago) }}</span>
@@ -145,7 +145,7 @@
                                     <span class="fw-bold fs-5 text-success">${{ formatoDinero(t.monto_pagado) }}</span>
                                 </td>
                                 <td class="text-center pe-4">
-                                    <button class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-sm" @click="verComprobante(t)">
+                                    <button class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-sm" @click.stop="verComprobante(t)">
                                         <i class="bi bi-receipt me-1"></i> Comprobante
                                     </button>
                                 </td>
@@ -348,6 +348,15 @@ export default {
 </script>
 
 <style scoped>
+.row-hover:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.03) !important;
+}
+.cursor-pointer {
+    cursor: pointer;
+}
+.transition-all {
+    transition: all 0.2s ease-in-out;
+}
 .tracking-wide {
     letter-spacing: 0.05em;
 }

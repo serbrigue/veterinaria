@@ -1,19 +1,21 @@
 <?php
 
+use App\Http\Controllers\BoxController;
 use App\Http\Controllers\CitaController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\EspecieController;
+use App\Http\Controllers\InsumoController;
 use App\Http\Controllers\MascotaController;
+use App\Http\Controllers\PagoVeterinarioController;
 use App\Http\Controllers\PanelController;
+use App\Http\Controllers\PrestacionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RazaController;
 use App\Http\Controllers\SucursalController;
-use App\Http\Controllers\BoxController;
-use App\Http\Controllers\VeterinarioController;
-use App\Http\Controllers\InsumoController;
-use App\Http\Controllers\PagoVeterinarioController;
-use App\Http\Controllers\PrestacionController;
 use App\Http\Controllers\TransaccionController;
+use App\Http\Controllers\VeterinarioController;
+use App\Http\Controllers\ImportController;
+use App\Http\Controllers\ExportController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -30,14 +32,12 @@ use Inertia\Inertia;
 */
 
 Route::get('/', function () {
-    return auth()->check()
-        ? redirect()->route('panel')
-        : Inertia::render('Publico/Bienvenido', [
-            'puedeIniciarSesion' => Route::has('iniciar-sesion'),
-            'puedeRegistrarse' => Route::has('registrarse'),
-            'laravelVersion' => Application::VERSION,
-            'phpVersion' => PHP_VERSION,
-        ]);
+    return Inertia::render('Publico/Bienvenido', [
+        'puedeIniciarSesion' => Route::has('iniciar-sesion'),
+        'puedeRegistrarse' => Route::has('registrarse'),
+        'laravelVersion' => Application::VERSION,
+        'phpVersion' => PHP_VERSION,
+    ]);
 });
 
 Route::get('/panel', [PanelController::class, 'index'])
@@ -72,42 +72,60 @@ Route::middleware('auth')->group(function () {
     // MÓDULO 5 — Citas (manual): Route::get('/citas', ...)->name('citas.listado');
     Route::get('/citas', [CitaController::class, 'listado'])->name('citas.listado')->middleware('can:verTodas,App\Models\Cita');
     Route::get('/citas/{cita}', [CitaController::class, 'detalle'])->name('citas.detalle')->middleware('can:ver,cita');
+    Route::get('/secretaria/calendario', [CitaController::class, 'agendaSecretaria'])->name('agenda.secretaria');
 
-    //Sucursales
+    // Sucursales
     Route::get('/sucursales', [SucursalController::class, 'listado'])->name('sucursales.listado')->middleware('can:verTodas,App\Models\Sucursal');
     Route::get('/sucursales/{sucursal}', [SucursalController::class, 'detalle'])->name('sucursales.detalle')->middleware('can:ver,sucursal');
 
-    //Boxes
+    // Boxes
     Route::get('/boxes', [BoxController::class, 'listado'])->name('boxes.listado')->middleware('can:verTodas,App\Models\Box');
     Route::get('/boxes/{box}', [BoxController::class, 'detalle'])->name('boxes.detalle')->middleware('can:ver,box');
 
-    //Veterinarios
+    // Veterinarios
     Route::get('/veterinarios', [VeterinarioController::class, 'listado'])->name('veterinarios.listado')->middleware('can:verTodas,App\Models\Veterinario');
     Route::get('/veterinarios/{veterinario}', [VeterinarioController::class, 'detalle'])->name('veterinarios.detalle')->middleware('can:ver,veterinario');
 
-    //Prestaciones
+    // Prestaciones
     Route::get('/prestaciones', [PrestacionController::class, 'listado'])->name('prestaciones.listado')->middleware('can:verTodas,App\Models\Prestacion');
     Route::get('/prestaciones/{prestacion}', [PrestacionController::class, 'detalle'])->name('prestaciones.detalle')->middleware('can:ver,prestacion');
 
-    //Insumos
+    // Insumos
     Route::get('/insumos', [InsumoController::class, 'listado'])->name('insumos.listado')->middleware('can:verTodas,App\Models\Insumo');
     Route::get('/insumos/{insumo}', [InsumoController::class, 'detalle'])->name('insumos.detalle')->middleware('can:ver,insumo');
 
     // Transacciones y Pagos
-    Route::get('/ingresos', [TransaccionController::class, 'listado'])->name('ingresos.listado');
-    
+    Route::get('/ingresos', [TransaccionController::class, 'listado'])->name('ingresos.listado')->middleware('can:verTodas,App\Models\Transaccion');
+
     // Realizar Pagos (Liquidación de Personal Médico)
-    Route::get('/realizar-pagos', [PagoVeterinarioController::class, 'index'])->name('pagos.personal');
-    Route::get('/realizar-pagos/{usuario}', [PagoVeterinarioController::class, 'detalle'])->name('pagos.personal.detalle');
-    Route::post('/realizar-pagos/{usuario}/pagar', [PagoVeterinarioController::class, 'procesarPago'])->name('pagos.personal.pagar');
-    
+    Route::get('/realizar-pagos', [PagoVeterinarioController::class, 'index'])->name('pagos.personal')->middleware('can:pagos-veterinarios.verTodas');
+    Route::get('/realizar-pagos/{usuario}', [PagoVeterinarioController::class, 'detalle'])->name('pagos.personal.detalle')->middleware('can:pagos-veterinarios.ver');
+    Route::post('/realizar-pagos/{usuario}/pagar', [PagoVeterinarioController::class, 'procesarPago'])->name('pagos.personal.pagar')->middleware('can:pagos-veterinarios.crear');
+
     Route::get('/transacciones/{transaccion}/checkout', [TransaccionController::class, 'checkout'])
         ->name('transacciones.checkout')
         ->middleware('can:pagar,transaccion');
-        
+
     Route::post('/transacciones/{transaccion}/pagar', [TransaccionController::class, 'procesarPago'])
         ->name('transacciones.pagar')
         ->middleware('can:pagar,transaccion');
+
+    // Importador y Exportador de Datos
+    Route::group(['middleware' => ['can:importar-datos']], function () {
+        // Importador Consolidado
+        Route::get('/importador-consolidado', function() {
+            return Inertia::render('ConsolidatedImport');
+        })->name('importador.index');
+        Route::post('/api/import/analyze', [ImportController::class, 'analyzeHeaders'])->name('import.analyze');
+        Route::post('/api/import/process', [ImportController::class, 'importData'])->name('import.process');
+        Route::get('/api/import/download/{fileName}', [ImportController::class, 'downloadDiscarded'])->name('import.download');
+
+        // Importador Simple (entidades individuales)
+        Route::post('/api/import/simple/{entidad}', [ImportController::class, 'importarSimple'])->name('import.simple');
+
+        // Exportador Universal
+        Route::get('/api/export/{entidad}', [ExportController::class, 'exportar'])->name('export.entidad');
+    });
 });
 
 require __DIR__ . '/auth.php';

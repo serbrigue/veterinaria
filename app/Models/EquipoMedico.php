@@ -6,31 +6,31 @@ use Illuminate\Database\Eloquent\Model;
 
 class EquipoMedico extends Model
 {
-    # Definimos el nombre de la tabla
+    // Definimos el nombre de la tabla
     protected $table = 'equipos_medicos';
 
-    # Definimos los campos que se pueden llenar
+    // Definimos los campos que se pueden llenar
     protected $fillable = [
         'cita_id',
         'usuario_id',
         'rol_id',
     ];
 
-    # Relaciones
+    // Relaciones
 
-    # Relación con cita
+    // Relación con cita
     public function cita()
     {
         return $this->belongsTo(Cita::class, 'cita_id');
     }
 
-    # Relación con usuario
+    // Relación con usuario
     public function usuario()
     {
         return $this->belongsTo(User::class, 'usuario_id');
     }
 
-    # Relación con rol
+    // Relación con rol
     public function rol()
     {
         return $this->belongsTo(Rol::class, 'rol_id');

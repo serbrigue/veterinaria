@@ -6,11 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Transaccion extends Model
 {
-
-    #Tabla
+    // Tabla
     protected $table = 'transacciones';
 
-    #Campos que se pueden llenar
+    // Campos que se pueden llenar
     protected $fillable = [
         'cita_id',
         'cliente_id',
@@ -21,22 +20,22 @@ class Transaccion extends Model
         'fecha_pago',
     ];
 
-    #Casteos
+    // Casteos
     protected $casts = [
         'monto_total' => 'decimal:2',
         'monto_pagado' => 'decimal:2',
         'fecha_pago' => 'datetime',
     ];
 
-    #Relaciones
+    // Relaciones
 
-    #Una transaccion pertenece a una cita
+    // Una transaccion pertenece a una cita
     public function cita()
     {
         return $this->belongsTo(Cita::class);
     }
 
-    #Un cliente tiene muchas transacciones
+    // Un cliente tiene muchas transacciones
     public function cliente()
     {
         return $this->belongsTo(Cliente::class);

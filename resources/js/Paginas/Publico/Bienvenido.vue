@@ -12,8 +12,11 @@
                 
                 <div class="d-flex gap-2 ms-auto">
                     <template v-if="$page.props.auth.user">
-                        <Link :href="route('panel')" class="btn btn-primary btn-sm px-4 rounded-pill shadow-sm">
+                        <Link v-if="esAdmin" :href="route('panel')" class="btn btn-primary btn-sm px-4 rounded-pill shadow-sm">
                             <i class="bi bi-speedometer2 me-1"></i> Panel de Control
+                        </Link>
+                        <Link v-else :href="route('perfil.editar')" class="btn btn-primary btn-sm px-4 rounded-pill shadow-sm">
+                            <i class="bi bi-person-circle me-1"></i> Mi Perfil
                         </Link>
                     </template>
                     <template v-else-if="puedeIniciarSesion">
@@ -46,8 +49,11 @@
                         
                         <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center justify-content-lg-start mb-5">
                             <template v-if="$page.props.auth.user">
-                                <Link :href="route('panel')" class="btn btn-primary btn-lg px-5 py-3 rounded-pill shadow hover-grow">
+                                <Link v-if="esAdmin" :href="route('panel')" class="btn btn-primary btn-lg px-5 py-3 rounded-pill shadow hover-grow">
                                     Ir al Panel de Control <i class="bi bi-arrow-right ms-2"></i>
+                                </Link>
+                                <Link v-else :href="route('perfil.editar')" class="btn btn-primary btn-lg px-5 py-3 rounded-pill shadow hover-grow">
+                                    Ir a mi Perfil <i class="bi bi-arrow-right ms-2"></i>
                                 </Link>
                             </template>
                             <template v-else>
@@ -186,6 +192,12 @@ export default {
             required: true,
         },
     },
+    computed: {
+        esAdmin() {
+            const user = this.$page.props.auth.user;
+            return user && user.rol && user.rol.nombre_interno === 'admin';
+        }
+    }
 }
 </script>
 

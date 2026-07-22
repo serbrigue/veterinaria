@@ -5,9 +5,19 @@
             <div class="card shadow-sm border-0 rounded-4">
                 <div class="card-header bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
                     <h1 class="h4 mb-0 text-primary fw-bold">Sucursales</h1>
-                    <button v-if="esVeterinarioOAdmin" type="button" class="btn btn-primary rounded-pill shadow-sm px-4" @click="abrirModalCrear">
-                        <i class="bi bi-plus-lg me-1"></i> Nueva Sucursal
-                    </button>
+                    <div class="d-flex gap-2">
+                        <template v-if="$isAdmin() || $isSecretaria()">
+                            <a href="/api/export/sucursales" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-download me-1"></i> Exportar
+                            </a>
+                            <button type="button" class="btn btn-sm btn-outline-primary" @click="mostrarModalImportar = true">
+                                <i class="bi bi-upload me-1"></i> Importar
+                            </button>
+                        </template>
+                        <button v-if="esAdmin" type="button" class="btn btn-primary rounded-pill shadow-sm px-4" @click="abrirModalCrear">
+                            <i class="bi bi-plus-lg me-1"></i> Nueva Sucursal
+                        </button>
+                    </div>
                 </div>
 
                 <div class="card-body p-4">
@@ -60,6 +70,7 @@
                             <TarjetaEntidad
                                 :titulo="sucursal.nombre"
                                 icono="bi-shop"
+                                :imagen-url="sucursal.imagen_url || '/images/default_sucursal.png'"
                                 :url-detalle="route('sucursales.detalle', sucursal.id)"
                                 :mostrar-acciones="esVeterinarioOAdmin"
                                 @editar="abrirModalEditar(sucursal)"
@@ -108,7 +119,32 @@
                     <input v-model="formulario.telefono" type="text" class="form-control bg-light border-0 py-2" placeholder="Ej: +56 9 1234 5678" :class="{ 'is-invalid': formulario.errors.telefono }" required />
                     <div v-if="formulario.errors.telefono" class="invalid-feedback">{{ formulario.errors.telefono }}</div>
                 </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary small text-uppercase">Foto / Imagen de la Sucursal</label>
+                    <input
+                        ref="fotoInput"
+                        type="file"
+                        class="form-control bg-light border-0 py-2"
+                        accept="image/*"
+                        @change="seleccionarFoto"
+                        :class="{ 'is-invalid': formulario.errors.imagen_url }"
+                    />
+                    <div v-if="formulario.errors.imagen_url" class="invalid-feedback">
+                        {{ formulario.errors.imagen_url }}
+                    </div>
+                    <div v-if="formulario.imagen_url_preview || formulario.imagen_url" class="mt-2 text-center">
+                        <img :src="formulario.imagen_url_preview || formulario.imagen_url" class="img-thumbnail" style="max-height: 120px;" alt="Vista previa" />
+                    </div>
+                </div>
             </ModalCrud>
+
+            <ModalImportarSimple
+                :visible="mostrarModalImportar"
+                entidad="sucursales"
+                etiqueta="Sucursales"
+                @cerrar="mostrarModalImportar = false"
+                @importado="obtenerSucursales()"
+            />
         </div>
     </AuthenticatedLayout>
 </template>
@@ -123,6 +159,7 @@ import SinResultados from '@/Componentes/SinResultados.vue';
 import ModalCrud from '@/Componentes/ModalCrud.vue';
 import BarraFiltros from '@/Componentes/BarraFiltros.vue';
 import TarjetaEntidad from '@/Componentes/TarjetaEntidad.vue';
+import ModalImportarSimple from '@/Componentes/ModalImportarSimple.vue';
 
 export default {
     components: {
@@ -135,6 +172,7 @@ export default {
         ModalCrud,
         BarraFiltros,
         TarjetaEntidad,
+        ModalImportarSimple,
     },
     props: {
         sucursales: {
@@ -150,10 +188,14 @@ export default {
             sucursalEditando: null,
             filtroTexto: '',
             sucursalAEliminar: null,
+            mostrarModalImportar: false,
             formulario: {
                 nombre: '',
                 direccion: '',
                 telefono: '',
+                imagen_url: '', // Ruta actual en BD
+                imagen_url_file: null, // Archivo a subir
+                imagen_url_preview: null, // Previsualización local
                 errors: {},
                 processing: false,
             },
@@ -166,9 +208,9 @@ export default {
         }
     },
     computed: {
-        esVeterinarioOAdmin() {
+        esAdmin() {
             const user = this.$page.props.auth.user;
-            return user && (user.rol?.nombre_interno === 'veterinario' || user.rol?.nombre_interno === 'admin');
+            return user && (user.rol?.nombre_interno === 'admin');
         },
         textoBotonGuardar() {
             return this.modoEdicion ? 'Guardar Cambios' : 'Crear Sucursal';
@@ -187,12 +229,23 @@ export default {
         },
     },
     methods: {
-        datosFormulario() {
-            return {
-                nombre: this.formulario.nombre,
-                direccion: this.formulario.direccion,
-                telefono: this.formulario.telefono,
+        seleccionarFoto(e) {
+            const archivos = e.target.files;
+            if (archivos && archivos.length > 0) {
+                this.formulario.imagen_url_file = archivos[0];
+                this.formulario.imagen_url_preview = URL.createObjectURL(archivos[0]);
             }
+        },
+        datosFormulario() {
+            const formData = new FormData();
+            formData.append('nombre', this.formulario.nombre);
+            formData.append('direccion', this.formulario.direccion);
+            formData.append('telefono', this.formulario.telefono);
+            
+            if (this.formulario.imagen_url_file) {
+                formData.append('imagen_url', this.formulario.imagen_url_file);
+            }
+            return formData;
         },
         obtenerSucursales() {
             this.cargando = true;
@@ -217,6 +270,12 @@ export default {
             this.formulario.nombre = '';
             this.formulario.direccion = '';
             this.formulario.telefono = '';
+            this.formulario.imagen_url = '';
+            this.formulario.imagen_url_file = null;
+            this.formulario.imagen_url_preview = null;
+            if (this.$refs.fotoInput) {
+                this.$refs.fotoInput.value = '';
+            }
             this.formulario.errors = {};
             this.mostrarModal = true;
         },
@@ -226,6 +285,12 @@ export default {
             this.formulario.nombre = sucursal.nombre;
             this.formulario.direccion = sucursal.direccion;
             this.formulario.telefono = sucursal.telefono;
+            this.formulario.imagen_url = sucursal.imagen_url;
+            this.formulario.imagen_url_file = null;
+            this.formulario.imagen_url_preview = null;
+            if (this.$refs.fotoInput) {
+                this.$refs.fotoInput.value = '';
+            }
             this.formulario.errors = {};
             this.mostrarModal = true;
         },
@@ -239,6 +304,9 @@ export default {
             this.formulario.nombre = '';
             this.formulario.direccion = '';
             this.formulario.telefono = '';
+            this.formulario.imagen_url = '';
+            this.formulario.imagen_url_file = null;
+            this.formulario.imagen_url_preview = null;
             this.formulario.errors = {};
             this.mostrarModal = false;
         },
@@ -246,8 +314,13 @@ export default {
             this.formulario.processing = true;
             this.formulario.errors = {};
             
+            const data = this.datosFormulario();
+
             if (this.modoEdicion) {
-                axios.put(`/api/sucursales/${this.sucursalEditando.id}`, this.datosFormulario())
+                data.append('_method', 'PUT');
+                axios.post(`/api/sucursales/${this.sucursalEditando.id}`, data, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                })
                 .then(() => { 
                     this.cerrarModal(); 
                     this.obtenerSucursales();
@@ -264,7 +337,9 @@ export default {
                     this.formulario.processing = false; 
                 });
             } else {
-                axios.post('/api/sucursales', this.datosFormulario())
+                axios.post('/api/sucursales', data, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                })
                 .then(() => { 
                     this.cerrarModal(); 
                     this.obtenerSucursales();

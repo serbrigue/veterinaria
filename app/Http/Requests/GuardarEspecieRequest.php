@@ -17,7 +17,8 @@ class GuardarEspecieRequest extends FormRequest
         return [
             'nombre' => ['required', 'string', 'max:255'],
             'descripcion' => ['nullable', 'string'],
-            'imagen_url' => ['nullable', 'string'],
+            'imagen_url' => ['nullable', 'string', 'max:500'],
+            'foto' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
         ];
     }
 
@@ -29,6 +30,9 @@ class GuardarEspecieRequest extends FormRequest
             'nombre.max' => 'El nombre no puede exceder los 255 caracteres.',
             'descripcion.string' => 'La descripción debe ser una cadena de texto.',
             'imagen_url.string' => 'La URL de la imagen debe ser una cadena de texto.',
+            'foto.image' => 'El archivo debe ser una imagen.',
+            'foto.mimes' => 'La foto debe ser en formato jpeg, png, jpg o webp.',
+            'foto.max' => 'La foto no puede superar los 2 MB.',
         ];
     }
 }

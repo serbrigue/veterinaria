@@ -165,6 +165,28 @@ services:
     networks:
       - vet_network
 
+  # -----------------------------------------------------------
+  # n8n: Automatización de flujos de trabajo
+  # -----------------------------------------------------------
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: vet_n8n
+    restart: unless-stopped
+    ports:
+      - "${N8N_PORT:-5678}:5678"
+    environment:
+      - N8N_HOST=${N8N_HOST:-localhost}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=${N8N_PROTOCOL:-http}
+      - NODE_ENV=production
+      - WEBHOOK_URL=${N8N_PROTOCOL:-http}://${N8N_HOST:-localhost}:${N8N_PORT:-5678}/
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
+    volumes:
+      - vet_n8n_data:/home/node/.n8n
+    networks:
+      - vet_network
+
 # =============================================================
 # Volúmenes persistentes
 # =============================================================
@@ -174,6 +196,8 @@ volumes:
   vet_redis_data:
     driver: local
   vet_node_modules:
+    driver: local
+  vet_n8n_data:
     driver: local
 
 # =============================================================

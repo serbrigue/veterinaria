@@ -6,31 +6,41 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h1 class="h5 mb-0">Mis Citas</h1>
 
-                    <button v-if="esCliente()" type="button" class="btn btn-primary" @click="abrirModalCrear">
-                        + Nueva Cita
-                    </button>
+                    <div class="d-flex gap-2">
+                        <template v-if="$isAdmin() || $isSecretaria()">
+                            <a href="/api/export/citas" class="btn btn-outline-success">
+                                <i class="bi bi-download me-1"></i> Exportar
+                            </a>
+                            <button type="button" class="btn btn-outline-primary" @click="mostrarModalImportar = true">
+                                <i class="bi bi-upload me-1"></i> Importar Consolidado
+                            </button>
+                        </template>
+                        <button v-if="$isCliente() || $isAdmin() || $isSecretaria()" type="button" class="btn btn-primary" @click="abrirModalCrear">
+                            + Nueva Cita
+                        </button>
+                    </div>
                 </div>
 
                 <div class="card-body">
                     <!-- Barra de búsqueda y filtros -->
                     <BarraFiltros
-                        :deshabilitar-limpiar="!filtroTitulo && !filtroSucursal && !filtroMascota && !filtroVeterinario && !filtroEstado"
+                        :deshabilitar-limpiar="!filtroTitulo && !filtroSucursal && !filtroMascota && !filtroVeterinario && !filtroEstado && !filtroCliente"
                         clase-boton-contenedor="col-12 col-lg-2 d-flex gap-2 justify-content-lg-end"
                         @limpiar="limpiarFiltros"
                     >
                         <!-- Buscar por Título -->
                         <div class="col-12 col-md-6 col-lg-3">
                             <label class="form-label small fw-bold text-secondary mb-1" for="filtroTitulo">Buscar por Título</label>
-                            <input type="text" class="form-control form-control-sm" id="filtroTitulo" placeholder="Ej: Control mensual" v-model="filtroTitulo" @keyup.enter="obtenerCitas">
+                            <input type="text" class="form-control form-control-sm" id="filtroTitulo" placeholder="Ej: Control mensual" v-model="filtroTitulo" @keyup.enter="obtenerCitas()">
                         </div>
                         <!-- Buscar por Sucursal -->
-                        <div class="col-12 col-md-4 col-lg-2">
+                        <div v-if="!$isVeterinario()" class="col-12 col-md-4 col-lg-2">
                             <label class="form-label small fw-bold text-secondary mb-1" for="filtroSucursal">Sucursal</label>
                             <select 
                                 class="form-select form-select-sm" 
                                 id="filtroSucursal"
                                 v-model="filtroSucursal"
-                                @change="obtenerCitas()"
+                                @change="cambiarFiltroSucursal"
                             >
                                 <option value="">Todas</option>
                                 <option 
@@ -42,27 +52,19 @@
                                 </option>
                             </select>
                         </div>
+                        <!-- Buscar por Cliente -->
+                        <div v-if="$isAdmin() || $isSecretaria() || $isVeterinario()" class="col-12 col-md-4 col-lg-2">
+                            <label class="form-label small fw-bold text-secondary mb-1" for="filtroCliente">Buscar por Cliente</label>
+                            <input type="text" class="form-control form-control-sm" id="filtroCliente" placeholder="Ej: Juan Pérez" v-model="filtroCliente" @keyup.enter="obtenerCitas()">
+                        </div>
+
                         <!-- Buscar por Mascota -->
                         <div class="col-12 col-md-4 col-lg-2">
                             <label class="form-label small fw-bold text-secondary mb-1" for="filtroMascota">Buscar por Mascota</label>
-                            <select 
-                                class="form-select form-select-sm" 
-                                id="filtroMascota"
-                                v-model="filtroMascota"
-                                @change="obtenerCitas()"
-                            >
-                                <option value="">Todas las mascotas</option>
-                                <option 
-                                    v-for="mascota in mascotas" 
-                                    :key="mascota.id" 
-                                    :value="mascota.id"
-                                >
-                                    {{ mascota.nombre }}
-                                </option>
-                            </select>
+                            <input type="text" class="form-control form-control-sm" id="filtroMascota" placeholder="Nombre de mascota..." v-model="filtroMascota" @keyup.enter="obtenerCitas()">
                         </div>
                         <!-- Buscar por Veterinario -->
-                        <div class="col-12 col-md-4 col-lg-2">
+                        <div v-if="!$isVeterinario()" class="col-12 col-md-4 col-lg-2">
                             <label class="form-label small fw-bold text-secondary mb-1" for="filtroVeterinario">Buscar por Veterinario</label>
                             <select 
                                 class="form-select form-select-sm"
@@ -72,7 +74,7 @@
                             >
                                 <option value="">Todos los veterinarios</option>
                                 <option 
-                                    v-for="veterinario in veterinarios" 
+                                    v-for="veterinario in veterinariosFiltradosPorSucursal" 
                                     :key="veterinario.id" 
                                     :value="veterinario.id"
                                 >
@@ -90,7 +92,8 @@
                                 v-model="filtroEstado"
                                 @change="obtenerCitas()"
                             >
-                                <option value="">Todos</option>
+                                <option value="">Activas (Oculta canceladas)</option>
+                                <option value="todos">Mostrar Todas</option>
                                 <option value="pendiente">Pendiente</option>
                                 <option value="en_curso">En curso</option>
                                 <option value="completada">Completada</option>
@@ -108,7 +111,7 @@
                     <EstadoVacio
                         :visible="!cargando && listaVacia"
                         mensaje="No tienes citas registradas aún."
-                        :texto-boton="esCliente() ? 'Registrar tu primera cita' : ''"
+                        :texto-boton="$isCliente() || $isAdmin() || $isSecretaria() ? 'Registrar primera cita' : ''"
                         icono="bi bi-calendar-x"
                         @accion="abrirModalCrear"
                     />
@@ -130,7 +133,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="cita in citas" :key="cita.id">
+                                <tr v-for="cita in citas" :key="cita.id" @click="irADetalle(cita.id)" style="cursor: pointer;" class="row-hover transition-all">
                                     <td class="ps-3">
                                         <div class="d-flex flex-column">
                                             <Link :href="route('citas.detalle', cita.id)" class="text-dark fw-bold text-decoration-none mb-1">
@@ -148,6 +151,21 @@
                                                     'bg-primary': cita.estado === 'en_curso'
                                                 }">
                                                     {{ cita.estado ? cita.estado.charAt(0).toUpperCase() + cita.estado.slice(1) : 'Pendiente' }}
+                                                </span>
+                                            </div>
+                                            <div v-if="cita.alertas_secretaria?.length" class="d-flex flex-wrap gap-2 mt-2">
+                                                <span
+                                                    v-for="alerta in cita.alertas_secretaria"
+                                                    :key="alerta.tipo"
+                                                    class="badge rounded-pill d-inline-flex align-items-center shadow-sm border"
+                                                    :class="{
+                                                        'bg-danger bg-opacity-10 text-danger border-danger border-opacity-25': alerta.tipo === 'sin_equipo',
+                                                        'bg-warning bg-opacity-10 text-dark border-warning border-opacity-50': alerta.tipo === 'sin_box'
+                                                    }"
+                                                    style="font-size: 0.7rem; padding: 0.35rem 0.65rem;"
+                                                >
+                                                    <i class="bi me-1" :class="alerta.icono"></i>
+                                                    {{ alerta.mensaje }}
                                                 </span>
                                             </div>
                                         </div>
@@ -179,20 +197,23 @@
                                             </template>
                                             <template v-else-if="cita.estado === 'pendiente'">
                                                 <button
+                                                    v-if="$isAdmin() || $isSecretaria() || $isCliente()"
                                                     type="button"
                                                     class="btn btn-sm btn-outline-primary rounded-pill px-3 transition-all hover-opacity"
-                                                    @click="abrirModalEditar(cita)"
+                                                    @click.stop="abrirModalEditar(cita)"
                                                 >
                                                     Editar
                                                 </button>
                                                 <button
+                                                    v-if="$isAdmin() || $isSecretaria() || $isCliente()"
                                                     type="button"
                                                     class="btn btn-sm btn-outline-warning rounded-pill px-3 transition-all hover-opacity"
-                                                    @click="confirmarCancelar(cita)"
+                                                    @click.stop="confirmarCancelar(cita)"
                                                 >
                                                     <i class="bi bi-x-circle me-1"></i> Cancelar
                                                 </button>
                                             </template>
+                                            <i class="bi bi-chevron-right text-muted fs-5 ms-2 d-none d-md-block"></i>
                                         </div>
                                     </td>
                                 </tr>
@@ -270,7 +291,7 @@
                 @cerrar="cerrarModal"
                 @guardar="guardar"
             >
-                <div class="row g-0">
+                <div class="row g-0" style="min-height: 65vh;">
 
                                     <!-- Columna izquierda: datos de la cita -->
                                     <div class="col-md-5 p-3 border-end">
@@ -291,25 +312,119 @@
                                                 <textarea id="descripcion" v-model="formulario.descripcion" class="form-control bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.descripcion }" rows="2" required placeholder="Motivo de la cita..."></textarea>
                                                 <div v-if="formulario.errors.descripcion" class="invalid-feedback">{{ formulario.errors.descripcion }}</div>
                                             </div>
+                                            <div v-if="$isSecretaria()" class="col-12 position-relative">
+                                                <label class="form-label fw-semibold text-secondary small text-uppercase mb-1">Cliente</label>
+                                                <div class="dropdown">
+                                                    <div 
+                                                        class="form-select bg-light border-0 py-2 d-flex justify-content-between align-items-center"
+                                                        :class="{ 'is-invalid': formulario.errors.cliente_id }"
+                                                        @click="mostrarDropdownCliente = !mostrarDropdownCliente"
+                                                        style="cursor: pointer;"
+                                                    >
+                                                        <span>{{ nombreClienteSeleccionado || 'Selecciona un cliente' }}</span>
+                                                    </div>
+                                                    <div v-if="formulario.errors.cliente_id" class="invalid-feedback d-block">{{ formulario.errors.cliente_id }}</div>
+                                                    
+                                                    <!-- Backdrop transparente para cerrar al hacer click fuera -->
+                                                    <div 
+                                                        v-if="mostrarDropdownCliente" 
+                                                        class="position-fixed top-0 start-0 w-100 h-100" 
+                                                        style="z-index: 1040; background: transparent;" 
+                                                        @click.stop="mostrarDropdownCliente = false"
+                                                    ></div>
+                                                    
+                                                    <div 
+                                                        v-if="mostrarDropdownCliente" 
+                                                        class="dropdown-menu show w-100 p-2 shadow border-0 mt-1 bg-white" 
+                                                        style="max-height: 350px; overflow-y: auto; z-index: 1050; display: block;"
+                                                    >
+                                                        <input 
+                                                            type="text" 
+                                                            class="form-control form-control-sm mb-2" 
+                                                            v-model="busquedaCliente" 
+                                                            placeholder="Escribe para buscar cliente..."
+                                                            @click.stop
+                                                        />
+                                                        <ul class="list-unstyled mb-0">
+                                                            <li v-for="cliente in clientesFiltradosPorBusqueda" :key="cliente.id">
+                                                                 <button 
+                                                                    type="button" 
+                                                                    class="dropdown-item py-2 rounded text-start"
+                                                                    :class="{ 'active bg-primary text-white': formulario.cliente_id === cliente.id }"
+                                                                    @click="seleccionarClienteDropdown(cliente)"
+                                                                 >
+                                                                     {{ cliente.nombre }} ({{ cliente.email }})
+                                                                 </button>
+                                                            </li>
+                                                            <li v-if="clientesFiltradosPorBusqueda.length === 0" class="text-muted small p-2 text-center">
+                                                                No se encontraron resultados
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+
                                             <div class="col-12">
                                                 <label for="mascota_id" class="form-label fw-semibold text-secondary small text-uppercase">Mascota</label>
-                                                <select id="mascota_id" v-model="formulario.mascota_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.mascota_id }" required>
-                                                    <option value="" disabled>Selecciona una mascota</option>
-                                                    <option v-for="mascota in mascotas" :key="mascota.id" :value="mascota.id">
+                                                <select id="mascota_id" v-model="formulario.mascota_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.mascota_id }" required :disabled="$isSecretaria() && !formulario.cliente_id">
+                                                    <option value="" disabled>{{ ($isSecretaria() && !formulario.cliente_id) ? 'Debe seleccionar un cliente primero' : 'Selecciona una mascota' }}</option>
+                                                    <option v-for="mascota in mascotasFiltradas" :key="mascota.id" :value="mascota.id">
                                                         {{ mascota.nombre }} {{ mascota.sexo ? `(${mascota.sexo})` : '' }}
                                                     </option>
                                                 </select>
                                                 <div v-if="formulario.errors.mascota_id" class="invalid-feedback">{{ formulario.errors.mascota_id }}</div>
                                             </div>
-                                            <div v-if="formulario.mascota_id" class="col-12">
-                                                <label for="prestacion_id" class="form-label fw-semibold text-secondary small text-uppercase">Prestación o Servicio</label>
-                                                <select id="prestacion_id" v-model="formulario.prestacion_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.prestacion_id }" required>
-                                                    <option value="" disabled>Selecciona una prestación</option>
-                                                    <option v-for="prestacion in prestaciones" :key="prestacion.id" :value="prestacion.id">
-                                                        {{ prestacion.nombre }} ({{ prestacion.sucursal?.nombre }})
-                                                    </option>
-                                                </select>
-                                                <div v-if="formulario.errors.prestacion_id" class="invalid-feedback">{{ formulario.errors.prestacion_id }}</div>
+                                            <div v-if="formulario.mascota_id" class="col-12 position-relative">
+                                                <label class="form-label fw-semibold text-secondary small text-uppercase mb-1">Prestación o Servicio</label>
+                                                
+                                                <div class="dropdown">
+                                                    <div 
+                                                        class="form-select bg-light border-0 py-2 d-flex justify-content-between align-items-center"
+                                                        :class="{ 'is-invalid': formulario.errors.prestacion_id }"
+                                                        @click="mostrarDropdownPrestacion = !mostrarDropdownPrestacion"
+                                                        style="cursor: pointer;"
+                                                    >
+                                                        <span>{{ nombrePrestacionSeleccionada || 'Selecciona una prestación o servicio' }}</span>
+                                                    </div>
+                                                    <div v-if="formulario.errors.prestacion_id" class="invalid-feedback d-block">{{ formulario.errors.prestacion_id }}</div>
+                                                    
+                                                    <!-- Backdrop transparente para cerrar al hacer click fuera -->
+                                                    <div 
+                                                        v-if="mostrarDropdownPrestacion" 
+                                                        class="position-fixed top-0 start-0 w-100 h-100" 
+                                                        style="z-index: 1040; background: transparent;" 
+                                                        @click.stop="mostrarDropdownPrestacion = false"
+                                                    ></div>
+                                                    
+                                                    <div 
+                                                        v-if="mostrarDropdownPrestacion" 
+                                                        class="dropdown-menu show w-100 p-2 shadow border-0 mt-1 bg-white" 
+                                                        style="max-height: 350px; overflow-y: auto; z-index: 1050; display: block;"
+                                                    >
+                                                        <input 
+                                                            type="text" 
+                                                            class="form-control form-control-sm mb-2" 
+                                                            v-model="busquedaPrestacion" 
+                                                            placeholder="Escribe para buscar..."
+                                                            @click.stop
+                                                        />
+                                                        <ul class="list-unstyled mb-0">
+                                                            <li v-for="prestacion in prestacionesFiltradasPorBusqueda" :key="prestacion.id">
+                                                                <button 
+                                                                    type="button" 
+                                                                    class="dropdown-item py-2 rounded text-start"
+                                                                    :class="{ 'active bg-primary text-white': formulario.prestacion_id === prestacion.id }"
+                                                                    @click="seleccionarPrestacionDropdown(prestacion)"
+                                                                >
+                                                                    {{ prestacion.nombre }} ({{ prestacion.sucursal?.nombre }})
+                                                                </button>
+                                                            </li>
+                                                            <li v-if="prestacionesFiltradasPorBusqueda.length === 0" class="text-muted small p-2 text-center">
+                                                                No se encontraron resultados
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
                                             </div>
 
                                             <div v-if="formulario.prestacion_id" class="col-12">
@@ -558,18 +673,25 @@
             </div>
         
             <div v-if="mostrarConfirmacion" class="modal-backdrop fade show"></div>
+
+            <ModalImportarConsolidado
+                :visible="mostrarModalImportar"
+                @cerrar="mostrarModalImportar = false"
+                @importado="obtenerCitas()"
+            />
     </AuthenticatedLayout>
 </template>
 
 <script>
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import Paginador from '@/Componentes/Paginador.vue';
 import BarraFiltros from '@/Componentes/BarraFiltros.vue';
 import IndicadorCarga from '@/Componentes/IndicadorCarga.vue';
 import EstadoVacio from '@/Componentes/EstadoVacio.vue';
 import SinResultados from '@/Componentes/SinResultados.vue';
 import ModalCrud from '@/Componentes/ModalCrud.vue';
+import ModalImportarConsolidado from '@/Componentes/ModalImportarConsolidado.vue';
 
 export default {
     components: {
@@ -582,6 +704,7 @@ export default {
         EstadoVacio,
         SinResultados,
         ModalCrud,
+        ModalImportarConsolidado,
     },
     props: {
         mascotas: {
@@ -604,7 +727,12 @@ export default {
     data() {
         return {
             cargando: false,
+            busquedaPrestacion: '',
+            mostrarDropdownPrestacion: false,
+            busquedaCliente: '',
+            mostrarDropdownCliente: false,
             mostrarModal: false,
+            mostrarModalImportar: false,
             modoEdicion: false,
             citaEditando: null,
             mostrarConfirmacion: false,
@@ -642,6 +770,7 @@ export default {
                 sucursal_id: '',
                 box_id: '',
                 prestacion_id: '',
+                cliente_id: '',
                 errors: {},
                 processing: false,
             },
@@ -650,6 +779,28 @@ export default {
     computed: {
         hoy() {
             return new Date().toISOString().split('T')[0];
+        },
+        clientes() {
+            const map = new Map();
+            this.mascotas.forEach(mascota => {
+                if (mascota.cliente && mascota.cliente.usuario) {
+                    map.set(mascota.cliente.id, {
+                        id: mascota.cliente.id,
+                        nombre: mascota.cliente.usuario.name,
+                        email: mascota.cliente.usuario.email
+                    });
+                }
+            });
+            return Array.from(map.values()).sort((a, b) => a.nombre.localeCompare(b.nombre));
+        },
+        mascotasFiltradas() {
+            if (this.$isSecretaria()) {
+                if (!this.formulario.cliente_id) {
+                    return [];
+                }
+                return this.mascotas.filter(m => m.cliente_id === this.formulario.cliente_id);
+            }
+            return this.mascotas;
         },
         sucursalesFiltradas() {
             if (!this.formulario.prestacion_id) return [];
@@ -667,6 +818,12 @@ export default {
                 if (!prestacion.especialidad_id) return true;
                 return vet.especialidad_id === prestacion.especialidad_id;
             });
+        },
+        veterinariosFiltradosPorSucursal() {
+            if (!this.filtroSucursal) {
+                return this.veterinarios;
+            }
+            return this.veterinarios.filter(v => Number(v.sucursal_id) === Number(this.filtroSucursal));
         },
         boxesFiltrados() {
             if (!this.formulario.sucursal_id) return [];
@@ -697,6 +854,36 @@ export default {
         },
         sinResultadosFiltro() {
             return this.citas.length === 0 && this.hayFiltrosActivos;
+        },
+        prestacionesFiltradasPorBusqueda() {
+            if (!this.busquedaPrestacion) {
+                return this.prestaciones;
+            }
+            const term = this.busquedaPrestacion.toLowerCase();
+            return this.prestaciones.filter(p => {
+                if (p.id === this.formulario.prestacion_id) return true;
+                return p.nombre.toLowerCase().includes(term) || (p.sucursal?.nombre && p.sucursal.nombre.toLowerCase().includes(term));
+            });
+        },
+        nombrePrestacionSeleccionada() {
+            if (!this.formulario.prestacion_id) return '';
+            const prestacion = this.prestaciones.find(p => p.id === this.formulario.prestacion_id);
+            return prestacion ? `${prestacion.nombre} (${prestacion.sucursal?.nombre || ''})` : '';
+        },
+        clientesFiltradosPorBusqueda() {
+            if (!this.busquedaCliente) {
+                return this.clientes;
+            }
+            const term = this.busquedaCliente.toLowerCase();
+            return this.clientes.filter(c => {
+                if (c.id === this.formulario.cliente_id) return true;
+                return c.nombre.toLowerCase().includes(term) || (c.email && c.email.toLowerCase().includes(term));
+            });
+        },
+        nombreClienteSeleccionado() {
+            if (!this.formulario.cliente_id) return '';
+            const cliente = this.clientes.find(c => c.id === this.formulario.cliente_id);
+            return cliente ? `${cliente.nombre} (${cliente.email})` : '';
         },
     },
     watch: {
@@ -735,6 +922,29 @@ export default {
         },
     },
     methods: {
+        irADetalle(id) {
+            router.visit(route('citas.detalle', id));
+        },
+        cambiarFiltroSucursal() {
+            if (this.filtroSucursal && this.filtroVeterinario) {
+                const vet = this.veterinarios.find(v => v.id === this.filtroVeterinario);
+                if (vet && Number(vet.sucursal_id) !== Number(this.filtroSucursal)) {
+                    this.filtroVeterinario = '';
+                }
+            }
+            this.obtenerCitas();
+        },
+        seleccionarPrestacionDropdown(prestacion) {
+            this.formulario.prestacion_id = prestacion.id;
+            this.mostrarDropdownPrestacion = false;
+            this.busquedaPrestacion = '';
+        },
+        seleccionarClienteDropdown(cliente) {
+            this.formulario.cliente_id = cliente.id;
+            this.formulario.mascota_id = '';
+            this.mostrarDropdownCliente = false;
+            this.busquedaCliente = '';
+        },
         abrirModalCrear() {
             this.modoEdicion = false;
             this.citaEditando = null;
@@ -749,6 +959,11 @@ export default {
             this.formulario.sucursal_id = '';
             this.formulario.veterinario_id = '';
             this.formulario.box_id = '';
+            this.formulario.cliente_id = '';
+            this.busquedaPrestacion = '';
+            this.mostrarDropdownPrestacion = false;
+            this.busquedaCliente = '';
+            this.mostrarDropdownCliente = false;
             this.formulario.errors = {};
             this.horariosNormales = [];
             this.horariosUrgencia = [];
@@ -775,25 +990,36 @@ export default {
         },
 
         abrirModalEditar(cita) {
+            this.evitarResetHorario = true;
             this.modoEdicion = true;
             this.citaEditando = cita;
             this.errorGeneral = null;
             this.formulario.titulo = cita.titulo;
             this.formulario.descripcion = cita.descripcion;
             this.formulario.fecha_hora = cita.fecha_hora;
+            if (cita.fecha_hora) {
+                this.formulario.fecha_seleccionada = cita.fecha_hora.substring(0, 10);
+            }
             this.formulario.mascota_id = cita.mascota_id;
             // Obtenemos el ID del cliente mapeado en el accessor o mascota
             this.formulario.cliente_id = cita.cliente?.id || cita.mascota?.cliente_id || '';
             this.formulario.prestacion_id = cita.prestacion_id || '';
+            this.busquedaPrestacion = '';
+            this.mostrarDropdownPrestacion = false;
+            this.busquedaCliente = '';
+            this.mostrarDropdownCliente = false;
             
-            // Allow watchers to run or simply assign:
+            const prestacion = this.prestaciones.find(p => p.id === cita.prestacion_id);
+            const sucursalId = prestacion ? prestacion.sucursal_id : (cita.box?.sucursal_id || '');
+            
+            this.formulario.sucursal_id = sucursalId;
+            this.formulario.veterinario_id = cita.veterinario_id || '';
+            this.formulario.box_id = cita.box_id || '';
+            
             this.$nextTick(() => {
-                this.formulario.sucursal_id = cita.box?.sucursal_id || '';
-                
+                this.cargarHorarios();
                 this.$nextTick(() => {
-                    this.formulario.veterinario_id = cita.veterinario_id;
-                    this.formulario.box_id = cita.box_id;
-                    this.cargarHorarios();
+                    this.evitarResetHorario = false;
                 });
             });
 
@@ -823,6 +1049,11 @@ export default {
             this.formulario.veterinario_id='';
             this.formulario.box_id='';
             this.formulario.mascota_id='';
+            this.formulario.cliente_id='';
+            this.busquedaPrestacion='';
+            this.mostrarDropdownPrestacion=false;
+            this.busquedaCliente='';
+            this.mostrarDropdownCliente=false;
             this.formulario.errors={};
             this.horariosNormales=[];
             this.horariosUrgencia=[];
@@ -835,11 +1066,12 @@ export default {
             if (!url) return;
             this.cargando=true;
             axios.get(url,{params:{
-                mascota_id:this.filtroMascota,
+                mascota:this.filtroMascota,
                 veterinario_id:this.filtroVeterinario,
                 titulo:this.filtroTitulo,
                 estado:this.filtroEstado,
-                sucursal_id:this.filtroSucursal
+                sucursal_id:this.filtroSucursal,
+                cliente:this.filtroCliente
             }})
                 .then(response => {
                     if (response.data.citas.data) {
@@ -1040,5 +1272,9 @@ export default {
         width: 100%;
         background-color: white;
     }
+}
+.row-hover:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.03) !important;
+    transition: background-color 0.2s ease-in-out;
 }
 </style>

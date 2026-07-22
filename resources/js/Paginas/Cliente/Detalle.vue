@@ -84,7 +84,17 @@
                             <h3 class="h5 mb-0 fw-bold text-dark d-flex align-items-center gap-2">
                                 <i class="bi bi-hearts text-danger"></i> Pacientes (Mascotas)
                             </h3>
-                            <span class="badge bg-secondary rounded-pill">{{ cliente.mascotas?.length || 0 }} Registros</span>
+                            <div class="d-flex align-items-center gap-2">
+                                <button
+                                    v-if="$isAdmin() || $isSecretaria()"
+                                    type="button"
+                                    class="btn btn-primary btn-sm d-flex align-items-center gap-1 shadow-sm"
+                                    @click="abrirModalCrear"
+                                >
+                                    <i class="bi bi-plus-lg"></i> Registrar Mascota
+                                </button>
+                                <span class="badge bg-secondary rounded-pill">{{ cliente.mascotas?.length || 0 }} Registros</span>
+                            </div>
                         </div>
                         <div class="card-body p-4">
                             <div v-if="!cliente.mascotas || cliente.mascotas.length === 0" class="text-center py-4 bg-light rounded-3">
@@ -93,23 +103,43 @@
                             </div>
                             <div v-else class="row g-3">
                                 <div v-for="mascota in cliente.mascotas" :key="mascota.id" class="col-md-6">
-                                    <Link :href="route('mascotas.detalle', mascota.id)" class="text-decoration-none">
-                                        <div class="d-flex align-items-center gap-3 p-3 border rounded-3 hover-shadow transition-all bg-white h-100">
-                                            <div class="bg-danger bg-opacity-10 text-danger rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 50px; height: 50px;">
-                                                <img v-if="mascota.imagen_url" :src="mascota.imagen_url" class="rounded-circle object-fit-cover w-100 h-100">
-                                                <i v-else class="bi bi-heart-fill fs-5"></i>
-                                            </div>
-                                            <div class="overflow-hidden">
-                                                <h4 class="h6 mb-1 fw-bold text-dark text-truncate">{{ mascota.nombre }}</h4>
-                                                <p class="text-muted small mb-0 text-truncate">
-                                                    {{ mascota.raza?.especie?.nombre || 'Especie N/A' }} - {{ mascota.raza?.nombre || 'Raza N/A' }}
-                                                </p>
-                                            </div>
-                                            <div class="ms-auto text-muted">
-                                                <i class="bi bi-chevron-right"></i>
-                                            </div>
+                                    <div class="d-flex align-items-center gap-3 p-3 border rounded-3 hover-shadow transition-all bg-white h-100 position-relative" @click="irAMascota(mascota.id)" style="cursor: pointer;">
+                                        <div class="bg-danger bg-opacity-10 text-danger rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 50px; height: 50px;">
+                                            <img v-if="mascota.imagen_url" :src="mascota.imagen_url" class="rounded-circle object-fit-cover w-100 h-100">
+                                            <i v-else class="bi bi-heart-fill fs-5"></i>
                                         </div>
-                                    </Link>
+                                        <div class="overflow-hidden">
+                                            <h4 class="h6 mb-1 fw-bold text-dark text-truncate">{{ mascota.nombre }}</h4>
+                                            <p class="text-muted small mb-0 text-truncate">
+                                                {{ mascota.raza?.especie?.nombre || 'Especie N/A' }} - {{ mascota.raza?.nombre || 'Raza N/A' }}
+                                            </p>
+                                        </div>
+                                        <div class="ms-auto d-flex align-items-center gap-1">
+                                            <button
+                                                v-if="$isAdmin() || $isSecretaria() || ($isCliente() && $page.props.auth.user.cliente?.id === cliente.id)"
+                                                type="button"
+                                                class="btn btn-sm btn-outline-primary p-0 rounded-circle d-flex align-items-center justify-content-center"
+                                                style="width: 28px; height: 28px;"
+                                                @click.stop.prevent="abrirModalEditar(mascota)"
+                                                title="Editar"
+                                            >
+                                                <i class="bi bi-pencil small">Editar</i>
+                                            </button>
+                                            <button
+                                                v-if="$isAdmin() || $isSecretaria() || ($isCliente() && $page.props.auth.user.cliente?.id === cliente.id)"
+                                                type="button"
+                                                class="btn btn-sm btn-outline-danger p-0 rounded-circle d-flex align-items-center justify-content-center"
+                                                style="width: 28px; height: 28px;"
+                                                @click.stop.prevent="confirmarEliminar(mascota)"
+                                                title="Eliminar"
+                                            >
+                                                <i class="bi bi-trash small">Eliminar</i>
+                                            </button>
+                                            <Link :href="route('mascotas.detalle', mascota.id)" class="btn btn-sm btn-link text-muted p-0 ms-1" title="Ver detalle" @click.stop>
+                                                <i class="bi bi-chevron-right fs-5"></i>
+                                            </Link>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -117,13 +147,32 @@
 
                     <!-- SECCIÓN: HISTORIAL DE PAGOS / TRANSACCIONES -->
                     <div class="card border-0 shadow-sm rounded-4">
-                        <div class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+                        <div class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center flex-wrap gap-3">
                             <h3 class="h5 mb-0 fw-bold text-dark d-flex align-items-center gap-2">
                                 <i class="bi bi-receipt-cutoff text-success"></i> Historial de Transacciones
                             </h3>
+                            <div class="d-flex align-items-center gap-2">
+                                <button 
+                                    v-if="($isAdmin() || $isSecretaria()) && transaccionesSeleccionadas.length > 0"
+                                    class="btn btn-warning btn-sm shadow-sm d-flex align-items-center gap-1"
+                                    @click="enviarCorreoMora"
+                                    :disabled="enviandoMora"
+                                >
+                                    <i class="bi bi-envelope-exclamation"></i> 
+                                    <span v-if="enviandoMora">Enviando...</span>
+                                    <span v-else>Notificar Mora</span>
+                                </button>
+                                <select v-model="estadoFiltro" class="form-select form-select-sm" style="width: auto;" @change="filtrarTransacciones">
+                                    <option value="">Todos los estados</option>
+                                    <option value="pendiente">Pendientes</option>
+                                    <option value="pagado">Pagados</option>
+                                    <option value="abonado">Abonados</option>
+                                    <option value="anulado">Anulados</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="card-body p-4">
-                            <div v-if="!transacciones.data || transacciones.data.length === 0" class="text-center py-4 bg-light rounded-3">
+                            <div v-if="!transaccionesData.data || transaccionesData.data.length === 0" class="text-center py-4 bg-light rounded-3">
                                 <i class="bi bi-wallet2 text-muted fs-2 d-block mb-2"></i>
                                 <span class="text-muted small">No hay registro de transacciones para este cliente.</span>
                             </div>
@@ -131,14 +180,31 @@
                                 <table class="table table-hover align-middle mb-0">
                                     <thead class="table-light">
                                         <tr>
-                                            <th class="text-secondary small fw-bold text-uppercase border-0 rounded-start">Fecha</th>
+                                            <th v-if="$isAdmin() || $isSecretaria()" class="text-center border-0 rounded-start" style="width: 40px;">
+                                                <input class="form-check-input" type="checkbox" @change="toggleTodasTransacciones" :checked="todasSeleccionadas && transaccionesPendientesActuales.length > 0" :disabled="transaccionesPendientesActuales.length === 0">
+                                            </th>
+                                            <th class="text-secondary small fw-bold text-uppercase border-0" :class="{'rounded-start': !($isAdmin() || $isSecretaria())}">Fecha</th>
                                             <th class="text-secondary small fw-bold text-uppercase border-0">Concepto</th>
                                             <th class="text-secondary small fw-bold text-uppercase border-0 text-end">Monto</th>
                                             <th class="text-secondary small fw-bold text-uppercase border-0 text-center rounded-end">Estado</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr v-for="tx in transacciones.data" :key="tx.id">
+                                        <tr v-for="tx in transaccionesData.data" :key="tx.id"
+                                            :class="{'row-hover transition-all': tx.cita}"
+                                            :style="tx.cita ? 'cursor: pointer;' : ''"
+                                            @click="tx.cita ? irACita(tx.cita.id) : null"
+                                        >
+                                            <td v-if="$isAdmin() || $isSecretaria()" class="text-center">
+                                                <input 
+                                                    v-if="tx.estado === 'pendiente'"
+                                                    class="form-check-input" 
+                                                    type="checkbox" 
+                                                    :value="tx.id" 
+                                                    v-model="transaccionesSeleccionadas"
+                                                    @click.stop
+                                                >
+                                            </td>
                                             <td>
                                                 <span class="d-block fw-medium text-dark small">{{ formatearFechaCorta(tx.created_at) }}</span>
                                             </td>
@@ -169,25 +235,25 @@
                             </div>
 
                             <!-- Controles de Paginación -->
-                            <div v-if="transacciones.last_page > 1" class="d-flex justify-content-between align-items-center mt-4">
+                            <div v-if="transaccionesData.last_page > 1" class="d-flex justify-content-between align-items-center mt-4">
                                 <div class="text-muted small">
-                                    Mostrando {{ transacciones.from }} a {{ transacciones.to }} de {{ transacciones.total }}
+                                    Mostrando {{ transaccionesData.from }} a {{ transaccionesData.to }} de {{ transaccionesData.total }}
                                 </div>
                                 <nav aria-label="Navegación de páginas">
                                     <ul class="pagination pagination-sm mb-0">
-                                        <li class="page-item" :class="{ disabled: !transacciones.prev_page_url }">
-                                            <Link class="page-link" :href="transacciones.prev_page_url || '#'" preserve-scroll>Anterior</Link>
+                                        <li class="page-item" :class="{ disabled: !transaccionesData.prev_page_url }">
+                                            <a class="page-link" href="#" @click.prevent="cargarTransacciones(transaccionesData.prev_page_url)">Anterior</a>
                                         </li>
                                         <li 
-                                            v-for="link in transacciones.links.slice(1, -1)" 
+                                            v-for="link in transaccionesData.links.slice(1, -1)" 
                                             :key="link.label" 
                                             class="page-item" 
                                             :class="{ active: link.active }"
                                         >
-                                            <Link class="page-link" :href="link.url || '#'" v-html="link.label" preserve-scroll></Link>
+                                            <a class="page-link" href="#" @click.prevent="cargarTransacciones(link.url)" v-html="link.label"></a>
                                         </li>
-                                        <li class="page-item" :class="{ disabled: !transacciones.next_page_url }">
-                                            <Link class="page-link" :href="transacciones.next_page_url || '#'" preserve-scroll>Siguiente</Link>
+                                        <li class="page-item" :class="{ disabled: !transaccionesData.next_page_url }">
+                                            <a class="page-link" href="#" @click.prevent="cargarTransacciones(transaccionesData.next_page_url)">Siguiente</a>
                                         </li>
                                     </ul>
                                 </nav>
@@ -199,18 +265,233 @@
                 </div>
             </div>
         </div>
+
+        <!-- MODAL CRUD PARA MASCOTAS -->
+        <ModalCrud
+            :visible="mostrarModal"
+            :titulo="tituloModal"
+            :modo-edicion="modoEdicion"
+            :processing="formulario.processing"
+            tamanio="lg"
+            texto-guardar="Guardar Cambios"
+            texto-crear="Registrar Mascota"
+            @cerrar="cerrarModal"
+            @guardar="guardar"
+        >
+            <div class="row g-4">
+                <!-- Columna Izquierda: Identificación y Clasificación -->
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label fw-semibold text-secondary small text-uppercase">Nombre de la Mascota</label>
+                        <input
+                            id="nombre"
+                            v-model="formulario.nombre"
+                            type="text"
+                            class="form-control bg-light border-0 py-2"
+                            placeholder="Ej: Garfield"
+                            :class="{ 'is-invalid': formulario.errors.nombre }"
+                            required
+                        />
+                        <div v-if="formulario.errors.nombre" class="invalid-feedback">
+                            {{ formulario.errors.nombre }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="especie_id" class="form-label fw-semibold text-secondary small text-uppercase">Especie</label>
+                        <select
+                            id="especie_id"
+                            v-model="formulario.especie_id"
+                            class="form-select bg-light border-0 py-2"
+                            :class="{ 'is-invalid': formulario.errors.especie_id }"
+                            required
+                            @change="obtenerRazasPorEspecie(formulario.especie_id)"
+                        >
+                            <option value="" disabled>Seleccione una especie</option>
+                            <option
+                                v-for="especie in especies"
+                                :key="especie.id"
+                                :value="especie.id"
+                            >
+                                {{ especie.nombre }}
+                            </option>
+                        </select>
+                        <div v-if="formulario.errors.especie_id" class="invalid-feedback">
+                            {{ formulario.errors.especie_id }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3" v-if="formulario.especie_id && razas.length > 0">
+                        <label for="raza_id" class="form-label fw-semibold text-secondary small text-uppercase">Raza</label>
+                        <select
+                            id="raza_id"
+                            v-model="formulario.raza_id"
+                            class="form-select bg-light border-0 py-2"
+                            :class="{ 'is-invalid': formulario.errors.raza_id }"
+                            required
+                        >
+                            <option value="" disabled>Seleccione una raza</option>
+                            <option
+                                v-for="raza in razas"
+                                :key="raza.id"
+                                :value="raza.id"
+                            >
+                                {{ raza.nombre }}
+                            </option>
+                        </select>
+                        <div v-if="formulario.errors.raza_id" class="invalid-feedback">
+                            {{ formulario.errors.raza_id }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="sexo" class="form-label fw-semibold text-secondary small text-uppercase">Sexo</label>
+                        <select
+                            id="sexo"
+                            v-model="formulario.sexo"
+                            class="form-select bg-light border-0 py-2"
+                            :class="{ 'is-invalid': formulario.errors.sexo }"
+                            required
+                        >
+                            <option value="" disabled>Seleccione el sexo</option>
+                            <option
+                                v-for="op in opcionesSexo"
+                                :key="op.value"
+                                :value="op.value"
+                            >
+                                {{ op.label }}
+                            </option>
+                        </select>
+                        <div v-if="formulario.errors.sexo" class="invalid-feedback">
+                            {{ formulario.errors.sexo }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Columna Derecha: Información Física y Médica -->
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="fecha_nacimiento" class="form-label fw-semibold text-secondary small text-uppercase">Fecha de Nacimiento</label>
+                        <input
+                            id="fecha_nacimiento"
+                            v-model="formulario.fecha_nacimiento"
+                            type="date"
+                            class="form-control bg-light border-0 py-2"
+                            :class="{ 'is-invalid': formulario.errors.fecha_nacimiento }"
+                        />
+                        <div v-if="formulario.errors.fecha_nacimiento" class="invalid-feedback">
+                            {{ formulario.errors.fecha_nacimiento }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="peso_kg" class="form-label fw-semibold text-secondary small text-uppercase">Peso (kg)</label>
+                        <input
+                            id="peso_kg"
+                            v-model="formulario.peso_kg"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            class="form-control bg-light border-0 py-2"
+                            placeholder="Ej: 5.40"
+                            :class="{ 'is-invalid': formulario.errors.peso_kg }"
+                        />
+                        <div v-if="formulario.errors.peso_kg" class="invalid-feedback">
+                            {{ formulario.errors.peso_kg }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="color" class="form-label fw-semibold text-secondary small text-uppercase">Color / Pelaje</label>
+                        <input
+                            id="color"
+                            v-model="formulario.color"
+                            type="text"
+                            class="form-control bg-light border-0 py-2"
+                            placeholder="Ej: Blanco con manchas negras"
+                            :class="{ 'is-invalid': formulario.errors.color }"
+                        />
+                        <div v-if="formulario.errors.color" class="invalid-feedback">
+                            {{ formulario.errors.color }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="foto" class="form-label fw-semibold text-secondary small text-uppercase">Foto de la Mascota</label>
+                        <input
+                            id="foto"
+                            ref="fotoInput"
+                            type="file"
+                            class="form-control bg-light border-0 py-2"
+                            accept="image/*"
+                            @change="seleccionarFoto"
+                            :class="{ 'is-invalid': formulario.errors.foto }"
+                        />
+                        <div v-if="formulario.errors.foto" class="invalid-feedback">
+                            {{ formulario.errors.foto }}
+                        </div>
+                        <div v-if="formulario.imagen_url" class="mt-2 text-center">
+                            <img :src="formulario.imagen_url" class="img-thumbnail" style="max-height: 120px;" alt="Vista previa de la mascota" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3 pt-2">
+                        <div class="form-check form-switch card p-3 border-light shadow-sm d-flex flex-row align-items-center justify-content-between bg-light border-0">
+                            <div class="ms-1">
+                                <label class="form-check-label fw-semibold text-secondary small text-uppercase" for="esterilizado">Esterilizado / Castrado</label>
+                                <span class="d-block text-muted small mt-1" style="font-size: 0.75rem;">¿Ha sido sometido a cirugía de esterilización?</span>
+                            </div>
+                            <input
+                                id="esterilizado"
+                                v-model="formulario.esterilizado"
+                                type="checkbox"
+                                class="form-check-input ms-0 float-none"
+                                role="switch"
+                                style="width: 2.8em; height: 1.5em; cursor: pointer;"
+                                :class="{ 'is-invalid': formulario.errors.esterilizado }"
+                            />
+                        </div>
+                        <div v-if="formulario.errors.esterilizado" class="invalid-feedback d-block mt-1">
+                            {{ formulario.errors.esterilizado }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección de Ancho Completo al Final: Descripción/Notas Médicas -->
+                <div class="col-12 mt-2">
+                    <hr class="text-muted opacity-25 my-3">
+                    <div class="mb-2">
+                        <label for="descripcion" class="form-label fw-semibold text-secondary small text-uppercase">Descripción / Antecedentes Médicos</label>
+                        <textarea
+                            id="descripcion"
+                            v-model="formulario.descripcion"
+                            class="form-control bg-light border-0 py-2"
+                            :class="{ 'is-invalid': formulario.errors.descripcion }"
+                            rows="3"
+                            placeholder="Registra condiciones previas, alergias, comportamiento o detalles relevantes de la mascota."
+                            required
+                        ></textarea>
+                        <div v-if="formulario.errors.descripcion" class="invalid-feedback">
+                            {{ formulario.errors.descripcion }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </ModalCrud>
     </AuthenticatedLayout>
 </template>
 
 <script>
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
+import ModalCrud from '@/Componentes/ModalCrud.vue';
 
 export default {
     components: {
         AuthenticatedLayout,
         Head,
-        Link
+        Link,
+        ModalCrud
     },
     props: {
         cliente: {
@@ -230,7 +511,59 @@ export default {
             default: 0
         }
     },
+    data() {
+        return {
+            especies: [],
+            razas: [],
+            mostrarModal: false,
+            modoEdicion: false,
+            mascotaEditando: null,
+            opcionesSexo: [
+                { value: 'macho', label: 'Macho' },
+                { value: 'hembra', label: 'Hembra' },
+            ],
+            formulario: {
+                nombre: '',
+                descripcion: '',
+                sexo: '',
+                fecha_nacimiento: '',
+                especie_id: '',
+                raza_id: '',
+                cliente_id: '',
+                imagen_url: '',
+                foto: null,
+                peso_kg: '',
+                color: '',
+                esterilizado: false,
+                errors: {},
+                processing: false,
+            },
+            estadoFiltro: '',
+            transaccionesSeleccionadas: [],
+            enviandoMora: false,
+            transaccionesData: this.transacciones,
+        };
+    },
+    computed: {
+        tituloModal() {
+            return this.modoEdicion ? 'Editar Mascota' : 'Nueva Mascota';
+        },
+        transaccionesPendientesActuales() {
+            return this.transaccionesData.data ? this.transaccionesData.data.filter(t => t.estado === 'pendiente') : [];
+        },
+        todasSeleccionadas() {
+            const pendientes = this.transaccionesPendientesActuales;
+            if (pendientes.length === 0) return false;
+            return pendientes.every(t => this.transaccionesSeleccionadas.includes(t.id));
+        }
+    },
     methods: {
+        irAMascota(id) {
+            router.visit(route('mascotas.detalle', id));
+        },
+        irACita(id) {
+            router.visit(route('citas.detalle', id));
+        },
         formatearDinero(monto) {
             return '$' + Math.round(monto).toLocaleString('es-CL');
         },
@@ -238,7 +571,231 @@ export default {
             if (!fechaStr) return 'N/A';
             const f = new Date(fechaStr);
             return f.toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' });
+        },
+        cargarTransacciones(url = null) {
+            let apiUrl = `/api/clientes/${this.cliente.id}/transacciones`;
+            let page = 1;
+            
+            if (url) {
+                try {
+                    const parsedUrl = new URL(url, window.location.origin);
+                    if (parsedUrl.searchParams.has('page')) {
+                        page = parsedUrl.searchParams.get('page');
+                    }
+                } catch (e) {}
+            }
+
+            axios.get(apiUrl, {
+                params: {
+                    estado: this.estadoFiltro,
+                    page: page
+                }
+            })
+            .then(response => {
+                this.transaccionesData = response.data;
+            });
+        },
+        filtrarTransacciones() {
+            this.cargarTransacciones();
+        },
+        toggleTodasTransacciones(e) {
+            const checked = e.target.checked;
+            const pendientes = this.transaccionesPendientesActuales;
+            
+            if (checked) {
+                pendientes.forEach(t => {
+                    if (!this.transaccionesSeleccionadas.includes(t.id)) {
+                        this.transaccionesSeleccionadas.push(t.id);
+                    }
+                });
+            } else {
+                this.transaccionesSeleccionadas = this.transaccionesSeleccionadas.filter(
+                    id => !pendientes.find(t => t.id === id)
+                );
+            }
+        },
+        enviarCorreoMora() {
+            if (this.transaccionesSeleccionadas.length === 0) return;
+            
+            this.enviandoMora = true;
+            axios.post(`/api/clientes/${this.cliente.id}/enviar-mora`, {
+                transacciones_ids: this.transaccionesSeleccionadas
+            })
+            .then(response => {
+                this.$alertaExito('Enviado', response.data.mensaje);
+                this.transaccionesSeleccionadas = [];
+            })
+            .catch(error => {
+                this.$alertaError('Error', error.response?.data?.error || 'No se pudo enviar el correo de mora.');
+            })
+            .finally(() => {
+                this.enviandoMora = false;
+            });
+        },
+        obtenerEspecies() {
+            axios.get('/especies')
+                .then((response) => {
+                    this.especies = response.data.especies;
+                });
+        },
+        obtenerRazasPorEspecie(especieId) {
+            axios.get(`/razas`, {
+                params: {
+                    especie_id: especieId
+                }
+            })
+                .then((response) => {
+                    this.razas = response.data.razas;
+                });
+        },
+        abrirModalCrear() {
+            this.modoEdicion = false;
+            this.mascotaEditando = null;
+            this.formulario.nombre = '';
+            this.formulario.descripcion = '';
+            this.formulario.especie_id = '';
+            this.formulario.raza_id = '';
+            this.formulario.cliente_id = this.cliente.id;
+            this.formulario.sexo = '';
+            this.formulario.fecha_nacimiento = '';
+            this.formulario.imagen_url = '';
+            this.formulario.foto = null;
+            if (this.$refs.fotoInput) {
+                this.$refs.fotoInput.value = '';
+            }
+            this.formulario.peso_kg = '';
+            this.formulario.color = '';
+            this.formulario.esterilizado = false;
+            this.formulario.errors = {};
+            this.mostrarModal = true;
+        },
+        abrirModalEditar(mascota) {
+            this.modoEdicion = true;
+            this.mascotaEditando = mascota;
+            this.formulario.nombre = mascota.nombre;
+            this.formulario.descripcion = mascota.descripcion;
+            this.formulario.sexo = mascota.sexo;
+            this.formulario.fecha_nacimiento = this.$fechaInput(mascota.fecha_nacimiento);
+            this.formulario.especie_id = mascota.raza?.especie_id || '';
+            this.formulario.raza_id = mascota.raza_id;
+            this.formulario.cliente_id = this.cliente.id;
+            this.formulario.imagen_url = mascota.imagen_url;
+            this.formulario.foto = null;
+            if (this.$refs.fotoInput) {
+                this.$refs.fotoInput.value = '';
+            }
+            this.formulario.peso_kg = mascota.peso_kg ?? '';
+            this.formulario.color = mascota.color ?? '';
+            this.formulario.esterilizado = !!mascota.esterilizado;
+            this.formulario.errors = {};
+            if (this.formulario.especie_id) {
+                this.obtenerRazasPorEspecie(this.formulario.especie_id);
+            }
+            this.mostrarModal = true;
+        },
+        cerrarModal() {
+            this.mostrarModal = false;
+            this.mascotaEditando = null;
+        },
+        seleccionarFoto(e) {
+            const archivos = e.target.files;
+            if (archivos && archivos.length > 0) {
+                this.formulario.foto = archivos[0];
+            }
+        },
+        datosFormulario() {
+            const formData = new FormData();
+            formData.append('nombre', this.formulario.nombre);
+            formData.append('descripcion', this.formulario.descripcion);
+            formData.append('sexo', this.formulario.sexo);
+            if (this.formulario.fecha_nacimiento) {
+                formData.append('fecha_nacimiento', this.formulario.fecha_nacimiento);
+            }
+            formData.append('raza_id', this.formulario.raza_id);
+            formData.append('cliente_id', this.formulario.cliente_id);
+            if (this.formulario.peso_kg !== '') {
+                formData.append('peso_kg', this.formulario.peso_kg);
+            }
+            if (this.formulario.color) {
+                formData.append('color', this.formulario.color);
+            }
+            formData.append('esterilizado', this.formulario.esterilizado ? '1' : '0');
+            
+            if (this.formulario.foto) {
+                formData.append('foto', this.formulario.foto);
+            } else if (this.formulario.imagen_url) {
+                formData.append('imagen_url', this.formulario.imagen_url);
+            }
+            return formData;
+        },
+        guardar() {
+            this.formulario.processing = true;
+            this.formulario.errors = {};
+
+            const data = this.datosFormulario();
+
+            if (this.modoEdicion) {
+                data.append('_method', 'PUT');
+                axios.post(`/api/mascotas/${this.mascotaEditando.id}`, data, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                })
+                .then(() => {
+                    this.cerrarModal();
+                    this.$alertaExito('Mascota actualizada', 'Los cambios se guardaron correctamente.');
+                    this.$inertia.reload({ preserveScroll: true });
+                })
+                .catch((error) => {
+                    if (error.response?.status === 422) {
+                        this.formulario.errors = error.response.data.errors;
+                        this.$alertaValidacion(error.response.data.errors);
+                    } else {
+                        this.$alertaError('Error', 'No se pudo guardar la mascota.');
+                    }
+                })
+                .finally(() => {
+                    this.formulario.processing = false;
+                });
+            } else {
+                axios.post('/api/mascotas', data, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                })
+                .then(() => {
+                    this.cerrarModal();
+                    this.$alertaExito('Mascota creada', 'El registro se guardó correctamente.');
+                    this.$inertia.reload({ preserveScroll: true });
+                })
+                .catch((error) => {
+                    if (error.response?.status === 422) {
+                        this.formulario.errors = error.response.data.errors;
+                        this.$alertaValidacion(error.response.data.errors);
+                    } else {
+                        this.$alertaError('Error', 'No se pudo crear la mascota.');
+                    }
+                })
+                .finally(() => {
+                    this.formulario.processing = false;
+                });
+            }
+        },
+        confirmarEliminar(mascota) {
+            this.$confirmar('¿Eliminar mascota?', `Se eliminará a ${mascota.nombre}.`)
+                .then((resultado) => {
+                    if (!resultado.isConfirmed) return;
+                    axios.delete(`/api/mascotas/${mascota.id}`)
+                        .then(() => {
+                            this.$alertaExito('Eliminada', `${mascota.nombre} fue eliminada.`);
+                            this.$inertia.reload({ preserveScroll: true });
+                        })
+                        .catch(() => this.$alertaError('Error', 'No se pudo eliminar la mascota.'));
+                });
         }
+    },
+    mounted() {
+        this.obtenerEspecies();
     }
 }
 </script>
@@ -253,5 +810,9 @@ export default {
 }
 .transition-all {
     transition: all 0.3s ease;
+}
+.row-hover:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.03) !important;
+    transition: background-color 0.2s ease-in-out;
 }
 </style>

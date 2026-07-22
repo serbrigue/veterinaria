@@ -18,18 +18,19 @@ class GuardarSucursalRequest extends FormRequest
             'nombre' => [
                 'required',
                 'string',
-                'max:255'
+                'max:255',
             ],
             'direccion' => [
                 'required',
                 'string',
-                'max:255'
+                'max:255',
             ],
             'telefono' => [
                 'nullable',
                 'string',
-                'max:255'
+                'max:255',
             ],
+            'imagen_url' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
         ];
     }
 
@@ -44,6 +45,9 @@ class GuardarSucursalRequest extends FormRequest
             'direccion.max' => 'La dirección no puede exceder los 255 caracteres.',
             'telefono.string' => 'El teléfono debe ser una cadena de texto.',
             'telefono.max' => 'El teléfono no puede exceder los 255 caracteres.',
+            'imagen_url.image' => 'La imagen debe ser una imagen.',
+            'imagen_url.mimes' => 'La imagen debe ser de tipo jpeg, png, jpg o webp.',
+            'imagen_url.max' => 'La imagen no puede exceder los 2MB.',
         ];
     }
 }

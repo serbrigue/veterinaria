@@ -14,7 +14,9 @@ class NotificacionMasivaMail extends Mailable implements ShouldQueue
     use Queueable, SerializesModels;
 
     public string $asunto;
+
     public string $mensaje;
+
     public string $clienteNombre;
 
     /**

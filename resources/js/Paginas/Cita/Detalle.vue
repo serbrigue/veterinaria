@@ -1,6 +1,5 @@
 <template>
     <Head :title="'Cita - ' + (cita.titulo || 'Detalle')" />
-
     <AuthenticatedLayout>
         <div class="container py-4">
             <div class="d-flex align-items-center justify-content-between mb-4">
@@ -10,7 +9,7 @@
                     </Link>
                     <h1 class="h3 mb-0">Detalle de la Cita</h1>
                 </div>
-                <div v-if="estadoActual === 'pendiente' " class="d-flex gap-2">
+                <div v-if="estadoActual === 'pendiente' && puedeCancelarCita" class="d-flex gap-2">
                     <button class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1" @click="confirmarEliminar" :disabled="procesando">
                         <i class="bi bi-trash"></i> Eliminar Cita
                     </button>
@@ -34,8 +33,8 @@
                                         {{ estadoActual ? estadoActual.charAt(0).toUpperCase() + estadoActual.slice(1) : 'Pendiente' }}
                                     </span>
                                 </div>
-                                <!-- Botones de cambio de estado: solo visibles para vet asignado o admin -->
-                                <div v-if="puedeEditarCita" class="d-flex flex-column align-items-end gap-2">
+                                <!-- Botones de cambio de estado: solo visibles para personal autorizado -->
+                                <div v-if="puedeEditarEstado" class="d-flex flex-column align-items-end gap-2">
                                     <div v-if="estadoActual === 'pendiente' || estadoActual === 'en_curso'" class="btn-group btn-group-sm">
                                         <button @click="marcarEnCurso" class="btn btn-outline-primary" :disabled="procesando || estadoActual === 'en_curso'">
                                             <i class="bi bi-play-fill"></i> En curso
@@ -43,7 +42,7 @@
                                         <button @click="confirmarCompletar" class="btn btn-success" :disabled="procesando">
                                             <i class="bi bi-check-lg"></i> Completada
                                         </button>
-                                        <button @click="confirmarEliminar" class="btn btn-outline-danger" :disabled="procesando">
+                                        <button v-if="puedeCancelarCita" @click="confirmarEliminar" class="btn btn-outline-danger" :disabled="procesando">
                                             <i class="bi bi-x-lg"></i> Cancelar
                                         </button>
                                     </div>
@@ -61,7 +60,7 @@
                                 </p>
                             </div>
 
-                            <div v-if="puedeEditarCita && estadoCita != 'completada'" class="mb-0">
+                            <div v-if="puedeEditarNotas && estadoCita != 'completada'" class="mb-0">
                                 <h3 class="h6 text-uppercase text-muted fw-bold mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Notas Clinicas (Autoguardado)</h3>
                                 <div class="position-relative">
                                     <textarea 
@@ -80,7 +79,7 @@
                                 </div>
                                 <small class="text-muted mt-1 d-block">Las notas se guardan automáticamente al hacer clic fuera del cuadro de texto.</small>
                             </div>
-                            <div class="mb-0" v-else-if="!puedeEditarCita || cita.estado === 'completada'">
+                            <div class="mb-0" v-else-if="!puedeEditarNotas || cita.estado === 'completada'">
                                 <h3 class="h6 text-uppercase text-muted fw-bold mb-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">Notas Clinicas</h3>
                                 <p class="text-secondary bg-light p-3 rounded border-start border-primary border-3 mb-0" style="white-space: pre-wrap;">
                                     {{ cita.notas || 'Sin notas.' }}
@@ -285,22 +284,24 @@
                             </div>
                             <div class="card-body p-4 pt-3">
                                 <div v-if="cita.box" class="d-flex align-items-center gap-3 mb-3">
-                                    <div class="bg-secondary bg-opacity-10 text-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                                        <i class="bi bi-door-open fs-4"></i>
-                                    </div>
+                                    <img :src="cita.box.imagen_url || '/images/default_box.png'" :alt="cita.box.nombre" class="rounded-circle object-fit-cover shadow-sm" style="width: 50px; height: 50px;">
                                     <div>
                                         <h4 class="h6 mb-1 fw-bold text-dark">
                                             {{ cita.box.nombre }}
                                         </h4>
-                                        <p class="text-muted small mb-0">Sucursal: {{ cita.box.sucursal?.nombre || 'N/A' }}</p>
+                                        <p class="text-muted small mb-0 d-flex align-items-center gap-1">
+                                            Sucursal: 
+                                            <img :src="cita.box.sucursal?.imagen_url || '/images/default_sucursal.png'" :alt="cita.box.sucursal?.nombre || 'Sucursal'" class="rounded-circle object-fit-cover shadow-sm" style="width: 20px; height: 20px;">
+                                            {{ cita.box.sucursal?.nombre || 'N/A' }}
+                                        </p>
                                     </div>
                                 </div>
                                 <div v-else class="text-muted text-center py-2 small mb-3">
                                     No hay box asignado para esta cita.
                                 </div>
 
-                                <!-- Formulario de asignación/cambio de box SOLO para veterinarios -->
-                                <div v-if="$page.props.auth.user?.rol?.nombre_interno === 'veterinario' && estadoActual !== 'completada' && estadoActual !== 'cancelada' && $page.props.auth.user?.id === cita.veterinario?.user_id" class="border rounded-3 p-3 bg-white mt-2">
+                                <!-- Formulario de asignación/cambio de box para personal autorizado -->
+                                <div v-if="puedeAsignarBox && estadoActual !== 'completada' && estadoActual !== 'cancelada'" class="border rounded-3 p-3 bg-white mt-2">
                                     <h4 class="h6 fw-semibold text-dark mb-2"><i class="bi bi-pencil-square me-1 text-primary"></i> Asignar Box</h4>
                                     <div class="d-flex flex-column gap-2">
                                         <div>
@@ -349,7 +350,7 @@
                                                 <span class="text-muted d-block" style="font-size: 0.75rem;">{{ miembro.rol?.nombre_legible }}</span>
                                             </div>
                                         </div>
-                                        <button v-if="puedeEditarCita && estadoActual !== 'completada' && estadoActual !== 'cancelada'" 
+                                        <button v-if="puedeAsignarEquipo && estadoActual !== 'completada' && estadoActual !== 'cancelada'" 
                                                 class="btn btn-sm btn-outline-danger p-1 rounded-circle d-flex align-items-center justify-content-center" 
                                                 style="width: 24px; height: 24px;" 
                                                 @click="eliminarMiembroEquipo(miembro.id)" 
@@ -365,7 +366,7 @@
                                 </p>
 
                                 <!-- Formulario para agregar personal de apoyo -->
-                                <div v-if="puedeEditarCita && estadoActual !== 'completada' && estadoActual !== 'cancelada'" class="border rounded-3 p-3 bg-white mt-3">
+                                <div v-if="puedeAsignarEquipo && estadoActual !== 'completada' && estadoActual !== 'cancelada'" class="border rounded-3 p-3 bg-white mt-3">
                                     <h4 class="h6 fw-semibold text-dark mb-2"><i class="bi bi-plus-circle me-1 text-success"></i> Agregar Personal</h4>
                                     <div class="d-flex flex-column gap-2">
                                         <div>
@@ -633,6 +634,78 @@ export default {
             // Si es veterinario, debe ser estrictamente el veterinario asignado a la cita
             if (user.rol.nombre_interno === 'veterinario') {
                 return this.cita.veterinario && this.cita.veterinario.user_id === user.id;
+            }
+
+            return false;
+        },
+
+        puedeCancelarCita() {
+            const user = this.$page.props.auth.user;
+            if (!user || !user.rol) return false;
+
+            if (this.$isAdmin()) {
+                return true;
+            }
+
+            if (this.$isSecretaria()) {
+                return this.cita.veterinario && this.cita.veterinario.sucursal_id === user.secretaria?.sucursal_id;
+            }
+
+            if (this.$isCliente()) {
+                return this.cita.mascota && this.cita.mascota.cliente_id === user.cliente?.id;
+            }
+
+            return false;
+        },
+
+        puedeEditarEstado() {
+            const user = this.$page.props.auth.user;
+            if (!user || !user.rol) return false;
+
+            if (this.$isAdmin()) {
+                return true;
+            }
+
+            if (this.$isVeterinario()) {
+                return this.cita.veterinario && this.cita.veterinario.user_id === user.id;
+            }
+
+            if (this.$isSecretaria()) {
+                return this.cita.veterinario && this.cita.veterinario.sucursal_id === user.secretaria?.sucursal_id;
+            }
+
+            return false;
+        },
+
+        puedeEditarNotas() {
+            return this.puedeEditarEstado;
+        },
+
+        puedeAsignarBox() {
+            const user = this.$page.props.auth.user;
+            if (!user || !user.rol) return false;
+
+            if (this.$isAdmin()) {
+                return true;
+            }
+
+            if (this.$isSecretaria()) {
+                return this.cita.veterinario && this.cita.veterinario.sucursal_id === user.secretaria?.sucursal_id;
+            }
+
+            return false;
+        },
+
+        puedeAsignarEquipo() {
+            const user = this.$page.props.auth.user;
+            if (!user || !user.rol) return false;
+
+            if (this.$isAdmin()) {
+                return true;
+            }
+
+            if (this.$isSecretaria()) {
+                return this.cita.veterinario && this.cita.veterinario.sucursal_id === user.secretaria?.sucursal_id;
             }
 
             return false;

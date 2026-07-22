@@ -46,4 +46,5 @@ terraform.rc
 **/terraform/*_override.tf
 **/terraform/*_override.tf.json
 **/terraform/.terraform.lock.hcl
+**/terraform/terraform.tfvars
 

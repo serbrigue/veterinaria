@@ -15,7 +15,6 @@ return new class extends Migration
             $table->unsignedBigInteger('permiso_id');
             $table->unsignedBigInteger('rol_id');
 
-
             $table->primary(['permiso_id', 'rol_id']);
         });
     }

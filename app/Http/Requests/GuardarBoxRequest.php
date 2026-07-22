@@ -17,7 +17,9 @@ class GuardarBoxRequest extends FormRequest
         return [
             'nombre' => ['required', 'string', 'max:255'],
             'descripcion' => ['nullable', 'string'],
-            'sucursal_id' => ['required', 'exists:sucursales,id']
+            'sucursal_id' => ['required', 'exists:sucursales,id'],
+            'categoria_prestacion_id' => ['nullable', 'exists:categorias_prestaciones,id'],
+            'imagen_url' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
         ];
     }
 
@@ -29,6 +31,9 @@ class GuardarBoxRequest extends FormRequest
             'nombre.max' => 'El nombre no puede exceder los 255 caracteres.',
             'sucursal_id.required' => 'La sucursal es obligatoria.',
             'sucursal_id.exists' => 'La sucursal seleccionada no existe.',
+            'imagen_url.image' => 'La imagen debe ser una imagen.',
+            'imagen_url.mimes' => 'La imagen debe ser de tipo jpeg, png, jpg o webp.',
+            'imagen_url.max' => 'La imagen no puede exceder los 2MB.',
         ];
     }
 }

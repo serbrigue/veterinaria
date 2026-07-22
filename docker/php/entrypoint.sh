@@ -109,7 +109,13 @@ echo "🔒 Ajustando permisos de storage..."
 chmod -R 775 storage bootstrap/cache 2>/dev/null || true
 
 # -----------------------------------------------------------
-# 8. Iniciar PHP-FPM
+# 8. Crear enlace simbólico de storage (relativo)
+# -----------------------------------------------------------
+echo "🔗 Creando enlace simbólico de storage (relativo)..."
+php artisan storage:link --relative --force || true
+
+# -----------------------------------------------------------
+# 9. Iniciar PHP-FPM
 # -----------------------------------------------------------
 echo ""
 echo "✅ Laravel listo. Iniciando PHP-FPM..."

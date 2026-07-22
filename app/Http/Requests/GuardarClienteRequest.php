@@ -15,7 +15,6 @@ class GuardarClienteRequest extends FormRequest
      * ejemplo de GuardarMascotaRequest.
      * ============================================
      */
-
     public function authorize(): bool
     {
         // TODO: Completar (debe retornar true)

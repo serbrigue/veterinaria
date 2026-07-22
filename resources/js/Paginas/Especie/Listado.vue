@@ -5,9 +5,19 @@
             <div class="card shadow-sm">
                 <div class="card-header d-flex justify-content-between align-items-center bg-white py-3">
                     <h1 class="h5 mb-0 fw-bold text-primary">Listado de Especies</h1>
-                    <button v-if="esVeterinarioOAdmin" type="button" class="btn btn-sm btn-primary px-3" @click="abrirModalCrear">
-                        <i class="bi bi-plus-lg me-1"></i> Nueva Especie
-                    </button>
+                    <div class="d-flex gap-2">
+                        <template v-if="$isAdmin() || $isSecretaria()">
+                            <a href="/api/export/especies" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-download me-1"></i> Exportar
+                            </a>
+                            <button type="button" class="btn btn-sm btn-outline-primary" @click="mostrarModalImportar = true">
+                                <i class="bi bi-upload me-1"></i> Importar
+                            </button>
+                        </template>
+                        <button v-if="esVeterinario" type="button" class="btn btn-sm btn-primary px-3" @click="abrirModalCrear">
+                            <i class="bi bi-plus-lg me-1"></i> Nueva Especie
+                        </button>
+                    </div>
                 </div>
 
                 <div class="card-body">
@@ -43,7 +53,7 @@
                     <EstadoVacio
                         :visible="!cargando && listaVacia"
                         mensaje="No tienes especies registradas aún."
-                        :texto-boton="esVeterinarioOAdmin ? 'Registrar tu primera especie' : ''"
+                        :texto-boton="esVeterinario ? 'Registrar tu primera especie' : ''"
                         icono="bi bi-clipboard2-x"
                         @accion="abrirModalCrear"
                     />
@@ -62,7 +72,7 @@
                                 :imagen-url="especie.imagen_url"
                                 icono="bi-bug-fill"
                                 :url-detalle="`/especies/${especie.id}`"
-                                :mostrar-acciones="esVeterinarioOAdmin"
+                                :mostrar-acciones="esVeterinario"
                                 @editar="abrirModalEditar(especie)"
                                 @eliminar="confirmarEliminar(especie)"
                             >
@@ -117,20 +127,32 @@
                     </div>
                 </div>
                 <div class="mb-3">
-                    <label for="imagen_url" class="form-label fw-semibold text-secondary small text-uppercase">URL de la Imagen</label>
+                    <label for="foto" class="form-label fw-semibold text-secondary small text-uppercase">Foto de la Especie</label>
                     <input
-                        id="imagen_url"
-                        v-model="formulario.imagen_url"
-                        type="text"
+                        id="foto"
+                        ref="fotoInput"
+                        type="file"
                         class="form-control bg-light border-0 py-2"
-                        placeholder="https://ejemplo.com/foto.jpg"
-                        :class="{ 'is-invalid': formulario.errors.imagen_url }"
+                        accept="image/*"
+                        @change="seleccionarFoto"
+                        :class="{ 'is-invalid': formulario.errors.foto }"
                     />
-                    <div v-if="formulario.errors.imagen_url" class="invalid-feedback">
-                        {{ formulario.errors.imagen_url }}
+                    <div v-if="formulario.errors.foto" class="invalid-feedback">
+                        {{ formulario.errors.foto }}
+                    </div>
+                    <div v-if="formulario.imagen_url" class="mt-2 text-center">
+                        <img :src="formulario.imagen_url" class="img-thumbnail" style="max-height: 120px;" alt="Vista previa de la especie" />
                     </div>
                 </div>
             </ModalCrud>
+
+            <ModalImportarSimple
+                :visible="mostrarModalImportar"
+                entidad="especies"
+                etiqueta="Especies"
+                @cerrar="mostrarModalImportar = false"
+                @importado="obtenerEspecies()"
+            />
         </div>
     </AuthenticatedLayout>
 </template>
@@ -144,6 +166,7 @@ import SinResultados from '@/Componentes/SinResultados.vue';
 import ModalCrud from '@/Componentes/ModalCrud.vue';
 import BarraFiltros from '@/Componentes/BarraFiltros.vue';
 import TarjetaEntidad from '@/Componentes/TarjetaEntidad.vue';
+import ModalImportarSimple from '@/Componentes/ModalImportarSimple.vue';
 
 export default {
     components: {
@@ -156,6 +179,7 @@ export default {
         ModalCrud,
         BarraFiltros,
         TarjetaEntidad,
+        ModalImportarSimple,
     },
     props: {
         especies: {
@@ -171,10 +195,12 @@ export default {
             especieEditando: null,
             filtroTexto: '',
             especieAEliminar: null,
+            mostrarModalImportar: false,
             formulario: {
                 nombre: '',
                 descripcion: '',
                 imagen_url: '',
+                foto: null,
                 errors: {},
                 processing: false,
             },
@@ -187,9 +213,9 @@ export default {
         }
     },
     computed: {
-        esVeterinarioOAdmin() {
+        esVeterinario() {
             const user = this.$page.props.auth.user;
-            return user && (user.rol?.nombre_interno === 'veterinario' || user.rol?.nombre_interno === 'admin');
+            return user && (user.rol?.nombre_interno === 'veterinario');
         },
         textoBotonGuardar() {
             return this.modoEdicion ? 'Guardar Cambios' : 'Crear Especie';
@@ -208,12 +234,24 @@ export default {
         },
     },
     methods: {
-        datosFormulario() {
-            return {
-                nombre: this.formulario.nombre,
-                descripcion: this.formulario.descripcion,
-                imagen_url: this.formulario.imagen_url,
+        seleccionarFoto(e) {
+            const archivos = e.target.files;
+            if (archivos && archivos.length > 0) {
+                this.formulario.foto = archivos[0];
             }
+        },
+        datosFormulario() {
+            const formData = new FormData();
+            formData.append('nombre', this.formulario.nombre);
+            if (this.formulario.descripcion) {
+                formData.append('descripcion', this.formulario.descripcion);
+            }
+            if (this.formulario.foto) {
+                formData.append('foto', this.formulario.foto);
+            } else if (this.formulario.imagen_url) {
+                formData.append('imagen_url', this.formulario.imagen_url);
+            }
+            return formData;
         },
         obtenerEspecies() {
             this.cargando = true;
@@ -236,6 +274,10 @@ export default {
             this.formulario.nombre = '';
             this.formulario.descripcion = '';
             this.formulario.imagen_url = '';
+            this.formulario.foto = null;
+            if (this.$refs.fotoInput) {
+                this.$refs.fotoInput.value = '';
+            }
             this.formulario.errors = {};
             this.mostrarModal = true;
         },
@@ -245,6 +287,10 @@ export default {
             this.formulario.nombre = especie.nombre;
             this.formulario.descripcion = especie.descripcion;
             this.formulario.imagen_url = especie.imagen_url;
+            this.formulario.foto = null;
+            if (this.$refs.fotoInput) {
+                this.$refs.fotoInput.value = '';
+            }
             this.formulario.errors = {};
             this.mostrarModal = true;
         },
@@ -258,15 +304,26 @@ export default {
             this.formulario.nombre = '';
             this.formulario.descripcion = '';
             this.formulario.imagen_url = '';
+            this.formulario.foto = null;
+            if (this.$refs.fotoInput) {
+                this.$refs.fotoInput.value = '';
+            }
             this.formulario.errors = {};
             this.mostrarModal = false;
         },
         guardar() {
             this.formulario.processing = true;
             this.formulario.errors = {};
+
+            const data = this.datosFormulario();
             
             if (this.modoEdicion) {
-                axios.put(`/api/especies/${this.especieEditando.id}`, this.datosFormulario())
+                data.append('_method', 'PUT');
+                axios.post(`/api/especies/${this.especieEditando.id}`, data, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                })
                 .then(() => { 
                     this.cerrarModal(); 
                     this.obtenerEspecies(); 
@@ -283,7 +340,11 @@ export default {
                     this.formulario.processing = false; 
                 });
             } else {
-                axios.post('/api/especies', this.datosFormulario())
+                axios.post('/api/especies', data, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                })
                 .then(() => { 
                     this.cerrarModal(); 
                     this.obtenerEspecies(); 

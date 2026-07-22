@@ -1,0 +1,297 @@
+<template>
+  <div class="py-2">
+    <!-- Step 1: Upload (Drag & Drop) -->
+    <div v-if="step === 1" class="card shadow-sm border-0">
+      <div class="card-body text-center p-4">
+        <div
+          class="dropzone border-primary border-dashed rounded p-4 bg-light"
+          @dragover.prevent="dragover = true"
+          @dragleave.prevent="dragover = false"
+          @drop.prevent="handleDrop"
+          :class="{ 'bg-primary text-white': dragover }"
+          style="border: 2px dashed #0d6efd; cursor: pointer;"
+          @click="triggerFileInput"
+        >
+          <i class="bi bi-cloud-arrow-up display-4"></i>
+          <h5 class="mt-3">Arrastra tu archivo Excel aquí</h5>
+          <p class="text-muted small" :class="{ 'text-white': dragover }">o haz clic para seleccionar (Máx. 10MB)</p>
+          <input
+            type="file"
+            ref="fileInput"
+            class="d-none"
+            accept=".xlsx, .xls, .csv"
+            @change="handleFileSelect"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div v-if="loading" class="text-center my-4">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <p class="mt-2 small">Procesando archivo...</p>
+    </div>
+
+    <!-- Step 2: Mapping -->
+    <div v-if="step === 2 && !loading" class="card shadow-sm border-0">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">Mapeo de Datos</h6>
+        <button class="btn btn-outline-secondary btn-sm" @click="reset">Volver</button>
+      </div>
+      <div class="card-body p-3">
+        <form @submit.prevent="submitImport">
+          
+          <!-- Módulo: Clientes -->
+          <div class="mb-3 p-3 border rounded bg-light">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6 class="text-primary mb-0"><i class="bi bi-person"></i> Clientes</h6>
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="switchClientes" v-model="modules.clientes">
+              </div>
+            </div>
+            
+            <div v-if="modules.clientes" class="row g-2">
+              <div class="col-12" v-for="field in fields.clientes" :key="field.id">
+                <label class="form-label small mb-1">{{ field.label }}</label>
+                <select class="form-select form-select-sm" v-model="mapping[field.id]">
+                  <option :value="null">-- Ignorar --</option>
+                  <option v-for="(header, index) in headers" :key="index" :value="header">
+                    {{ header }}
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Módulo: Mascotas -->
+          <div class="mb-3 p-3 border rounded bg-light">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6 class="text-primary mb-0"><i class="bi bi-heart"></i> Mascotas</h6>
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="switchMascotas" v-model="modules.mascotas" :disabled="!modules.clientes">
+              </div>
+            </div>
+            
+            <div v-if="modules.mascotas" class="row g-2">
+              <div class="col-12" v-for="field in fields.mascotas" :key="field.id">
+                <label class="form-label small mb-1">{{ field.label }}</label>
+                <select class="form-select form-select-sm" v-model="mapping[field.id]">
+                  <option :value="null">-- Ignorar --</option>
+                  <option v-for="(header, index) in headers" :key="index" :value="header">
+                    {{ header }}
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Módulo: Citas -->
+          <div class="mb-3 p-3 border rounded bg-light">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6 class="text-primary mb-0"><i class="bi bi-calendar"></i> Citas</h6>
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="switchCitas" v-model="modules.citas" :disabled="!modules.mascotas">
+              </div>
+            </div>
+            
+            <div v-if="modules.citas" class="row g-2">
+              <div class="col-12" v-for="field in fields.citas" :key="field.id">
+                <label class="form-label small mb-1">{{ field.label }}</label>
+                <select class="form-select form-select-sm" v-model="mapping[field.id]">
+                  <option :value="null">-- Ignorar --</option>
+                  <option v-for="(header, index) in headers" :key="index" :value="header">
+                    {{ header }}
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-grid mt-3">
+            <button type="submit" class="btn btn-success btn-sm" :disabled="loading">
+              <i class="bi bi-play-circle"></i> Iniciar Importación
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, reactive } from 'vue';
+import axios from 'axios';
+import Swal from 'sweetalert2';
+
+// Estados
+const step = ref(1);
+const loading = ref(false);
+const dragover = ref(false);
+const fileInput = ref(null);
+const file = ref(null);
+
+// Datos recibidos del backend
+const headers = ref([]);
+const sampleData = ref([]);
+
+// Configuración de Mapeo y Módulos
+const mapping = reactive({});
+const modules = reactive({
+  clientes: true,
+  mascotas: true,
+  citas: true
+});
+
+// Campos esperados en el sistema
+const fields = {
+  clientes: [
+    { id: 'cliente_email', label: 'Email del Cliente (Llave)' },
+    { id: 'cliente_nombre', label: 'Nombre del Cliente' },
+    { id: 'cliente_telefono', label: 'Teléfono' },
+    { id: 'cliente_direccion', label: 'Dirección' }
+  ],
+  mascotas: [
+    { id: 'mascota_nombre', label: 'Nombre de la Mascota' },
+    { id: 'mascota_raza', label: 'Raza (Texto)' }
+  ],
+  citas: [
+    { id: 'cita_titulo', label: 'Motivo de la Cita' },
+    { id: 'cita_fecha_hora', label: 'Fecha y Hora (YYYY-MM-DD HH:MM:SS)' },
+    { id: 'cita_veterinario', label: 'Veterinario' },
+    { id: 'cita_valor', label: 'Costo / Valor Pagado' }
+  ]
+};
+
+// Acciones Drag & Drop
+const triggerFileInput = () => {
+  fileInput.value.click();
+};
+
+const handleFileSelect = (event) => {
+  const selectedFile = event.target.files[0];
+  if (selectedFile) {
+    processFile(selectedFile);
+  }
+};
+
+const handleDrop = (event) => {
+  dragover.value = false;
+  const droppedFile = event.dataTransfer.files[0];
+  if (droppedFile) {
+    processFile(droppedFile);
+  }
+};
+
+// RF-02: Pre-lectura Estructural
+const processFile = async (selectedFile) => {
+  if (selectedFile.size > 10 * 1024 * 1024) {
+    Swal.fire('Error', 'El archivo no debe superar los 10MB', 'error');
+    return;
+  }
+
+  file.value = selectedFile;
+  loading.value = true;
+
+  const formData = new FormData();
+  formData.append('file', file.value);
+
+  try {
+    const response = await axios.post('/api/import/analyze', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+
+    if (response.data.success) {
+      headers.value = response.data.headers;
+      sampleData.value = response.data.sample;
+      autoMapHeaders();
+      step.value = 2; // Avanzar al paso de mapeo
+    }
+  } catch (error) {
+    Swal.fire('Error', error.response?.data?.message || 'Error al analizar el archivo', 'error');
+    reset();
+  } finally {
+    loading.value = false;
+  }
+};
+
+// Auto-mapeo simple basado en nombres
+const autoMapHeaders = () => {
+  const lowerHeaders = headers.value.map(h => h ? h.toString().toLowerCase() : '');
+  
+  const findMatch = (keywords) => {
+    const idx = lowerHeaders.findIndex(h => keywords.some(k => h.includes(k)));
+    return idx !== -1 ? headers.value[idx] : null;
+  };
+
+  mapping['cliente_email'] = findMatch(['email', 'correo']);
+  mapping['cliente_nombre'] = findMatch(['cliente', 'dueño', 'nombre cliente']);
+  mapping['mascota_nombre'] = findMatch(['mascota', 'paciente', 'nombre mascota']);
+  mapping['mascota_raza'] = findMatch(['raza']);
+  mapping['cita_fecha_hora'] = findMatch(['fecha', 'hora', 'cuando']);
+  mapping['cita_valor'] = findMatch(['valor', 'costo', 'precio', 'total', 'pago']);
+};
+
+// RF-01, RNF-01: Ejecutar la importación real transaccional
+const submitImport = async () => {
+  loading.value = true;
+
+  const formData = new FormData();
+  formData.append('file', file.value);
+  formData.append('mapping', JSON.stringify(mapping));
+  formData.append('modules', JSON.stringify(modules));
+
+  try {
+    const response = await axios.post('/api/import/process', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+
+    if (response.data.success) {
+      if (response.data.download_url) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Importación Parcial',
+          text: response.data.message,
+          confirmButtonText: 'Descargar Excel de Descartes',
+          showCancelButton: true,
+          cancelButtonText: 'Cerrar'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            window.location.href = response.data.download_url;
+          }
+          reset();
+        });
+      } else {
+        Swal.fire({
+          icon: 'success',
+          title: '¡Importación Exitosa!',
+          text: response.data.message
+        });
+        reset();
+      }
+    }
+  } catch (error) {
+    const errorMsg = error.response?.data?.message || 'Hubo un error en la importación.';
+    Swal.fire({
+      icon: 'error',
+      title: 'Importación Fallida',
+      text: errorMsg,
+      footer: 'Se ha realizado un Rollback completo.'
+    });
+  } finally {
+    loading.value = false;
+  }
+};
+
+const reset = () => {
+  step.value = 1;
+  file.value = null;
+  headers.value = [];
+  sampleData.value = [];
+  if (fileInput.value) {
+    fileInput.value.value = '';
+  }
+};
+</script>

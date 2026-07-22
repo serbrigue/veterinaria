@@ -7,7 +7,15 @@
                 <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <h1 class="h5 mb-0">Catálogo de Prestaciones</h1>
                     <div class="d-flex flex-wrap gap-2 align-items-center">
-                        <button v-if="isAdmin()" type="button" class="btn btn-sm btn-primary" @click="abrirModalCrear">
+                        <template v-if="$isAdmin() || $isSecretaria()">
+                            <a href="/api/export/prestaciones" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-download me-1"></i> Exportar
+                            </a>
+                            <button type="button" class="btn btn-sm btn-outline-primary" @click="mostrarModalImportar = true">
+                                <i class="bi bi-upload me-1"></i> Importar
+                            </button>
+                        </template>
+                        <button v-if="esAdmin" type="button" class="btn btn-sm btn-primary" @click="abrirModalCrear">
                             + Nueva Prestación
                         </button>
                     </div>
@@ -58,7 +66,7 @@
                     <EstadoVacio
                         :visible="!cargando && listaVacia"
                         mensaje="No hay prestaciones registradas en el catálogo."
-                        :texto-boton="isAdmin() ? 'Registrar la primera prestación' : ''"
+                        :texto-boton="esAdmin ? 'Registrar la primera prestación' : ''"
                         icono="bi bi-box-seam"
                         @accion="abrirModalCrear"
                     />
@@ -102,12 +110,12 @@
                                             <span class="d-block small text-muted fw-semibold mb-1 text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Valor Cliente</span>
                                             <span class="fs-5 fw-bold text-success">${{ Math.round(prestacion.precio_base).toLocaleString('es-CL') }}</span>
                                         </div>
-                                        <div v-if="isAdmin()"   class="btn-group btn-group-sm bg-white shadow-sm rounded">
-                                            <button type="button" class="btn btn-outline-primary border-0" @click="abrirModalEditar(prestacion)" title="Editar Prestación">
-                                                <i class="bi bi-pencil-fill"></i>
+                                        <div v-if="esAdmin"   class="btn-group btn-group-sm bg-white shadow-sm rounded">
+                                            <button type="button" class="btn btn-outline-primary border-0" @click.prevent.stop="abrirModalEditar(prestacion)" title="Editar Prestación">
+                                                <i class="bi bi-pencil-fill"> Editar</i>
                                             </button>
-                                            <button type="button" class="btn btn-outline-danger border-0" @click="confirmarEliminar(prestacion)" title="Eliminar Prestación">
-                                                <i class="bi bi-trash-fill"></i>
+                                            <button type="button" class="btn btn-outline-danger border-0" @click.prevent.stop="confirmarEliminar(prestacion)" title="Eliminar Prestación">
+                                                <i class="bi bi-trash-fill"> Eliminar</i>
                                             </button>
                                         </div>
                                     </div>
@@ -202,6 +210,14 @@
                 </div>
             </div>
             <div v-if="mostrarModal" class="modal-backdrop fade show"></div>
+
+            <ModalImportarSimple
+                :visible="mostrarModalImportar"
+                entidad="prestaciones"
+                etiqueta="Prestaciones"
+                @cerrar="mostrarModalImportar = false"
+                @importado="obtenerPrestaciones()"
+            />
         </div>
     </AuthenticatedLayout>
 </template>
@@ -214,6 +230,7 @@ import BarraFiltros from '@/Componentes/BarraFiltros.vue';
 import IndicadorCarga from '@/Componentes/IndicadorCarga.vue';
 import EstadoVacio from '@/Componentes/EstadoVacio.vue';
 import SinResultados from '@/Componentes/SinResultados.vue';
+import ModalImportarSimple from '@/Componentes/ModalImportarSimple.vue';
 
 export default {
     components: {
@@ -224,6 +241,7 @@ export default {
         IndicadorCarga,
         EstadoVacio,
         SinResultados,
+        ModalImportarSimple,
     },
     props: {
         prestaciones: {
@@ -247,6 +265,7 @@ export default {
         return {
             cargando: false,
             mostrarModal: false,
+            mostrarModalImportar: false,
             modoEdicion: false,
             prestacionEditando: null,
             filtros: {
@@ -269,6 +288,10 @@ export default {
         }
     },
     computed: {
+        esAdmin() {
+            const user = this.$page.props.auth.user;
+            return user && (user.rol?.nombre_interno === 'admin');
+        },
         prestacionesVisibles() {
             return this.listaPrestaciones;
         },

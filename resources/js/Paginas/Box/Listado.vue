@@ -5,19 +5,29 @@
             <div class="card shadow-sm border-0 rounded-4">
                 <div class="card-header bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
                     <h1 class="h4 mb-0 text-primary fw-bold">Boxes de Atención</h1>
-                    <button v-if="esVeterinarioOAdmin" type="button" class="btn btn-primary rounded-pill shadow-sm px-4" @click="abrirModalCrear">
-                        <i class="bi bi-plus-lg me-1"></i> Nuevo Box
-                    </button>
+                    <div class="d-flex gap-2">
+                        <template v-if="$isAdmin() || $isSecretaria()">
+                            <a href="/api/export/boxes" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-download me-1"></i> Exportar
+                            </a>
+                            <button type="button" class="btn btn-sm btn-outline-primary" @click="mostrarModalImportar = true">
+                                <i class="bi bi-upload me-1"></i> Importar
+                            </button>
+                        </template>
+                        <button v-if="esAdmin" type="button" class="btn btn-primary rounded-pill shadow-sm px-4" @click="abrirModalCrear">
+                            <i class="bi bi-plus-lg me-1"></i> Nuevo Box
+                        </button>
+                    </div>
                 </div>
 
                 <div class="card-body p-4">
                     <!-- Barra de búsqueda -->
                     <BarraFiltros 
-                        :deshabilitar-limpiar="!filtroTexto" 
-                        clase-boton-contenedor="col-12 col-md-4 col-lg-6 d-flex justify-content-md-end"
+                        :deshabilitar-limpiar="!filtroTexto && !filtroCategoria" 
+                        clase-boton-contenedor="col-12 col-md-4 col-lg-4 d-flex justify-content-md-end"
                         @limpiar="limpiarFiltros"
                     >
-                        <div class="col-12 col-md-8 col-lg-6">
+                        <div class="col-12 col-md-4 col-lg-4">
                             <div class="input-group">
                                 <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
                                 <input 
@@ -28,6 +38,16 @@
                                     placeholder="Buscar box por nombre..."
                                 >
                             </div>
+                        </div>
+                        <div class="col-12 col-md-4 col-lg-4">
+                            <select 
+                                v-model="filtroCategoria" 
+                                @change="obtenerBoxes()" 
+                                class="form-select"
+                            >
+                                <option value="">Todas las categorías</option>
+                                <option v-for="cat in categoriasPrestacion" :key="cat.id" :value="cat.id">{{ cat.nombre }}</option>
+                            </select>
                         </div>
                         <template #texto-limpiar>
                             Limpiar Filtro
@@ -60,8 +80,9 @@
                             <TarjetaEntidad
                                 :titulo="box.nombre"
                                 icono="bi-door-closed"
+                                :imagen-url="box.imagen_url || '/images/default_box.png'"
                                 :url-detalle="route('boxes.detalle', box.id)"
-                                :mostrar-acciones="esVeterinarioOAdmin"
+                                :mostrar-acciones="esAdmin"
                                 @editar="abrirModalEditar(box)"
                                 @eliminar="confirmarEliminar(box)"
                             >
@@ -145,7 +166,32 @@
                     </select>
                     <div v-if="formulario.errors.sucursal_id" class="invalid-feedback">{{ formulario.errors.sucursal_id }}</div>
                 </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary small text-uppercase">Foto / Imagen del Box</label>
+                    <input
+                        ref="fotoInput"
+                        type="file"
+                        class="form-control bg-light border-0 py-2"
+                        accept="image/*"
+                        @change="seleccionarFoto"
+                        :class="{ 'is-invalid': formulario.errors.imagen_url }"
+                    />
+                    <div v-if="formulario.errors.imagen_url" class="invalid-feedback">
+                        {{ formulario.errors.imagen_url }}
+                    </div>
+                    <div v-if="formulario.imagen_url_preview || formulario.imagen_url" class="mt-2 text-center">
+                        <img :src="formulario.imagen_url_preview || formulario.imagen_url" class="img-thumbnail" style="max-height: 120px;" alt="Vista previa" />
+                    </div>
+                </div>
             </ModalCrud>
+
+            <ModalImportarSimple
+                :visible="mostrarModalImportar"
+                entidad="boxes"
+                etiqueta="Boxes"
+                @cerrar="mostrarModalImportar = false"
+                @importado="obtenerBoxes()"
+            />
     </AuthenticatedLayout>
 </template>
 
@@ -158,6 +204,7 @@ import SinResultados from '@/Componentes/SinResultados.vue';
 import ModalCrud from '@/Componentes/ModalCrud.vue';
 import BarraFiltros from '@/Componentes/BarraFiltros.vue';
 import TarjetaEntidad from '@/Componentes/TarjetaEntidad.vue';
+import ModalImportarSimple from '@/Componentes/ModalImportarSimple.vue';
 
 export default {
     components: {
@@ -170,6 +217,7 @@ export default {
         ModalCrud,
         BarraFiltros,
         TarjetaEntidad,
+        ModalImportarSimple,
     },
     props: {
         boxes: {
@@ -192,12 +240,17 @@ export default {
             modoEdicion: false,
             boxEditando: null,
             filtroTexto: '',
+            filtroCategoria: '',
             boxAEliminar: null,
+            mostrarModalImportar: false,
             formulario: {
                 nombre: '',
                 descripcion: '',
                 sucursal_id: null,
                 categoria_prestacion_id: null,
+                imagen_url: '',
+                imagen_url_file: null,
+                imagen_url_preview: null,
                 errors: {},
                 processing: false,
             },
@@ -210,15 +263,15 @@ export default {
         }
     },
     computed: {
-        esVeterinarioOAdmin() {
+        esAdmin() {
             const user = this.$page.props.auth.user;
-            return user && (user.rol?.nombre_interno === 'veterinario' || user.rol?.nombre_interno === 'admin');
+            return user && (user.rol?.nombre_interno === 'admin');
         },
         textoBotonGuardar() { return this.modoEdicion ? 'Guardar Cambios' : 'Crear Box'; },
         tituloModal()       { return this.modoEdicion ? 'Editar Box' : 'Nuevo Box'; },
         totalBoxes()        { return this.boxesVisibles.length; },
-        listaVacia()        { return this.boxesVisibles.length === 0 && this.filtroTexto === ''; },
-        sinResultadosFiltro() { return this.boxesVisibles.length === 0 && this.filtroTexto !== ''; },
+        listaVacia()        { return this.boxesVisibles.length === 0 && this.filtroTexto === '' && this.filtroCategoria === ''; },
+        sinResultadosFiltro() { return this.boxesVisibles.length === 0 && (this.filtroTexto !== '' || this.filtroCategoria !== ''); },
     },
     methods: {
         badgeCategoria(nombre) {
@@ -230,13 +283,24 @@ export default {
             };
             return mapa[nombre] || 'bg-secondary';
         },
-        datosFormulario() {
-            return {
-                nombre: this.formulario.nombre,
-                descripcion: this.formulario.descripcion,
-                sucursal_id: this.formulario.sucursal_id,
-                categoria_prestacion_id: this.formulario.categoria_prestacion_id,
+        seleccionarFoto(e) {
+            const archivos = e.target.files;
+            if (archivos && archivos.length > 0) {
+                this.formulario.imagen_url_file = archivos[0];
+                this.formulario.imagen_url_preview = URL.createObjectURL(archivos[0]);
             }
+        },
+        datosFormulario() {
+            const formData = new FormData();
+            formData.append('nombre', this.formulario.nombre);
+            formData.append('descripcion', this.formulario.descripcion || '');
+            if (this.formulario.sucursal_id) formData.append('sucursal_id', this.formulario.sucursal_id);
+            if (this.formulario.categoria_prestacion_id) formData.append('categoria_prestacion_id', this.formulario.categoria_prestacion_id);
+            
+            if (this.formulario.imagen_url_file) {
+                formData.append('imagen_url', this.formulario.imagen_url_file);
+            }
+            return formData;
         },
         
         abrirModalCrear() {
@@ -246,6 +310,12 @@ export default {
             this.formulario.descripcion = '';
             this.formulario.sucursal_id = null;
             this.formulario.categoria_prestacion_id = null;
+            this.formulario.imagen_url = '';
+            this.formulario.imagen_url_file = null;
+            this.formulario.imagen_url_preview = null;
+            if (this.$refs.fotoInput) {
+                this.$refs.fotoInput.value = '';
+            }
             this.formulario.errors = {};
             this.mostrarModal = true;
         },
@@ -256,12 +326,18 @@ export default {
             this.formulario.descripcion = box.descripcion;
             this.formulario.sucursal_id = box.sucursal_id;
             this.formulario.categoria_prestacion_id = box.categoria_prestacion_id;
+            this.formulario.imagen_url = box.imagen_url;
+            this.formulario.imagen_url_file = null;
+            this.formulario.imagen_url_preview = null;
+            if (this.$refs.fotoInput) {
+                this.$refs.fotoInput.value = '';
+            }
             this.formulario.errors = {};
             this.mostrarModal = true;
         },
         obtenerBoxes() {
             this.cargando = true;
-            axios.get('/boxes', { params: { texto: this.filtroTexto } })
+            axios.get('/boxes', { params: { texto: this.filtroTexto, categoria_prestacion_id: this.filtroCategoria } })
                 .then(response => {
                     this.boxesVisibles = response.data.boxes;
                 })
@@ -274,6 +350,7 @@ export default {
         },
         limpiarFiltros() {
             this.filtroTexto = '';
+            this.filtroCategoria = '';
             this.obtenerBoxes();
         },
         cerrarModal() {
@@ -283,6 +360,9 @@ export default {
             this.formulario.descripcion = '';
             this.formulario.sucursal_id = null;
             this.formulario.categoria_prestacion_id = null;
+            this.formulario.imagen_url = '';
+            this.formulario.imagen_url_file = null;
+            this.formulario.imagen_url_preview = null;
             this.formulario.errors = {};
             this.mostrarModal = false;
         },
@@ -290,8 +370,13 @@ export default {
             this.formulario.processing = true;
             this.formulario.errors = {};
             
+            const data = this.datosFormulario();
+
             if (this.modoEdicion) {
-                axios.put(`/api/boxes/${this.boxEditando.id}`, this.datosFormulario())
+                data.append('_method', 'PUT');
+                axios.post(`/api/boxes/${this.boxEditando.id}`, data, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                })
                 .then(() => { 
                     this.cerrarModal(); 
                     this.obtenerBoxes();
@@ -308,7 +393,9 @@ export default {
                     this.formulario.processing = false; 
                 });
             } else {
-                axios.post('/api/boxes', this.datosFormulario())
+                axios.post('/api/boxes', data, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                })
                 .then(() => { 
                     this.cerrarModal(); 
                     this.obtenerBoxes();

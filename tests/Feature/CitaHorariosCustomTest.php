@@ -12,27 +12,35 @@ test('actualizar horario de veterinario guarda los datos en base de datos', func
 
     $horarioData = [
         [
-            'dia' => 1, // Lunes
-            'normal' => ['activo' => true, 'inicio' => '09:00', 'fin' => '13:00'],
-            'urgencia' => ['activo' => false, 'inicio' => '', 'fin' => '']
-        ],
-        [
-            'dia' => 3, // Miercoles
-            'normal' => ['activo' => false, 'inicio' => '', 'fin' => ''],
-            'urgencia' => ['activo' => false, 'inicio' => '', 'fin' => '']
+            'id' => 'plan_1',
+            'nombre' => 'Plan Normal',
+            'fecha_inicio' => Carbon::today()->format('Y-m-d'),
+            'fecha_fin' => Carbon::now()->addYear()->format('Y-m-d'),
+            'dias' => [
+                [
+                    'dia' => 1, // Lunes
+                    'normal' => ['activo' => true, 'inicio' => '09:00', 'fin' => '13:00'],
+                    'urgencia' => ['activo' => false, 'inicio' => '', 'fin' => '']
+                ],
+                [
+                    'dia' => 3, // Miercoles
+                    'normal' => ['activo' => false, 'inicio' => '', 'fin' => ''],
+                    'urgencia' => ['activo' => false, 'inicio' => '', 'fin' => '']
+                ]
+            ]
         ]
     ];
 
     $this->actingAs($user)
         ->patchJson("/api/veterinarios/{$veterinario->id}/horario", [
-            'horario' => $horarioData
+            'horario' => $horarioData,
         ])
         ->assertOk()
         ->assertJsonPath('mensaje', 'Horario actualizado correctamente.');
 
     $updatedVet = Veterinario::find($veterinario->id);
     expect($updatedVet->horario)->toBeArray();
-    expect($updatedVet->horario[0]['normal']['fin'])->toBe('13:00');
+    expect($updatedVet->horario[0]['dias'][0]['normal']['fin'])->toBe('13:00');
 });
 
 test('horarios disponibles retorna slots basados en el horario personalizado del veterinario', function () {
@@ -46,14 +54,22 @@ test('horarios disponibles retorna slots basados en el horario personalizado del
     // Miércoles (3): No trabaja
     $horarioData = [
         [
-            'dia' => 1, // Lunes
-            'normal' => ['activo' => true, 'inicio' => '09:00', 'fin' => '11:00'],
-            'urgencia' => ['activo' => false, 'inicio' => '', 'fin' => '']
-        ],
-        [
-            'dia' => 3, // Miercoles
-            'normal' => ['activo' => false, 'inicio' => '', 'fin' => ''],
-            'urgencia' => ['activo' => false, 'inicio' => '', 'fin' => '']
+            'id' => 'plan_2',
+            'nombre' => 'Plan Restringido',
+            'fecha_inicio' => Carbon::today()->format('Y-m-d'),
+            'fecha_fin' => Carbon::now()->addYear()->format('Y-m-d'),
+            'dias' => [
+                [
+                    'dia' => 1, // Lunes
+                    'normal' => ['activo' => true, 'inicio' => '09:00', 'fin' => '11:00'],
+                    'urgencia' => ['activo' => false, 'inicio' => '', 'fin' => '']
+                ],
+                [
+                    'dia' => 3, // Miercoles
+                    'normal' => ['activo' => false, 'inicio' => '', 'fin' => ''],
+                    'urgencia' => ['activo' => false, 'inicio' => '', 'fin' => '']
+                ]
+            ]
         ]
     ];
 
