@@ -1,29 +1,31 @@
 # =============================================================
-# Terraform — Variables de Entrada
+# Variables de Configuración — GCP
 # =============================================================
 
-# ----- Credenciales AWS Sandbox (temporales) -----
-
-variable "aws_access_key" {
-  description = "AWS Access Key ID (credencial temporal del Sandbox)"
+variable "project_id" {
+  description = "ID del proyecto en Google Cloud Platform (GCP)"
   type        = string
-  sensitive   = true
 }
 
-variable "aws_secret_key" {
-  description = "AWS Secret Access Key (credencial temporal del Sandbox)"
+variable "region" {
+  description = "Región de GCP (Ej: southamerica-west1 para Santiago de Chile)"
   type        = string
-  sensitive   = true
+  default     = "southamerica-west1"
 }
 
-variable "aws_session_token" {
-  description = "AWS Session Token (obligatorio en Sandbox Academy)"
+variable "zone" {
+  description = "Zona de GCP dentro de la región (ej. southamerica-west1-a)"
   type        = string
-  sensitive   = true
+  default     = "southamerica-west1-a"
 }
 
-# ----- Base de Datos RDS -----
+variable "machine_type" {
+  description = "Tipo de máquina en Compute Engine (ej. e2-medium para mayor velocidad con créditos de prueba)"
+  type        = string
+  default     = "e2-medium"
+}
 
+# ----- Base de Datos MySQL (Contenedor local en la VM) -----
 variable "db_name" {
   description = "Nombre de la base de datos MySQL"
   type        = string
@@ -31,55 +33,53 @@ variable "db_name" {
 }
 
 variable "db_username" {
-  description = "Usuario administrador de MySQL"
+  description = "Usuario de la base de datos MySQL"
   type        = string
   default     = "vet_user"
 }
 
 variable "db_password" {
-  description = "Contraseña del usuario MySQL"
+  description = "Contraseña de la base de datos MySQL"
   type        = string
   sensitive   = true
 }
 
-# ----- Aplicación -----
+variable "db_root_password" {
+  description = "Contraseña root de MySQL"
+  type        = string
+  sensitive   = true
+}
 
+# ----- Redis -----
+variable "redis_password" {
+  description = "Contraseña para Redis"
+  type        = string
+  sensitive   = true
+  default     = "redis_secret"
+}
+
+# ----- Aplicación Laravel -----
 variable "app_key" {
-  description = "APP_KEY de Laravel (base64:...)"
+  description = "Clave de encriptación de Laravel (base64:...)"
   type        = string
   sensitive   = true
 }
 
 variable "ghcr_image" {
-  description = "Imagen Docker de la aplicación en GHCR"
+  description = "Imagen Docker de la aplicación en GitHub Container Registry"
   type        = string
   default     = "ghcr.io/serbrigue/veterinaria:main"
 }
 
-variable "instance_type" {
-  description = "Tipo de instancia EC2 para el ASG"
-  type        = string
-  default     = "t3.small"
-}
-
-variable "redis_password" {
-  description = "Contraseña de Redis"
-  type        = string
-  default     = "redis_secret"
-  sensitive   = true
-}
-
-# ----- Mail (opcional) -----
-
+# ----- Correo (SMTP / Gmail) -----
 variable "mail_username" {
-  description = "Usuario SMTP para envío de correos"
+  description = "Correo Gmail para envío SMTP"
   type        = string
-  default     = ""
+  default     = "vaalavet@gmail.com"
 }
 
 variable "mail_password" {
-  description = "Contraseña SMTP"
+  description = "Contraseña de aplicación de Gmail (16 caracteres)"
   type        = string
-  default     = ""
   sensitive   = true
 }
