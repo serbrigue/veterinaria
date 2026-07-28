@@ -53,6 +53,47 @@ class ProfileController extends Controller
             ->orderBy('fecha_hora', 'asc')
             ->first();
 
+        $cotizaciones = [];
+        if ($veterinario) {
+            $pagosRegistrados = \App\Models\PagoVeterinario::where('veterinario_id', $veterinario->id)->get()->keyBy(function($item) {
+                return $item->anio . '-' . $item->mes;
+            });
+
+            $citasCompletadas = $veterinario->citas()
+                ->where('estado', 'completada')
+                ->whereHas('transaccion', function ($t) {
+                    $t->where('estado', 'pagado');
+                })
+                ->with(['prestacion', 'transaccion'])
+                ->get();
+
+            foreach ($citasCompletadas as $cita) {
+                $fecha = \Carbon\Carbon::parse($cita->transaccion->fecha_pago);
+                $key = $fecha->format('Y-n');
+                if (!isset($cotizaciones[$key])) {
+                    $cotizaciones[$key] = [
+                        'mes' => $fecha->month,
+                        'anio' => $fecha->year,
+                        'mes_nombre' => ucfirst($fecha->translatedFormat('F Y')),
+                        'citas_count' => 0,
+                        'monto_generado' => 0,
+                        'comision_calculada' => 0,
+                        'estado' => isset($pagosRegistrados[$key]) ? $pagosRegistrados[$key]->estado : 'pendiente',
+                        'pago_id' => isset($pagosRegistrados[$key]) ? $pagosRegistrados[$key]->id : null
+                    ];
+                }
+                $cotizaciones[$key]['citas_count']++;
+                $precioBase = $cita->prestacion ? $cita->prestacion->precio_base : 0;
+                $porcentaje = $cita->prestacion ? $cita->prestacion->comision_vet : 0;
+                $cotizaciones[$key]['monto_generado'] += $precioBase;
+                $cotizaciones[$key]['comision_calculada'] += ($precioBase * $porcentaje) / 100;
+            }
+
+            usort($cotizaciones, function($a, $b) {
+                return ($b['anio'] <=> $a['anio']) ?: ($b['mes'] <=> $a['mes']);
+            });
+        }
+
         // Devolvemos la vista con todos los datos
         return Inertia::render('Perfil/Editar', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
@@ -62,6 +103,7 @@ class ProfileController extends Controller
             'proximaCitaVet' => $proximaCitaVet,
             'mascota' => $mascota,
             'veterinario' => $veterinario,
+            'cotizaciones' => $cotizaciones,
         ]);
     }
 

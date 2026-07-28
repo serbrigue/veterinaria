@@ -4,18 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\Insumo;
 use App\Models\MovimientoInventario;
+use App\Http\Requests\GuardarMovimientoInventarioRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class MovimientoInventarioController extends Controller
 {
-    public function registrarMerma(Request $request)
+    public function registrarMerma(GuardarMovimientoInventarioRequest $request)
     {
-        $request->validate([
-            'insumo_id' => 'required|exists:insumos,id',
-            'cantidad' => 'required|numeric|min:1',
-            'motivo' => 'required|string|max:255',
-        ]);
+        $request->validated();
 
         return DB::transaction(function () use ($request) {
             $insumo = Insumo::findOrFail($request->insumo_id);
@@ -36,5 +33,36 @@ class MovimientoInventarioController extends Controller
 
             return response()->json($movimiento->load('insumo'), 201);
         });
+    }
+
+    public function registrarCompra(GuardarMovimientoInventarioRequest $request)
+    {
+        $request->validated();
+
+        return DB::transaction(function () use ($request) {
+            $insumo = Insumo::findOrFail($request->insumo_id);
+            
+            $insumo->increment('stock_actual', $request->cantidad);
+
+            $movimiento = MovimientoInventario::create([
+                'insumo_id' => $insumo->id,
+                'tipo' => 'entrada',
+                'cantidad' => $request->cantidad,
+                'motivo' => $request->motivo,
+                'usuario_id' => auth()->id(),
+            ]);
+
+            return response()->json($movimiento->load('insumo'), 201);
+        });
+    }
+
+    public function historial(Insumo $insumo)
+    {
+        $movimientos = MovimientoInventario::with(['usuario', 'cita'])
+            ->where('insumo_id', $insumo->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($movimientos);
     }
 }

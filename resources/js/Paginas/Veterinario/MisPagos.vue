@@ -54,7 +54,7 @@
                                     </div>
                                     <div class="text-end">
                                         <span class="fs-5 fw-bold text-dark">${{ formatoDinero(pago.monto_total) }}</span>
-                                        <i class="bi bi-chevron-right text-muted ms-3 opacity-50"></i>
+                                        <i class="bi bi-caret-right-fill text-muted ms-3 opacity-50"></i>
                                     </div>
                                 </button>
                             </div>

@@ -4,19 +4,24 @@
 
         <div class="container py-4">
             <div class="card shadow-sm">
-                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <h1 class="h5 mb-0">Catálogo de Prestaciones</h1>
+                <div class="card-header border-0 bg-white p-4 d-flex justify-content-between align-items-center flex-wrap gap-3 rounded-top-4 border-bottom border-light">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-primary bg-opacity-10 p-2 rounded-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 56px; height: 56px;">
+                            <img src="/images/icon_services.png" alt="Icono Prestaciones" class="w-100 h-100 object-fit-contain" style="transform: scale(1.15);">
+                        </div>
+                        <h1 class="h4 mb-0 fw-bold text-dark">Catálogo de Prestaciones</h1>
+                    </div>
                     <div class="d-flex flex-wrap gap-2 align-items-center">
                         <template v-if="$isAdmin() || $isSecretaria()">
-                            <a href="/api/export/prestaciones" class="btn btn-sm btn-outline-success">
+                            <a href="/api/export/prestaciones" class="btn btn-light text-success fw-bold rounded-pill shadow-sm btn-hover-elevate">
                                 <i class="bi bi-download me-1"></i> Exportar
                             </a>
-                            <button type="button" class="btn btn-sm btn-outline-primary" @click="mostrarModalImportar = true">
+                            <button type="button" class="btn btn-light text-primary fw-bold rounded-pill shadow-sm btn-hover-elevate" @click="mostrarModalImportar = true">
                                 <i class="bi bi-upload me-1"></i> Importar
                             </button>
                         </template>
-                        <button v-if="esAdmin" type="button" class="btn btn-sm btn-primary" @click="abrirModalCrear">
-                            + Nueva Prestación
+                        <button v-if="esAdmin" type="button" class="btn btn-primary fw-bold rounded-pill shadow-sm btn-hover-elevate px-4" @click="abrirModalCrear">
+                            <i class="bi bi-plus-lg me-1"></i> Nueva Prestación
                         </button>
                     </div>
                 </div>
@@ -80,42 +85,47 @@
                     <div v-if="!cargando && !listaVacia && !sinResultadosFiltro" class="row g-4">
                         <div v-for="prestacion in prestacionesVisibles" :key="prestacion.id" class="col-md-6 col-lg-4">
                             <Link :href="route('prestaciones.detalle', prestacion.id)" class="text-decoration-none">
-                            <div class="card h-100 shadow-sm border-0 border-top border-primary border-4" style="transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 .5rem 1rem rgba(0,0,0,.15)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 .125rem .25rem rgba(0,0,0,.075)';">
-                                <div class="card-body p-4 d-flex flex-column">
-                                    <div class="d-flex justify-content-between align-items-start mb-2 gap-2">
+                            <div class="card h-100 border-0 shadow-sm rounded-4 hover-elevate transition-all overflow-hidden position-relative">
+                                <!-- Línea superior decorativa -->
+                                <div class="position-absolute top-0 start-0 w-100 bg-primary" style="height: 4px;"></div>
+                                
+                                <div class="card-body p-4 d-flex flex-column pt-4">
+                                    <div class="d-flex justify-content-between align-items-start mb-3 gap-2">
                                         <h3 class="h5 fw-bold mb-0 text-dark">
                                             {{ prestacion.nombre }}
                                         </h3>
                                         <div class="d-flex flex-column align-items-end gap-1">
-                                            <span class="badge rounded-pill text-bg-light border shadow-sm">
+                                            <span class="badge rounded-pill bg-light text-primary border shadow-sm px-3 py-2">
                                                 {{ prestacion.especialidad_id ? prestacion.especialidad.nombre : 'Medicina General' }}
                                             </span>
-                                            <span v-if="prestacion.categoria_prestacion" class="badge rounded-pill bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 shadow-sm small">
+                                            <span v-if="prestacion.categoria_prestacion" class="badge rounded-pill bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 shadow-sm px-3 py-1">
                                                 {{ prestacion.categoria_prestacion.nombre }}
                                             </span>
                                         </div>
                                     </div>
                                     
-                                    <div class="mb-3 text-muted small d-flex align-items-center gap-1">
-                                        <i class="bi bi-geo-alt-fill text-danger"></i>
-                                        {{ prestacion.sucursal?.nombre || 'Sin sucursal asignada' }}
+                                    <div class="mb-3 text-muted small d-flex align-items-center gap-2">
+                                        <div class="bg-danger bg-opacity-10 p-1 rounded-circle text-danger d-flex align-items-center justify-content-center" style="width: 24px; height: 24px;">
+                                            <i class="bi bi-geo-alt-fill"></i>
+                                        </div>
+                                        <span class="fw-medium">{{ prestacion.sucursal?.nombre || 'Sin sucursal asignada' }}</span>
                                     </div>
                                     
                                     <p class="card-text text-secondary mb-4 flex-grow-1" style="font-size: 0.9rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
                                         {{ prestacion.descripcion || 'Sin descripción detallada.' }}
                                     </p>
                                     
-                                    <div class="mt-auto bg-light rounded p-3 d-flex justify-content-between align-items-center border">
+                                    <div class="mt-auto bg-light rounded-4 p-3 d-flex justify-content-between align-items-center border border-light shadow-sm">
                                         <div>
-                                            <span class="d-block small text-muted fw-semibold mb-1 text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Valor Cliente</span>
-                                            <span class="fs-5 fw-bold text-success">${{ Math.round(prestacion.precio_base).toLocaleString('es-CL') }}</span>
+                                            <span class="d-block small text-muted fw-bold mb-1 text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">Valor Cliente</span>
+                                            <span class="fs-4 fw-bold text-success">${{ Math.round(prestacion.precio_base).toLocaleString('es-CL') }}</span>
                                         </div>
-                                        <div v-if="esAdmin"   class="btn-group btn-group-sm bg-white shadow-sm rounded">
-                                            <button type="button" class="btn btn-outline-primary border-0" @click.prevent.stop="abrirModalEditar(prestacion)" title="Editar Prestación">
-                                                <i class="bi bi-pencil-fill"> Editar</i>
+                                        <div v-if="esAdmin" class="d-flex gap-2">
+                                            <button type="button" class="btn btn-sm btn-light text-primary fw-bold rounded-pill shadow-sm btn-hover-elevate px-3" @click.prevent.stop="abrirModalEditar(prestacion)">
+                                                <i class="bi bi-pencil-fill me-1"></i> Editar
                                             </button>
-                                            <button type="button" class="btn btn-outline-danger border-0" @click.prevent.stop="confirmarEliminar(prestacion)" title="Eliminar Prestación">
-                                                <i class="bi bi-trash-fill"> Eliminar</i>
+                                            <button type="button" class="btn btn-sm btn-light text-danger fw-bold rounded-pill shadow-sm btn-hover-elevate px-3" @click.prevent.stop="confirmarEliminar(prestacion)">
+                                                <i class="bi bi-trash3-fill me-1"></i> Eliminar
                                             </button>
                                         </div>
                                     </div>
@@ -425,3 +435,22 @@ export default {
     },
 }
 </script>
+
+<style scoped>
+.hover-elevate {
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.hover-elevate:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important;
+}
+.btn-hover-elevate {
+    transition: all 0.2s;
+}
+.btn-hover-elevate:hover {
+    transform: translateY(-2px);
+}
+.transition-all {
+    transition: all 0.3s ease-in-out;
+}
+</style>

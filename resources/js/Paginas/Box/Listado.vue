@@ -3,18 +3,23 @@
     <AuthenticatedLayout>
         <div class="container py-4">
             <div class="card shadow-sm border-0 rounded-4">
-                <div class="card-header bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
-                    <h1 class="h4 mb-0 text-primary fw-bold">Boxes de Atención</h1>
-                    <div class="d-flex gap-2">
+                <div class="card-header border-0 bg-white p-4 d-flex justify-content-between align-items-center flex-wrap gap-3 rounded-top-4 border-bottom border-light">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-primary bg-opacity-10 p-2 rounded-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 56px; height: 56px;">
+                            <img src="/images/icon_boxes.png" alt="Icono Boxes" class="w-100 h-100 object-fit-contain" style="transform: scale(1.15);">
+                        </div>
+                        <h1 class="h4 mb-0 fw-bold text-dark">Boxes de Atención</h1>
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap align-items-center">
                         <template v-if="$isAdmin() || $isSecretaria()">
-                            <a href="/api/export/boxes" class="btn btn-sm btn-outline-success">
+                            <a href="/api/export/boxes" class="btn btn-light text-success fw-bold rounded-pill shadow-sm btn-hover-elevate">
                                 <i class="bi bi-download me-1"></i> Exportar
                             </a>
-                            <button type="button" class="btn btn-sm btn-outline-primary" @click="mostrarModalImportar = true">
+                            <button type="button" class="btn btn-light text-primary fw-bold rounded-pill shadow-sm btn-hover-elevate" @click="mostrarModalImportar = true">
                                 <i class="bi bi-upload me-1"></i> Importar
                             </button>
                         </template>
-                        <button v-if="esAdmin" type="button" class="btn btn-primary rounded-pill shadow-sm px-4" @click="abrirModalCrear">
+                        <button v-if="esAdmin" type="button" class="btn btn-primary fw-bold rounded-pill shadow-sm btn-hover-elevate px-4" @click="abrirModalCrear">
                             <i class="bi bi-plus-lg me-1"></i> Nuevo Box
                         </button>
                     </div>
@@ -63,7 +68,7 @@
                     <EstadoVacio
                         :visible="!cargando && listaVacia"
                         mensaje="No tienes boxes registrados aún."
-                        :texto-boton="esVeterinarioOAdmin ? 'Registrar tu primer box' : ''"
+                        :texto-boton="esAdmin ? 'Registrar tu primer box' : ''"
                         icono="bi bi-door-open"
                         @accion="abrirModalCrear"
                     />
@@ -452,5 +457,11 @@ export default {
 }
 .border-dashed {
     border-style: dashed !important;
+}
+.btn-hover-elevate {
+    transition: all 0.2s;
+}
+.btn-hover-elevate:hover {
+    transform: translateY(-2px);
 }
 </style>

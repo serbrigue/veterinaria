@@ -494,6 +494,8 @@ class CitaController extends Controller
             'prestacion.categoriaPrestacion',
             'equipoMedico.usuario',
             'equipoMedico.rol',
+            'fichaClinica.recetas',
+            'fichaClinica.vacunas',
         ]);
 
         // Obtenemos la mascota
@@ -513,8 +515,21 @@ class CitaController extends Controller
             $insumosSucursal = Insumo::where('sucursal_id', $cita->box->sucursal_id)
                 ->where('stock_actual', '>', 0)
                 ->orderBy('nombre')
-                ->get(['id', 'nombre', 'precio_venta', 'stock_actual']);
+                ->get(['id', 'nombre', 'precio_venta', 'stock_actual', 'categoria_insumo_id']);
         }
+
+        // Obtenemos todos los medicamentos y vacunas del catálogo global (distintos por nombre)
+        $catalogoMedicamentos = Insumo::where('categoria_insumo_id', 1)
+            ->select('nombre')
+            ->distinct()
+            ->orderBy('nombre')
+            ->get();
+
+        $catalogoVacunas = Insumo::where('categoria_insumo_id', 3)
+            ->select('nombre')
+            ->distinct()
+            ->orderBy('nombre')
+            ->get();
 
         // Obtenemos el personal médico adicional si la cita es una cirugía
         $rolesMedicos = [];
@@ -551,6 +566,8 @@ class CitaController extends Controller
             'cita' => $cita,
             'cargos' => $cargos,
             'insumosSucursal' => $insumosSucursal,
+            'catalogoMedicamentos' => $catalogoMedicamentos,
+            'catalogoVacunas' => $catalogoVacunas,
             'mascota' => $mascota,
             'prestacion' => $cita->prestacion,
             'rolesMedicos' => $rolesMedicos,

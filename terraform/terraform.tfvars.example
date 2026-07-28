@@ -1,28 +1,23 @@
 # =============================================================
-# terraform.tfvars.example
+# Ejemplo de Variables de Despliegue — GCP
 # =============================================================
-# Copia este archivo como terraform.tfvars y rellena los valores.
-# NUNCA subas terraform.tfvars al repositorio (está en .gitignore).
-#
-# Las credenciales AWS se obtienen de AWS Academy Sandbox:
-#   Learner Lab → AWS Details → AWS CLI → Show
-# =============================================================
+# Copia este archivo como terraform.tfvars y rellena tus datos.
 
-# ----- Credenciales AWS Sandbox (cambian cada sesión ~3h) -----
-aws_access_key    = "ASIAXXXXXXXXXXX"
-aws_secret_key    = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-aws_session_token = "xxxxx...token largo...xxxxx"
+project_id   = "tu-proyecto-gcp-id"
+region       = "southamerica-west1"
+zone         = "southamerica-west1-a"
+machine_type = "e2-medium"
 
-# ----- Base de Datos -----
-db_password = "tu_password_seguro_aqui"
+db_name          = "veterinaria"
+db_username      = "vet_user"
+db_password      = "cambiar_secreto_db"
+db_root_password = "cambiar_secreto_root"
 
-# ----- Aplicación Laravel -----
-# Obtener con: php artisan key:generate --show
-app_key = "base64:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+redis_password = "cambiar_secreto_redis"
 
-# ----- Opcional -----
-# redis_password = "redis_secret"
-# instance_type  = "t3.small"
-# ghcr_image     = "ghcr.io/serbrigue/veterinaria:main"
-# mail_username  = "sbg.daemon@gmail.com"
-# mail_password  = "xxxx xxxx xxxx xxxx"
+app_key = "base64:..."
+
+ghcr_image = "ghcr.io/serbrigue/veterinaria:main"
+
+mail_username = "tu-correo@gmail.com"
+mail_password = "tu-password-de-aplicacion-sin-espacios"

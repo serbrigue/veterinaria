@@ -1,13 +1,30 @@
 <template>
     <div class="mb-4 p-4 rounded-4 shadow-sm bg-white border border-primary border-opacity-25">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h3 class="h5 fw-bold text-primary mb-0 d-flex align-items-center gap-2">
-                <i class="bi bi-file-medical-fill"></i> Ficha Clínica
-            </h3>
-            <span v-if="esSoloLectura" class="badge bg-secondary">Solo Lectura</span>
+        <div class="d-flex justify-content-between align-items-center mb-3" 
+             :class="{'user-select-none': esSoloLectura}"
+             :style="esSoloLectura ? 'cursor: pointer;' : ''" 
+             @click="esSoloLectura ? mostrarContenidoFicha = !mostrarContenidoFicha : null"
+             title="Clic para expandir/ocultar">
+            <div class="d-flex align-items-center gap-2">
+                <h3 class="h5 fw-bold text-primary mb-0 d-flex align-items-center gap-2">
+                    <i class="bi bi-file-medical-fill"></i> Ficha Clínica
+                </h3>
+                <span v-if="esSoloLectura" class="badge bg-light text-primary border border-primary border-opacity-50 ms-2" style="font-size: 0.75rem;">
+                    {{ mostrarContenidoFicha ? 'Ocultar detalles' : 'Ver detalles (Click)' }}
+                    <i :class="mostrarContenidoFicha ? 'bi bi-caret-up-fill' : 'bi bi-caret-down-fill'" class="ms-1"></i>
+                </span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <a v-if="esSoloLectura && cita.ficha_clinica" :href="`/api/citas/${cita.id}/ficha-clinica/pdf`" target="_blank" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1" title="Descargar PDF" @click.stop>
+                    <i class="bi bi-file-earmark-pdf-fill"></i> PDF
+                </a>
+                <span v-if="esSoloLectura" class="badge bg-secondary">Solo Lectura</span>
+                <span v-else class="badge bg-secondary">Modo Edición</span>
+            </div>
         </div>
 
-        <div v-if="guardando" class="text-center py-4">
+        <div v-show="!esSoloLectura || mostrarContenidoFicha">
+            <div v-if="guardando" class="text-center py-4">
             <div class="spinner-border text-primary" role="status"></div>
             <p class="text-muted mt-2 small">Guardando ficha clínica...</p>
         </div>
@@ -53,9 +70,14 @@
                 </div>
 
                 <!-- Elementos Utilizados (Cargos) - Integrado a la Ficha Clinica -->
-                <h4 class="h6 fw-semibold text-secondary mb-3 mt-5 border-bottom pb-2">
-                    <i class="bi bi-box-seam-fill me-1 text-warning"></i> Uso de Insumos / Mermas
-                </h4>
+                <div class="d-flex justify-content-between align-items-center mb-3 mt-5 border-bottom pb-2">
+                    <h4 class="h6 fw-semibold text-secondary mb-0">
+                        <i class="bi bi-box-seam-fill me-1 text-warning"></i> Uso de Insumos / Mermas
+                    </h4>
+                    <button v-if="estadoCita != 'completada'" type="button" class="btn btn-sm btn-outline-primary" @click="mostrandoFormularioInsumo = !mostrandoFormularioInsumo">
+                        <i :class="mostrandoFormularioInsumo ? 'bi bi-dash-circle' : 'bi bi-plus-circle'"></i> {{ mostrandoFormularioInsumo ? 'Cancelar Insumo' : 'Agregar Insumo' }}
+                    </button>
+                </div>
 
                 <div v-if="cargosList && cargosList.some(c => c.insumo)" class="mb-3">
                     <div v-for="cargo in cargosList.filter(c => c.insumo)" :key="'insumo-' + cargo.id"
@@ -63,7 +85,7 @@
                         <div class="d-flex align-items-center gap-2">
                             <i class="bi bi-capsule text-warning"></i>
                             <span class="small fw-semibold text-dark">{{ cargo.insumo.nombre }}</span>
-                            
+                       cv       
                             <div v-if="estadoCita != 'completada'" class="input-group input-group-sm ms-2" style="width: 90px;">
                                 <button class="btn btn-outline-secondary px-2 fw-bold" type="button" @click="$emit('actualizar-cantidad', cargo, -1)" :disabled="procesandoCargo === cargo.id || cargo.cantidad <= 1">
                                     -
@@ -83,19 +105,21 @@
                         </div>
                     </div>
                 </div>
-                <p v-else class="text-muted small mb-3"><i class="bi bi-dash-circle me-1"></i> Aún no se han registrado elementos usados.</p>
-
-                <div v-if="estadoCita != 'completada'" class="border rounded-3 p-3 bg-white mb-4">
-                    <h4 class="h6 fw-semibold text-dark mb-2"><i class="bi bi-plus-circle me-1 text-success"></i> Agregar Insumo</h4>
+                <div v-if="estadoCita != 'completada' && mostrandoFormularioInsumo" class="border rounded-3 p-3 bg-white mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h4 class="h6 fw-semibold text-dark mb-0"><i class="bi bi-plus-circle me-1 text-success"></i> Agregar Insumo</h4>
+                        <button type="button" class="btn btn-sm btn-outline-danger p-1" @click="mostrandoFormularioInsumo = false; nuevoCargo.insumoId = ''; nuevoCargo.cantidad = 1" title="Cancelar">
+                            <span class="fw-bold px-2">X</span>
+                        </button>
+                    </div>
                     <div class="row g-2 align-items-end">
                         <div class="col-12 col-sm-6">
                             <label class="form-label small fw-semibold text-secondary mb-1">Insumo (stock disponible)</label>
-                            <select v-model="nuevoCargo.insumoId" class="form-select form-select-sm">
-                                <option value="">Seleccionar insumo...</option>
-                                <option v-for="ins in insumosSucursal" :key="ins.id" :value="ins.id">
-                                    {{ ins.nombre }} (stock: {{ ins.stock_actual }}) — ${{ Number(ins.precio_venta).toLocaleString('es-CL') }}
-                                </option>
-                            </select>
+                            <BuscadorSelect 
+                                v-model="nuevoCargo.insumoId" 
+                                :opciones="opcionesInsumos" 
+                                placeholder="Buscar y seleccionar insumo..." 
+                            />
                         </div>
                         <div class="col-6 col-sm-3">
                             <label class="form-label small fw-semibold text-secondary mb-1">Cantidad</label>
@@ -104,7 +128,7 @@
                         <div class="col-6 col-sm-3">
                             <button type="button" @click="emitirAgregarCargo" class="btn btn-success btn-sm w-100" :disabled="!nuevoCargo.insumoId || nuevoCargo.cantidad < 1 || guardandoCargo">
                                 <span v-if="guardandoCargo" class="spinner-border spinner-border-sm me-1"></span>
-                                <i v-else class="bi bi-plus-lg me-1"></i> Añadir
+                                <i v-else class="bi bi-plus-lg me-1"></i> Añadir  
                             </button>
                         </div>
                     </div>
@@ -129,13 +153,17 @@
                         
                         <div class="mb-2">
                             <label class="form-label small fw-semibold text-muted">Medicamento</label>
-                            <select v-if="!esSoloLectura" v-model="receta.medicamentosTexto" class="form-select form-select-sm" required>
-                                <option value="">Seleccionar medicamento...</option>
-                                <option v-for="ins in insumosMedicamentos" :key="'med-'+ins.id" :value="ins.nombre">{{ ins.nombre }}</option>
-                            </select>
+                            <BuscadorSelect 
+                                v-if="!esSoloLectura" 
+                                v-model="receta.medicamentosTexto" 
+                                :opciones="catalogoMedicamentos" 
+                                trackBy="nombre"
+                                placeholder="Buscar medicamento..." 
+                                @change="!medicamentoEnStock(receta.medicamentosTexto) && (receta.comprado_en_clinica = false)"
+                            />
                             <input v-else type="text" class="form-control form-control-sm" :value="receta.medicamentosTexto" disabled>
                         </div>
-                        <div class="mb-2 form-check form-switch ps-5">
+                        <div class="mb-2 form-check form-switch ps-5" v-if="medicamentoEnStock(receta.medicamentosTexto)">
                             <input v-model="receta.comprado_en_clinica" type="checkbox" class="form-check-input" :id="'chkComprar-'+index" :disabled="esSoloLectura">
                             <label class="form-check-label small fw-semibold text-primary" :for="'chkComprar-'+index">
                                 Añadir costo al recibo de la cita (Se comprará aquí)
@@ -158,10 +186,13 @@
                 <div v-for="(vacuna, vIndex) in ficha.vacunas" :key="'vacuna-'+vIndex" class="row g-2 mb-3 bg-success bg-opacity-10 p-2 rounded align-items-end">
                     <div class="col-md-3">
                         <label class="form-label small fw-semibold text-muted mb-0">Vacuna</label>
-                        <select v-if="!esSoloLectura" v-model="vacuna.nombre_vacuna" class="form-select form-select-sm" required>
-                            <option value="">Seleccionar vacuna...</option>
-                            <option v-for="ins in insumosVacunas" :key="'vac-'+ins.id" :value="ins.nombre">{{ ins.nombre }}</option>
-                        </select>
+                        <BuscadorSelect 
+                            v-if="!esSoloLectura" 
+                            v-model="vacuna.nombre_vacuna" 
+                            :opciones="catalogoVacunas" 
+                            trackBy="nombre"
+                            placeholder="Buscar vacuna..." 
+                        />
                         <input v-else type="text" class="form-control form-control-sm" :value="vacuna.nombre_vacuna" disabled>
                     </div>
                     <div class="col-md-3">
@@ -190,21 +221,34 @@
                 </div>
             </form>
         </div>
+        </div>
     </div>
 </template>
 
 <script>
 import axios from 'axios';
 import Swal from 'sweetalert2';
+import BuscadorSelect from '@/Componentes/BuscadorSelect.vue';
 
 export default {
     name: 'FichaClinicaPanel',
+    components: {
+        BuscadorSelect
+    },
     props: {
         cita: {
             type: Object,
             required: true
         },
         insumosSucursal: {
+            type: Array,
+            default: () => []
+        },
+        catalogoMedicamentos: {
+            type: Array,
+            default: () => []
+        },
+        catalogoVacunas: {
             type: Array,
             default: () => []
         },
@@ -236,6 +280,8 @@ export default {
     data() {
         return {
             guardando: false,
+            mostrarContenidoFicha: false,
+            mostrandoFormularioInsumo: false,
             nuevoCargo: {
                 insumoId: '',
                 cantidad: 1
@@ -264,18 +310,30 @@ export default {
         insumosVacunas() {
             // CategoriaInsumo 3 = Vacuna
             return this.insumosSucursal.filter(ins => ins.categoria_insumo_id === 3);
+        },
+        opcionesInsumos() {
+            return this.insumosSucursal.map(ins => ({
+                id: ins.id,
+                nombre: ins.nombre,
+                subtexto: `Stock: ${ins.stock_actual} — $${Number(ins.precio_venta).toLocaleString('es-CL')}`
+            }));
         }
     },
     mounted() {
         this.cargarDatosFicha();
     },
     methods: {
+        medicamentoEnStock(nombre) {
+            if (!nombre) return false;
+            return this.insumosSucursal.some(ins => ins.nombre === nombre && ins.categoria_insumo_id === 1);
+        },
         emitirAgregarCargo() {
             this.$emit('agregar-cargo', { insumoId: this.nuevoCargo.insumoId, cantidad: this.nuevoCargo.cantidad });
             // Se limpia localmente si no hubo error o asincrónicamente?
             // Para simplificar, limpiamos en cuanto se emite, el padre lo procesa
             this.nuevoCargo.insumoId = '';
             this.nuevoCargo.cantidad = 1;
+            this.mostrandoFormularioInsumo = false;
         },
         cargarDatosFicha() {
             if (this.cita.ficha_clinica) {
@@ -289,7 +347,9 @@ export default {
                 
                 if (fc.recetas) {
                     this.ficha.recetas = fc.recetas.map(r => ({
-                        medicamentosTexto: Array.isArray(r.medicamentos) ? r.medicamentos.join('\n') : r.medicamentos,
+                        medicamentosTexto: Array.isArray(r.medicamentos) 
+                            ? r.medicamentos.map(m => (typeof m === 'object' && m !== null) ? `${m.nombre || 'Medicamento'}${m.dosis ? ' - ' + m.dosis : ''}` : m).join('\n') 
+                            : r.medicamentos,
                         indicaciones_generales: r.indicaciones_generales,
                         comprado_en_clinica: r.comprado_en_clinica !== undefined ? Boolean(r.comprado_en_clinica) : true
                     }));

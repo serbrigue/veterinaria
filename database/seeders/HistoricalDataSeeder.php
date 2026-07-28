@@ -23,6 +23,7 @@ class HistoricalDataSeeder extends Seeder
         $veterinarios = Veterinario::with('usuario')->get();
         $boxes = Box::all();
         $prestaciones = Prestacion::all();
+        $insumos = \App\Models\Insumo::where('estado', 'activo')->get();
 
         if ($mascotas->isEmpty() || $veterinarios->isEmpty() || $boxes->isEmpty() || $prestaciones->isEmpty()) {
             $this->command->error('Se requieren Mascotas, Veterinarios, Boxes y Prestaciones previas para generar historial.');
@@ -92,16 +93,102 @@ class HistoricalDataSeeder extends Seeder
                     'tipo' => rand(1, 10) > 8 ? 'urgencia' : 'normal',
                 ]);
 
-                // Si se completó, generar el pago asociado
+                // Si se completó, generar el pago asociado, ficha clínica, receta e insumos
                 if ($estado === 'completada') {
                     // Si el cliente es uno de los morosos o por probabilidad del 15% queda pendiente
                     $esMoroso = str_contains($mascota->cliente->usuario->email ?? '', 'deuda') || (rand(1, 100) <= 15);
 
+                    // --- GENERAR FICHA CLÍNICA ---
+                    $ficha = \App\Models\FichaClinica::create([
+                        'cita_id' => $cita->id,
+                        'mascota_id' => $mascota->id,
+                        'veterinario_id' => $veterinario->id,
+                        'peso_actual' => rand(30, 250) / 10,
+                        'frecuencia_cardiaca' => rand(80, 160),
+                        'temperatura' => rand(370, 395) / 10,
+                        'anamnesis' => 'Paciente asiste a consulta programada.',
+                        'sintomas' => rand(1, 10) > 7 ? 'Decaimiento leve.' : 'Ninguno aparente.',
+                        'diagnostico' => 'Diagnóstico presuntivo de rutina.',
+                    ]);
+
+                    // --- ASIGNAR INSUMOS (1 a 3 insumos al azar) ---
+                    $insumosDisponibles = $insumos->where('sucursal_id', $veterinario->sucursal_id);
+                    $montoInsumos = 0;
+                    if ($insumosDisponibles->count() > 0) {
+                        $cantidadInsumosUsados = rand(1, 3);
+                        $insumosUsados = $insumosDisponibles->random(min($cantidadInsumosUsados, $insumosDisponibles->count()));
+                        
+                        $medicamentosReceta = [];
+
+                        foreach ($insumosUsados as $ins) {
+                            $cant = rand(1, 2);
+                            $subtotal = $ins->precio_venta * $cant;
+                            $montoInsumos += $subtotal;
+
+                            // Registrar Cargo
+                            \App\Models\CitaCargo::create([
+                                'cita_id' => $cita->id,
+                                'prestacion_id' => $prestacion->id,
+                                'insumo_id' => $ins->id,
+                                'cantidad' => $cant,
+                                'precio_unitario' => $ins->precio_venta,
+                                'subtotal' => $subtotal,
+                                'pago_vet' => 0,
+                            ]);
+
+                            // Trazabilidad: Movimiento de Inventario (Salida)
+                            \App\Models\MovimientoInventario::create([
+                                'insumo_id' => $ins->id,
+                                'tipo' => 'salida',
+                                'cantidad' => $cant,
+                                'motivo' => "Uso clínico en Cita #{$cita->id}",
+                                'usuario_id' => $veterinario->user_id,
+                                'cita_id' => $cita->id,
+                            ]);
+
+                            // Si es vacuna, registrar en AplicacionVacuna
+                            if (stripos($ins->nombre, 'Vacuna') !== false) {
+                                \App\Models\AplicacionVacuna::create([
+                                    'cita_id' => $cita->id,
+                                    'mascota_id' => $mascota->id,
+                                    'nombre_vacuna' => $ins->nombre,
+                                    'fecha_aplicacion' => $horaInicio,
+                                    'fecha_proxima_dosis' => Carbon::parse($horaInicio)->addYear(),
+                                    'numero_lote' => 'LOTE-' . rand(1000, 9999),
+                                    'notas' => 'Vacunación rutinaria histórica.',
+                                ]);
+                            }
+
+                            // Si es medicamento, añadir a la receta (60% probabilidad)
+                            if ($ins->categoria_insumo_id !== null && rand(1, 100) <= 60 && stripos($ins->nombre, 'Vacuna') === false && stripos($ins->nombre, 'Jeringa') === false) {
+                                $medicamentosReceta[] = [
+                                    'nombre' => $ins->nombre,
+                                    'dosis' => rand(1, 2) . ' comprimidos',
+                                    'frecuencia' => 'cada 12 horas',
+                                    'duracion' => rand(3, 7) . ' días',
+                                    'insumo_id' => $ins->id
+                                ];
+                            }
+                        }
+
+                        // Crear Receta si hay medicamentos
+                        if (count($medicamentosReceta) > 0) {
+                            \App\Models\RecetaMedica::create([
+                                'ficha_clinica_id' => $ficha->id,
+                                'medicamentos' => $medicamentosReceta,
+                                'indicaciones_generales' => 'Administrar junto con la comida. Reposo relativo.',
+                                'comprado_en_clinica' => true,
+                            ]);
+                        }
+                    }
+
+                    $montoTotal = $prestacion->precio_base + $montoInsumos;
+
                     Transaccion::create([
                         'cita_id' => $cita->id,
                         'cliente_id' => $mascota->cliente_id,
-                        'monto_total' => $prestacion->precio_base,
-                        'monto_pagado' => $esMoroso ? 0.00 : $prestacion->precio_base,
+                        'monto_total' => $montoTotal,
+                        'monto_pagado' => $esMoroso ? 0.00 : $montoTotal,
                         'estado' => $esMoroso ? 'pendiente' : 'pagado',
                         'metodo_pago' => $esMoroso ? null : $metodosPago[array_rand($metodosPago)],
                         'fecha_pago' => $esMoroso ? null : clone $horaTermino,

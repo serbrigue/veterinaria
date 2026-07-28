@@ -67,6 +67,12 @@ class Cita extends Model
         return $this->hasMany(EquipoMedico::class, 'cita_id');
     }
 
+    // Relación con ficha clínica
+    public function fichaClinica()
+    {
+        return $this->hasOne(FichaClinica::class, 'cita_id');
+    }
+
     // Método que devuelve el cliente de la cita
     public function getClienteAttribute()
     {

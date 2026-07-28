@@ -23,62 +23,82 @@
             <div class="row g-4">
                 
                 <div class="col-lg-4 col-md-5">
-                    <div class="card border-0 shadow-sm sticky-top" style="top: 2rem;">
-                        <div class="card-body text-center py-4">
-                            <div v-if="mascota.imagen_url" class="mx-auto mb-3" style="width: 100px; height: 100px;">
-                                <img :src="mascota.imagen_url" alt="Foto de la mascota" class="img-fluid rounded-circle object-fit-cover w-100 h-100 border shadow-sm">
+                    <div class="card border-0 shadow-sm sticky-top rounded-4 overflow-hidden" style="top: 2rem;">
+                        <!-- Header Background -->
+                        <div class="card-img-top bg-light position-relative" style="height: 140px;">
+                            <div class="w-100 h-100 bg-primary bg-gradient bg-opacity-75 d-flex align-items-center justify-content-center">
+                                <i class="bi bi-heart-pulse text-white opacity-25" style="font-size: 5rem; transform: rotate(15deg);"></i>
                             </div>
-                            <div v-else class="mx-auto bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 90px; height: 90px;">
-                                <i class="bi bi-heart-pulse-fill fs-1"></i>
+                            <div class="position-absolute top-0 end-0 m-3">
+                                <span class="badge bg-white text-success px-3 py-2 rounded-pill shadow-sm fw-bold">
+                                    <i class="bi bi-circle-fill text-success small me-1"></i> Paciente Activo
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Avatar -->
+                        <div class="card-body text-center position-relative pt-0 pb-4">
+                            <div class="position-absolute top-0 start-50 translate-middle" style="z-index: 2;">
+                                <div class="bg-white p-2 rounded-circle shadow-sm" style="width: 110px; height: 110px;">
+                                    <div class="w-100 h-100 rounded-circle bg-light d-flex align-items-center justify-content-center text-primary fw-bold fs-1 overflow-hidden">
+                                        <img v-if="mascota.imagen_url" :src="mascota.imagen_url" alt="Foto de la mascota" class="w-100 h-100 object-fit-cover">
+                                        <i v-else class="bi bi-heart-pulse-fill text-primary opacity-50"></i>
+                                    </div>
+                                </div>
                             </div>
                             
-                            <h2 class="h5 mb-1 fw-bold text-dark">{{ mascota.nombre }}</h2>
-                            <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill small mt-2">Paciente Activo</span>
+                            <!-- Spacing for absolute avatar -->
+                            <div style="height: 60px;"></div>
+                            
+                            <h2 class="h4 mb-1 fw-bold text-dark">{{ mascota.nombre }}</h2>
+                            <p class="text-muted mb-0">{{ mascota.sexo ? mascota.sexo.charAt(0).toUpperCase() + mascota.sexo.slice(1) : 'Sexo N/A' }}</p>
                         </div>
                         
-                        <div class="card-body border-top p-4 bg-light bg-opacity-50">
-                            <h3 class="h6 text-uppercase text-muted fw-bold mb-4" style="font-size: 0.75rem; letter-spacing: 0.5px;">Información General</h3>
+                        <div class="card-body p-4 bg-light border-top border-light">
+                            <h3 class="h6 text-uppercase text-secondary fw-bold mb-4" style="font-size: 0.75rem; letter-spacing: 1px;">Detalles Principales</h3>
                             
-                            <div class="d-flex align-items-start gap-3 mb-4">
-                                <div class="bg-white p-2 rounded shadow-sm text-primary">
+                            <div class="d-flex align-items-center gap-3 mb-3 p-3 bg-white rounded-3 shadow-sm border border-light">
+                                <div class="bg-primary bg-opacity-10 p-2 rounded-circle text-primary d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
                                     <i class="bi bi-person-badge fs-5"></i>
                                 </div>
                                 <div>
-                                    <div class="text-muted small fw-medium mb-1">Dueño (Cliente)</div>
-                                        <Link v-if='cliente':href="route('clientes.detalle', cliente.id)" class="text-decoration-none fw-bold text-primary hover-primary">
-                                            {{ cliente?.usuario?.name }} <i class="bi bi-box-arrow-up-right ms-1 small"></i>
+                                    <div class="text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.65rem;">Propietario</div>
+                                        <Link v-if='cliente':href="route('clientes.detalle', cliente.id)" class="text-decoration-none fw-bold text-dark">
+                                            {{ cliente?.usuario?.name }} <i class="bi bi-box-arrow-up-right ms-1 small text-primary"></i>
                                         </Link>
                                         <span v-else class="text-dark fw-medium">No asignado</span>
-                                    </div>
-                                    
+                                </div>
                             </div>
 
-                            <div class="d-flex align-items-start gap-3 mb-4">
-                                <div class="bg-white p-2 rounded shadow-sm text-primary">
+                            <div class="d-flex align-items-center gap-3 mb-3 p-3 bg-white rounded-3 shadow-sm border border-light">
+                                <div class="bg-primary bg-opacity-10 p-2 rounded-circle text-primary d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
                                     <i class="bi bi-clipboard2-pulse fs-5"></i>
                                 </div>
                                 <div>
-                                    <div class="text-muted small fw-medium mb-1">Especie y Raza</div>
-                                    <span class="text-dark fw-medium d-block">
-                                        {{ especie?.nombre || 'Especie N/A' }} 
-                                        <span class="text-muted mx-1">•</span> 
-                                        {{ raza?.nombre || 'Raza N/A' }}
+                                    <div class="text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.65rem;">Especie y Raza</div>
+                                    <span class="text-dark fw-bold d-block">
+                                        {{ especie?.nombre || 'N/A' }} 
+                                        <span class="text-muted mx-1 fw-normal">•</span> 
+                                        {{ raza?.nombre || 'N/A' }}
                                     </span>
                                 </div>
                             </div>
 
-                            <div class="d-flex align-items-start gap-3">
-                                <div class="bg-white p-2 rounded shadow-sm text-primary">
-                                    <i class="bi bi-gender-ambiguous fs-5"></i>
+                            <div class="d-flex align-items-center gap-3 p-3 bg-white rounded-3 shadow-sm border border-light">
+                                <div class="bg-primary bg-opacity-10 p-2 rounded-circle text-primary d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                    <i class="bi bi-calendar3 fs-5"></i>
                                 </div>
                                 <div>
-                                    <div class="text-muted small fw-medium mb-1">Sexo</div>
-                                    <span class="text-dark fw-medium">{{ mascota.sexo || 'No especificado' }}</span>
+                                    <div class="text-muted small fw-bold text-uppercase mb-1" style="font-size: 0.65rem;">Fecha de Nac. / Edad</div>
+                                    <span class="text-dark fw-bold d-block">
+                                        {{ mascota.fecha_nacimiento ? formatearFecha(mascota.fecha_nacimiento) : 'N/A' }}
+                                        <span v-if="mascota.fecha_nacimiento" class="text-muted fw-normal ms-1">({{ $edadDesde(mascota.fecha_nacimiento) }})</span>
+                                    </span>
                                 </div>
                             </div>
                         </div>
-                        <div class="card-footer bg-white border-top p-3 text-center">
-                            <small class="text-muted"><i class="bi bi-clock-history me-1"></i> Registrado el: {{ formatearFecha(mascota.created_at) }}</small>
+                        <div class="card-footer bg-white border-top border-light p-3 text-center">
+                            <small class="text-muted fw-medium"><i class="bi bi-clock-history me-1"></i> Registrado el: {{ formatearFecha(mascota.created_at) }}</small>
                         </div>
                     </div>
                 </div>
@@ -624,7 +644,7 @@
                                                                     </span>
                                                                     <span class="badge rounded-pill bg-light text-secondary border border-light small px-2 py-1">
                                                                         {{ obtenerCantSlotsDisponibles(vet.id) }} horarios disponibles
-                                                                        <i class="bi ms-1" :class="vetAcordeonAbiertoId === vet.id ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                                                                        <i class="bi ms-1" :class="vetAcordeonAbiertoId === vet.id ? 'bi-caret-up-fill' : 'bi-caret-down-fill'"></i>
                                                                     </span>
                                                                 </button>
                                                             </h4>

@@ -3,31 +3,38 @@
     <AuthenticatedLayout>
         <div class="container py-4">
             <div class="card shadow-sm">
-                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <h1 class="h5 mb-0">Catálogo de Insumos</h1>
+                <div class="card-header border-0 bg-white p-4 d-flex justify-content-between align-items-center flex-wrap gap-3 rounded-top-4 border-bottom border-light">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-primary bg-opacity-10 p-2 rounded-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 56px; height: 56px;">
+                            <img src="/images/icon_supplies.png" alt="Icono Insumos" class="w-100 h-100 object-fit-contain" style="transform: scale(1.15);">
+                        </div>
+                        <h1 class="h4 mb-0 fw-bold text-dark">Catálogo de Insumos</h1>
+                    </div>
                     <div class="d-flex flex-wrap gap-2 align-items-center">
-                        <select v-model="filtroSucursal" class="form-select form-select-sm" style="width: auto; min-width: 12rem">
+                        <select v-model="filtroSucursal" class="form-select border-0 bg-light rounded-pill shadow-sm px-3" style="width: auto; min-width: 12rem">
                             <option value="">Todas las sucursales</option>
                             <option v-for="suc in sucursales" :key="suc.id" :value="suc.id">{{ suc.nombre }}</option>
                         </select>
-                        <select v-model="filtroCategoria" class="form-select form-select-sm" style="width: auto; min-width: 12rem">
+                        <select v-model="filtroCategoria" class="form-select border-0 bg-light rounded-pill shadow-sm px-3" style="width: auto; min-width: 12rem">
                             <option value="">Todas las categorías</option>
                             <option v-for="cat in categoriasInsumo" :key="cat.id" :value="cat.id">{{ cat.nombre }}</option>
                         </select>
-                        <select v-model="filtroEstado" class="form-select form-select-sm" style="width: auto; min-width: 10rem">
+                        <select v-model="filtroEstado" class="form-select border-0 bg-light rounded-pill shadow-sm px-3" style="width: auto; min-width: 10rem">
                             <option value="">Todos los estados</option>
                             <option value="activo">Activos</option>
                             <option value="inactivo">Inactivos</option>
                         </select>
                         <template v-if="$isAdmin() || $isSecretaria()">
-                            <a href="/api/export/insumos" class="btn btn-sm btn-outline-success">
+                            <a href="/api/export/insumos" class="btn btn-light text-success fw-bold rounded-pill shadow-sm btn-hover-elevate">
                                 <i class="bi bi-download me-1"></i> Exportar
                             </a>
-                            <button type="button" class="btn btn-sm btn-outline-primary" @click="mostrarModalImportar = true">
+                            <button type="button" class="btn btn-light text-primary fw-bold rounded-pill shadow-sm btn-hover-elevate" @click="mostrarModalImportar = true">
                                 <i class="bi bi-upload me-1"></i> Importar
                             </button>
                         </template>
-                        <button v-if="esAdmin" type="button" class="btn btn-sm btn-primary" @click="abrirModalCrear">+ Nuevo Insumo</button>
+                        <button v-if="esAdmin" type="button" class="btn btn-primary fw-bold rounded-pill shadow-sm btn-hover-elevate px-4" @click="abrirModalCrear">
+                            <i class="bi bi-plus-lg me-1"></i> Nuevo Insumo
+                        </button>
                     </div>
                 </div>
 
@@ -397,5 +404,11 @@ export default {
 }
 .transition-all {
     transition: all 0.2s ease-in-out;
+}
+.btn-hover-elevate {
+    transition: all 0.2s;
+}
+.btn-hover-elevate:hover {
+    transform: translateY(-2px);
 }
 </style>

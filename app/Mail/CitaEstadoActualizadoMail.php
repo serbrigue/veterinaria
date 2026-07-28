@@ -47,13 +47,40 @@ class CitaEstadoActualizadoMail extends Mailable implements ShouldQueue
         );
     }
 
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
-     */
     public function attachments(): array
     {
-        return [];
+        $adjuntos = [];
+
+        // Asegurar que sabemos si tiene ficha clínica y cargos (lazy load si no venía)
+        $this->cita->loadMissing([
+            'fichaClinica',
+            'cargos.insumo.categoriaInsumo',
+            'prestacion',
+            'transaccion'
+        ]);
+
+        // Si la cita está completada y tiene ficha clínica, adjuntamos el PDF
+        if ($this->cita->estado === 'completada' && $this->cita->fichaClinica) {
+            // Cargar relaciones necesarias para el PDF
+            $this->cita->loadMissing([
+                'fichaClinica.recetas', 
+                'fichaClinica.vacunas', 
+                'mascota.raza.especie', 
+                'mascota.cliente.usuario', 
+                'veterinario.usuario'
+            ]);
+
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.ficha_clinica', [
+                'cita' => $this->cita,
+                'ficha' => $this->cita->fichaClinica
+            ]);
+
+            $adjuntos[] = \Illuminate\Mail\Mailables\Attachment::fromData(
+                fn () => $pdf->output(),
+                'Ficha_Clinica_' . ($this->cita->mascota->nombre ?? 'Paciente') . '.pdf'
+            )->withMime('application/pdf');
+        }
+
+        return $adjuntos;
     }
 }
