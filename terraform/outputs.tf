@@ -1,5 +1,5 @@
 # =============================================================
-# Outputs — GCP
+# Outputs — GCP Free Tier
 # =============================================================
 
 output "instance_public_ip" {
@@ -18,7 +18,7 @@ output "app_url_domain" {
 }
 
 output "storage_bucket_name" {
-  description = "Nombre del bucket regional de Google Cloud Storage creado"
+  description = "Nombre del bucket regional de Google Cloud Storage creado (dentro de los 5GB gratuitos)"
   value       = google_storage_bucket.vet_storage.name
 }
 

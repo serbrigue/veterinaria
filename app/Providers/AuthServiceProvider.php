@@ -27,5 +27,9 @@ class AuthServiceProvider extends ServiceProvider
         Gate::define('pagos-veterinarios.ver', [PagosVeterinariosPolicy::class, 'ver']);
         Gate::define('pagos-veterinarios.crear', [PagosVeterinariosPolicy::class, 'crear']);
         Gate::define('importar-datos', [ImportPolicy::class, 'importar']);
+        
+        Gate::define('gestionar-inventario', function (\App\Models\User $user) {
+            return $user->isAdmin() || $user->isVeterinario() || $user->tienePermiso('gestionar_inventario');
+        });
     }
 }

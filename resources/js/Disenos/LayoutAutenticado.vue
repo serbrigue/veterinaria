@@ -74,7 +74,7 @@
                             >
                                 <img :src="`https://ui-avatars.com/api/?name=${encodeURIComponent($page.props.auth.user.name)}&background=ffffff&color=0d6efd&bold=true`" alt="Avatar" class="rounded-circle shadow-sm border border-2 border-white" style="width: 34px; height: 34px; object-fit: cover;">
                                 <span class="text-truncate" style="max-width: 120px;">{{ $page.props.auth.user.name }}</span>
-                                <i class="bi bi-chevron-down ms-1 opacity-75 small d-none d-lg-inline"></i>
+                                <i class="bi bi-caret-down-fill ms-1 opacity-75 small d-none d-lg-inline"></i>
                             </button>
 
                             <!-- Backdrop para cerrar al hacer click fuera -->

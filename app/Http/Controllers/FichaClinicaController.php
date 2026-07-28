@@ -61,6 +61,15 @@ class FichaClinicaController extends Controller
                         'indicaciones_generales' => $receta['indicaciones_generales'] ?? null,
                         'comprado_en_clinica' => $receta['comprado_en_clinica'] ?? false,
                     ]);
+                    if (!empty($receta['comprado_en_clinica'])) {
+                        $insumo = \App\Models\Insumo::where('nombre', $receta['medicamentos'])
+                            ->where('sucursal_id', $cita->box->sucursal_id ?? $cita->veterinario->sucursal_id ?? null)
+                            ->first();
+                        
+                        if ($insumo) {
+                            $this->agregarCargoSiNoExiste($cita, $insumo);
+                        }
+                    }
                 }
             }
 
@@ -76,10 +85,65 @@ class FichaClinicaController extends Controller
                         'numero_lote' => $vacuna['numero_lote'] ?? null,
                         'notas' => $vacuna['notas'] ?? null,
                     ]);
+
+                    $insumo = \App\Models\Insumo::where('nombre', $vacuna['nombre_vacuna'])
+                        ->where('sucursal_id', $cita->box->sucursal_id ?? $cita->veterinario->sucursal_id ?? null)
+                        ->first();
+                        
+                    // Si la vacuna no existe en esta sucursal, la creamos (clonando de la global)
+                    if (!$insumo) {
+                        $insumoGlobal = \App\Models\Insumo::where('nombre', $vacuna['nombre_vacuna'])->first();
+                        if ($insumoGlobal) {
+                            $insumo = \App\Models\Insumo::create([
+                                'nombre' => $insumoGlobal->nombre,
+                                'descripcion' => $insumoGlobal->descripcion,
+                                'precio_venta' => $insumoGlobal->precio_venta,
+                                'sucursal_id' => $cita->box->sucursal_id ?? $cita->veterinario->sucursal_id ?? null,
+                                'stock_actual' => 0,
+                                'stock_minimo' => 5,
+                                'estado' => 'activo',
+                                'categoria_insumo_id' => $insumoGlobal->categoria_insumo_id,
+                            ]);
+                        }
+                    }
+                        
+                    if ($insumo) {
+                        $this->agregarCargoSiNoExiste($cita, $insumo);
+                    }
                 }
             }
 
             return response()->json($ficha->load('recetas', 'vacunas'));
         });
+    }
+
+    private function agregarCargoSiNoExiste(Cita $cita, \App\Models\Insumo $insumo)
+    {
+        $existe = \App\Models\CitaCargo::where('cita_id', $cita->id)->where('insumo_id', $insumo->id)->exists();
+        if (!$existe) {
+            // Descontamos el stock (permitiendo que quede en negativo si es necesario)
+            $insumo->decrement('stock_actual', 1);
+
+            // Registramos el movimiento para la trazabilidad
+            \App\Models\MovimientoInventario::create([
+                'insumo_id' => $insumo->id,
+                'tipo' => 'salida',
+                'cantidad' => 1,
+                'motivo' => 'Uso clínico en Cita',
+                'usuario_id' => auth()->id(),
+                'cita_id' => $cita->id,
+            ]);
+
+            // Creamos el cargo
+            \App\Models\CitaCargo::create([
+                'cita_id' => $cita->id,
+                'prestacion_id' => $cita->prestacion_id,
+                'insumo_id' => $insumo->id,
+                'cantidad' => 1,
+                'precio_unitario' => $insumo->precio_venta,
+                'subtotal' => $insumo->precio_venta * 1,
+                'pago_vet' => 0,
+            ]);
+        }
     }
 }

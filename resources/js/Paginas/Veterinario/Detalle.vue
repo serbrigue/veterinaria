@@ -211,8 +211,8 @@
                 </div>
             </div>
 
+            </div>
 
-        </div>
     </AuthenticatedLayout>
 </template>
 

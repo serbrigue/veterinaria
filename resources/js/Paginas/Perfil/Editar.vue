@@ -99,6 +99,54 @@
                                         </div>
                                     </div>
                                 </div>
+                                
+                                <!-- Finanzas del Veterinario -->
+                                <div class="accordion-item bg-transparent border-0" v-if="$isVeterinario() && cotizaciones">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button bg-transparent fw-semibold text-success px-1 py-3" :class="{'collapsed': tabActiva !== 'finanzas'}" type="button" @click="tabActiva = tabActiva === 'finanzas' ? '' : 'finanzas'">
+                                            <i class="bi bi-cash-stack me-2"></i> Mis Finanzas (Cotizaciones)
+                                        </button>
+                                    </h2>
+                                    <div class="accordion-collapse collapse" :class="{'show': tabActiva === 'finanzas'}">
+                                        <div class="accordion-body px-1 pt-2 pb-0">
+                                            <div v-if="cotizaciones.length === 0" class="text-center py-5 bg-light rounded-4">
+                                                <i class="bi bi-wallet2 text-muted display-4 d-block mb-3 opacity-50"></i>
+                                                <p class="text-muted mb-0">No hay ganancias registradas todavía.</p>
+                                            </div>
+                                            <div v-else class="table-responsive">
+                                                <table class="table table-hover align-middle mb-0">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th class="px-2 py-3 small">Mes</th>
+                                                            <th class="px-2 py-3 small text-end">Comisión</th>
+                                                            <th class="px-2 py-3 small">Estado</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr v-for="(cot, index) in cotizaciones" :key="index" class="border-bottom border-light">
+                                                            <td class="px-2 py-3 fw-bold text-dark text-capitalize small">
+                                                                {{ cot.mes_nombre }}<br>
+                                                                <span class="text-muted fw-normal">{{ cot.citas_count }} citas</span>
+                                                            </td>
+                                                            <td class="px-2 py-3 fw-bold text-success text-end small">
+                                                                ${{ Number(cot.comision_calculada).toLocaleString('es-CL') }}
+                                                            </td>
+                                                            <td class="px-2 py-3 small">
+                                                                <span v-if="cot.estado === 'pagado'" class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 fw-medium">
+                                                                    <i class="bi bi-check-circle-fill"></i> Pagado
+                                                                </span>
+                                                                <span v-else class="badge bg-warning bg-opacity-10 text-warning rounded-pill px-2 py-1 fw-medium">
+                                                                    <i class="bi bi-clock-fill"></i> Pendiente
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
                     </div>
@@ -169,6 +217,9 @@ export default {
         status: {
             type: String,
         },
+        cotizaciones: {
+            type: Array,
+        }
     },
     data() {
         return {

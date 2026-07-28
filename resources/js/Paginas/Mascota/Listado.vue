@@ -103,64 +103,71 @@
                         @limpiar="limpiarFiltros()"
                     />
 
-                    <div v-if="!cargando && !listaVacia && !sinResultadosFiltro" class="table-responsive">
-                        <table class="table table-bordered table-hover">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Nombre</th>
-                                    <th>Sexo</th>
-                                    <th>Nacimiento</th>
-                                    <th>Raza</th>
-                                    <th>Cliente</th>
-                                    <th>Peso (kg)</th>
-                                    <th>Color</th>
-                                    <th>Esterilizado</th>
-                                    <th v-if="$isCliente() || $isAdmin() || $isSecretaria()" style="width: 180px">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="mascota in mascotasVisibles" :key="mascota.id" @click="irADetalle(mascota.id)" class="row-hover cursor-pointer transition-all">
-                                    <td>
-                                        <Link :href="`/mascotas/${mascota.id}`">
-                                            {{ mascota.nombre }}
-                                        </Link>
-                                    </td>
-                                    <td>{{ mascota.sexo }}</td>
-                                    <td>
-                                        {{ mascota.fecha_nacimiento_formato || $formatoFecha(mascota.fecha_nacimiento) }}
-                                        <span v-show="mascota.edad_texto" class="text-muted small d-block">{{ mascota.edad_texto }}</span>
-                                        <span v-show="!mascota.edad_texto && edadRelativa(mascota)" class="text-muted small d-block">{{ edadRelativa(mascota) }}</span>
-                                    </td>
-                                    <td>
-                                        <span v-if="mascota.raza">{{ mascota.raza.nombre }}</span>
-                                        <span v-else-if="mascota.especie">{{ mascota.especie.nombre }}</span>
-                                        <span v-else>—</span>
-                                    </td>
-                                    <td>{{ mascota.cliente?.usuario?.name || '—' }}</td>
-                                    <td>{{ mascota.peso_kg != null ? mascota.peso_kg : '—' }}</td>
-                                    <td>{{ mascota.color || '—' }}</td>
-                                    <td>{{ mascota.esterilizado ? 'Sí' : 'No' }}</td>
-                                    <td>
-                                        <div v-if="$isCliente() || $isAdmin() || $isSecretaria()" class="btn-group btn-group-sm">
-                                            <button
-                                                type="button"
-                                                class="btn btn-primary"
-                                                @click.stop="abrirModalEditar(mascota)"
-                                            >
-                                                Editar
-                                            </button>
-                                            <button
-                                                type="button"
-                                                class="btn btn-danger"
-                                                @click.stop="confirmarEliminar(mascota)"
-                                            >
-                                                Eliminar
-                                            </button>
+                    <div v-if="!cargando && !listaVacia && !sinResultadosFiltro" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4 mb-4">
+                        <div v-for="mascota in mascotasVisibles" :key="mascota.id" class="col">
+                            <div class="card h-100 border-0 shadow-sm rounded-4 hover-elevate transition-all cursor-pointer overflow-hidden" @click="irADetalle(mascota.id)">
+                                <!-- Encabezado de la tarjeta con color/imagen -->
+                                <div class="card-img-top bg-light position-relative" style="height: 100px;">
+                                    <div class="w-100 h-100 bg-primary bg-opacity-10 d-flex align-items-center justify-content-center">
+                                        <!-- Patrón decorativo de fondo -->
+                                        <i class="bi bi-heart-pulse-fill text-primary opacity-25" style="font-size: 3rem; transform: rotate(15deg);"></i>
+                                    </div>
+                                    <div class="position-absolute top-0 end-0 m-2">
+                                        <span v-if="mascota.sexo === 'macho'" class="badge bg-primary bg-opacity-75 rounded-pill p-2 px-3 shadow-sm" title="Macho"><i class="bi bi-gender-male me-1"></i> Macho</span>
+                                        <span v-else-if="mascota.sexo === 'hembra'" class="badge bg-danger bg-opacity-75 rounded-pill p-2 px-3 shadow-sm" title="Hembra"><i class="bi bi-gender-female me-1"></i> Hembra</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="card-body position-relative pt-4">
+                                    <div class="position-absolute top-0 start-50 translate-middle" style="z-index: 2;">
+                                        <!-- Avatar circular -->
+                                        <div class="bg-white p-1 rounded-circle shadow-sm" style="width: 72px; height: 72px;">
+                                            <div class="w-100 h-100 rounded-circle bg-primary bg-gradient text-white d-flex align-items-center justify-content-center fw-bold fs-3 overflow-hidden">
+                                                <img v-if="mascota.imagen_url" :src="mascota.imagen_url" class="w-100 h-100 object-fit-cover" />
+                                                <span v-else>{{ mascota.nombre.charAt(0).toUpperCase() }}</span>
+                                            </div>
                                         </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                                    </div>
+                                    
+                                    <div class="text-center mb-3 mt-3">
+                                        <h5 class="fw-bold mb-0 text-dark">{{ mascota.nombre }}</h5>
+                                        <small class="text-primary fw-semibold d-block">
+                                            <span v-if="mascota.raza">{{ mascota.raza.nombre }}</span>
+                                            <span v-else-if="mascota.especie">{{ mascota.especie.nombre }}</span>
+                                            <span v-else>Especie N/A</span>
+                                        </small>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between align-items-center small mb-3 bg-light rounded-4 p-2 px-3 border border-light">
+                                        <div class="text-center border-end border-2 w-50 border-secondary border-opacity-10 pe-2">
+                                            <span class="d-block text-muted" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px;">Edad</span>
+                                            <span class="fw-bold text-dark">{{ mascota.edad_texto || edadRelativa(mascota) || '—' }}</span>
+                                        </div>
+                                        <div class="text-center w-50 ps-2">
+                                            <span class="d-block text-muted" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px;">Peso</span>
+                                            <span class="fw-bold text-dark">{{ mascota.peso_kg ? mascota.peso_kg + ' kg' : '—' }}</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex align-items-center justify-content-center gap-2 mb-2 p-2">
+                                        <div class="rounded-circle shadow-sm overflow-hidden border border-2 border-white" style="width: 32px; height: 32px;">
+                                            <img :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(mascota.cliente?.usuario?.name || 'S P')}&background=e2e8f0&color=475569&bold=true`" class="w-100 h-100 object-fit-cover" alt="Avatar Cliente" />
+                                        </div>
+                                        <span class="text-truncate small text-secondary fw-semibold">
+                                            {{ mascota.cliente?.usuario?.name || 'Sin propietario' }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div v-if="$isCliente() || $isAdmin() || $isSecretaria()" class="card-footer bg-white border-top border-light pt-3 pb-3 d-flex gap-2">
+                                    <button class="btn btn-sm btn-light text-primary flex-grow-1 fw-bold rounded-pill btn-hover-elevate" @click.stop="abrirModalEditar(mascota)">
+                                        <i class="bi bi-pencil-square me-1"></i> Editar
+                                    </button>
+                                    <button class="btn btn-sm btn-light text-danger flex-grow-1 fw-bold rounded-pill btn-hover-elevate" @click.stop="confirmarEliminar(mascota)">
+                                        <i class="bi bi-trash3 me-1"></i> Borrar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <Paginador :data="mascotasData" entidad="mascotas" @cambiar-pagina="obtenerMascotas" />
@@ -744,13 +751,20 @@ export default {
 </script>
 
 <style scoped>
-.row-hover:hover {
-    background-color: rgba(var(--bs-primary-rgb), 0.03) !important;
-}
 .cursor-pointer {
     cursor: pointer;
 }
 .transition-all {
-    transition: all 0.2s ease-in-out;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.hover-elevate:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important;
+}
+.btn-hover-elevate {
+    transition: all 0.2s;
+}
+.btn-hover-elevate:hover {
+    transform: translateY(-2px);
 }
 </style>

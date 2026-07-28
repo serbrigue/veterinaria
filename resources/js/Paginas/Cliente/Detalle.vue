@@ -136,7 +136,7 @@
                                                 <i class="bi bi-trash small">Eliminar</i>
                                             </button>
                                             <Link :href="route('mascotas.detalle', mascota.id)" class="btn btn-sm btn-link text-muted p-0 ms-1" title="Ver detalle" @click.stop>
-                                                <i class="bi bi-chevron-right fs-5"></i>
+                                                <i class="bi bi-caret-right-fill fs-5"></i>
                                             </Link>
                                         </div>
                                     </div>

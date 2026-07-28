@@ -191,10 +191,10 @@
                         </div>
                         <div class="d-flex gap-2">
                             <button v-if="citaSeleccionada.estado === 'pendiente'" type="button" class="btn btn-outline-warning rounded-pill px-3" @click="confirmarCancelar(citaSeleccionada)">
-                                <i class="bi bi-x-circle me-1"></i> Cancelar
+                                <i class="bi bi-x-circle-fill me-1"></i> Cancelar
                             </button>
                             <Link :href="route('citas.detalle', citaSeleccionada.id)" class="btn btn-primary rounded-pill px-3">
-                                Ficha <i class="bi bi-chevron-right ms-1"></i>
+                                Ficha <i class="bi bi-caret-right-fill ms-1"></i>
                             </Link>
                         </div>
                     </div>
@@ -481,7 +481,7 @@
                                                 </span>
                                                 <span class="badge rounded-pill bg-light text-secondary border border-light small px-2 py-1">
                                                     {{ obtenerCantSlotsDisponibles(vet.id) }} horarios disponibles
-                                                    <i class="bi ms-1" :class="vetAcordeonAbiertoId === vet.id ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                                                    <i class="bi ms-1" :class="vetAcordeonAbiertoId === vet.id ? 'bi-caret-up-fill' : 'bi-caret-down-fill'"></i>
                                                 </span>
                                             </button>
                                         </h4>

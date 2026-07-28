@@ -13,6 +13,10 @@ Hola, el estado de la cita médica para **{{ $cita->mascota->nombre ?? 'Desconoc
 @if($cita->estado === 'completada' && $rol === 'cliente')
 La consulta ha finalizado con éxito. A continuación, encontrarás las notas clínicas y el detalle del cobro.
 
+@if($cita->fichaClinica)
+**Nota:** Hemos adjuntado a este correo un PDF con el resumen de la Ficha Clínica Médica (recetas, vacunas y diagnóstico).
+@endif
+
 @if($cita->notas)
 ### Notas Clínicas:
 <x-mail::panel>
@@ -29,7 +33,7 @@ La consulta ha finalizado con éxito. A continuación, encontrarás las notas cl
 @endif
 @if($cita->cargos && $cita->cargos->count() > 0)
 @foreach($cita->cargos as $cargo)
-| {{ $cargo->insumo->nombre ?? 'Insumo' }} (x{{ $cargo->cantidad }}) | ${{ number_format($cargo->subtotal, 0, ',', '.') }} |
+| **{{ $cargo->insumo->categoriaInsumo->nombre ?? 'Insumo' }}**: {{ $cargo->insumo->nombre ?? 'Sin nombre' }} (x{{ $cargo->cantidad }}) | ${{ number_format($cargo->subtotal, 0, ',', '.') }} |
 @endforeach
 @endif
 | **TOTAL A PAGAR** | **${{ number_format($cita->transaccion ? $cita->transaccion->monto_total : 0, 0, ',', '.') }}** |

@@ -3,18 +3,23 @@
     <AuthenticatedLayout>
         <div class="container py-4">
             <div class="card shadow-sm">
-                <div class="card-header d-flex justify-content-between align-items-center bg-white py-3">
-                    <h1 class="h5 mb-0 fw-bold text-primary">Listado de Especies</h1>
-                    <div class="d-flex gap-2">
+                <div class="card-header border-0 bg-white p-4 d-flex justify-content-between align-items-center flex-wrap gap-3 rounded-top-4 border-bottom border-light">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-primary bg-opacity-10 p-2 rounded-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 56px; height: 56px;">
+                            <img src="/images/icon_species.png" alt="Icono Especies" class="w-100 h-100 object-fit-contain" style="transform: scale(1.15);">
+                        </div>
+                        <h1 class="h4 mb-0 fw-bold text-dark">Gestión de Especies</h1>
+                    </div>
+                    <div class="d-flex gap-2 align-items-center">
                         <template v-if="$isAdmin() || $isSecretaria()">
-                            <a href="/api/export/especies" class="btn btn-sm btn-outline-success">
+                            <a href="/api/export/especies" class="btn btn-light text-success fw-bold rounded-pill shadow-sm btn-hover-elevate">
                                 <i class="bi bi-download me-1"></i> Exportar
                             </a>
-                            <button type="button" class="btn btn-sm btn-outline-primary" @click="mostrarModalImportar = true">
+                            <button type="button" class="btn btn-light text-primary fw-bold rounded-pill shadow-sm btn-hover-elevate" @click="mostrarModalImportar = true">
                                 <i class="bi bi-upload me-1"></i> Importar
                             </button>
                         </template>
-                        <button v-if="esVeterinario" type="button" class="btn btn-sm btn-primary px-3" @click="abrirModalCrear">
+                        <button v-if="esVeterinario" type="button" class="btn btn-primary fw-bold rounded-pill shadow-sm btn-hover-elevate px-4" @click="abrirModalCrear">
                             <i class="bi bi-plus-lg me-1"></i> Nueva Especie
                         </button>
                     </div>
@@ -397,5 +402,11 @@ export default {
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+}
+.btn-hover-elevate {
+    transition: all 0.2s;
+}
+.btn-hover-elevate:hover {
+    transform: translateY(-2px);
 }
 </style>

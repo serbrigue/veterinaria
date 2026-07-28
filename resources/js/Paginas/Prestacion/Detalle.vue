@@ -17,8 +17,8 @@
                     <div class="card border-0 shadow-lg overflow-hidden rounded-4">
                         <!-- Cabecera decorativa -->
                         <div class="bg-primary bg-gradient p-4 p-md-5 text-white position-relative">
-                            <div class="position-absolute top-0 end-0 p-4 opacity-25">
-                                <i class="bi bi-heart-pulse-fill" style="font-size: 6rem;"></i>
+                            <div class="position-absolute top-0 end-0 p-4 opacity-50">
+                                <img src="/images/icon_services.png" alt="Servicio" style="width: 120px; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2));" />
                             </div>
                             <div class="position-relative z-1">
                                 <div class="d-flex flex-wrap gap-2 mb-3">

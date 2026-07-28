@@ -758,6 +758,51 @@ class DatabaseSeeder extends Seeder
             'updated_at' => Carbon::now(),
         ]);
 
+        \App\Models\MovimientoInventario::create([
+            'insumo_id' => $insumoJeringaId,
+            'tipo' => 'salida',
+            'cantidad' => 2,
+            'motivo' => "Uso clínico en Cita #{$citaVacuna->id}",
+            'usuario_id' => $veterinario1->user_id,
+            'cita_id' => $citaVacuna->id,
+        ]);
+
+        $fichaVacuna = \App\Models\FichaClinica::create([
+            'cita_id' => $citaVacuna->id,
+            'mascota_id' => $mascota1->id,
+            'veterinario_id' => $veterinario1->id,
+            'peso_actual' => 6.20,
+            'frecuencia_cardiaca' => 120,
+            'temperatura' => 38.5,
+            'anamnesis' => 'Paciente acude a vacunación anual.',
+            'sintomas' => 'Ninguno.',
+            'diagnostico' => 'Sano',
+        ]);
+
+        \App\Models\AplicacionVacuna::create([
+            'cita_id' => $citaVacuna->id,
+            'mascota_id' => $mascota1->id,
+            'nombre_vacuna' => 'Vacuna Óctuple',
+            'fecha_aplicacion' => $citaVacuna->fecha_hora,
+            'fecha_proxima_dosis' => Carbon::parse($citaVacuna->fecha_hora)->addYear(),
+            'numero_lote' => 'LOTE-54321',
+            'notas' => 'Aplicada sin problemas.',
+        ]);
+
+        \App\Models\RecetaMedica::create([
+            'ficha_clinica_id' => $fichaVacuna->id,
+            'medicamentos' => [
+                [
+                    'nombre' => 'Desparasitante Interno',
+                    'dosis' => '1 comprimido',
+                    'frecuencia' => 'Dosis única',
+                    'duracion' => '1 día',
+                ]
+            ],
+            'indicaciones_generales' => 'Dar con la comida.',
+            'comprado_en_clinica' => true,
+        ]);
+
         DB::table('citas_cargo')->insert([
             'cita_id' => $citaCirugia->id,
             'prestacion_id' => $citaCirugia->prestacion_id,
@@ -768,6 +813,15 @@ class DatabaseSeeder extends Seeder
             'pago_vet' => 0,
             'created_at' => Carbon::now(),
             'updated_at' => Carbon::now(),
+        ]);
+
+        \App\Models\MovimientoInventario::create([
+            'insumo_id' => $insumoAnestesiaId,
+            'tipo' => 'salida',
+            'cantidad' => 4,
+            'motivo' => "Uso clínico en Cita #{$citaCirugia->id}",
+            'usuario_id' => $veterinario2->user_id,
+            'cita_id' => $citaCirugia->id,
         ]);
 
         // 12. Generar Transacción para Cita Completada
@@ -1084,6 +1138,66 @@ class DatabaseSeeder extends Seeder
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ],
+            [
+                'nombre' => 'Paracetamol Veterinario 100mg',
+                'descripcion' => 'Analgésico y antipirético.',
+                'precio_venta' => 2000.00,
+                'sucursal_id' => $sucursalValparaiso->id,
+                'stock_actual' => 50,
+                'stock_minimo' => 10,
+                'estado' => 'activo',
+                'categoria_insumo_id' => $catInsumoMedicamentoId,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ],
+            [
+                'nombre' => 'Meloxicam 2mg',
+                'descripcion' => 'Antiinflamatorio no esteroideo.',
+                'precio_venta' => 5000.00,
+                'sucursal_id' => $sucursalValparaiso->id,
+                'stock_actual' => 30,
+                'stock_minimo' => 10,
+                'estado' => 'activo',
+                'categoria_insumo_id' => $catInsumoMedicamentoId,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ],
+            [
+                'nombre' => 'Vacuna Óctuple',
+                'descripcion' => 'Vacuna múltiple para caninos.',
+                'precio_venta' => 15000.00,
+                'sucursal_id' => $sucursalValparaiso->id,
+                'stock_actual' => 20,
+                'stock_minimo' => 5,
+                'estado' => 'activo',
+                'categoria_insumo_id' => 3,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ],
+            [
+                'nombre' => 'Vacuna Triple Felina',
+                'descripcion' => 'Vacuna obligatoria para gatos.',
+                'precio_venta' => 12000.00,
+                'sucursal_id' => $sucursalVina->id,
+                'stock_actual' => 25,
+                'stock_minimo' => 5,
+                'estado' => 'activo',
+                'categoria_insumo_id' => 3,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ],
+            [
+                'nombre' => 'Desparasitante Interno',
+                'descripcion' => 'Comprimido para desparasitación.',
+                'precio_venta' => 3000.00,
+                'sucursal_id' => $sucursalVina->id,
+                'stock_actual' => 100,
+                'stock_minimo' => 20,
+                'estado' => 'activo',
+                'categoria_insumo_id' => $catInsumoMedicamentoId,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ]
         ]);
 
         // ─────────────────────────────────────────────────────────────────────

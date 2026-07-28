@@ -210,10 +210,10 @@
                                                     class="btn btn-sm btn-outline-warning rounded-pill px-3 transition-all hover-opacity"
                                                     @click.stop="confirmarCancelar(cita)"
                                                 >
-                                                    <i class="bi bi-x-circle me-1"></i> Cancelar
+                                                    <i class="bi bi-x-circle-fill me-1"></i> Cancelar
                                                 </button>
                                             </template>
-                                            <i class="bi bi-chevron-right text-muted fs-5 ms-2 d-none d-md-block"></i>
+                                            <i class="bi bi-caret-right-fill text-muted fs-5 ms-2 d-none d-md-block"></i>
                                         </div>
                                     </td>
                                 </tr>
@@ -553,7 +553,7 @@
                                                                     </span>
                                                                     <span class="badge rounded-pill bg-light text-secondary border border-light small px-2 py-1">
                                                                         {{ obtenerCantSlotsDisponibles(vet.id) }} horarios disponibles
-                                                                        <i class="bi ms-1" :class="vetAcordeonAbiertoId === vet.id ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                                                                        <i class="bi ms-1" :class="vetAcordeonAbiertoId === vet.id ? 'bi-caret-up-fill' : 'bi-caret-down-fill'"></i>
                                                                     </span>
                                                                 </button>
                                                             </h4>

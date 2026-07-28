@@ -6,9 +6,11 @@ use App\Http\Controllers\BoxController;
 use App\Http\Controllers\CitaCargoController;
 use App\Http\Controllers\CitaController;
 use App\Http\Controllers\ClienteController;
+use App\Http\Controllers\FichaClinicaController;
 use App\Http\Controllers\EquipoMedicoController;
 use App\Http\Controllers\EspecieController;
 use App\Http\Controllers\InsumoController;
+use App\Http\Controllers\MovimientoInventarioController;
 use App\Http\Controllers\MascotaController;
 use App\Http\Controllers\PrestacionController;
 use App\Http\Controllers\ProfileController;
@@ -99,6 +101,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/citas/{cita}/estado', [CitaController::class, 'actualizarEstado'])
         ->middleware('can:editarEstado,cita');
 
+    // Ficha Clínica
+    Route::post('/citas/{cita}/ficha-clinica', [FichaClinicaController::class, 'guardar'])
+        ->middleware('can:editarNotas,cita');
+    Route::get('/citas/{cita}/ficha-clinica', [FichaClinicaController::class, 'mostrar'])
+        ->middleware('can:ver,cita');
+    Route::get('/citas/{cita}/ficha-clinica/pdf', [FichaClinicaController::class, 'descargarPdf'])
+        ->middleware('can:ver,cita');
+
     // MÓDULO 6 — Cargos de Citas
     Route::post('/citas/{cita}/cargo', [CitaCargoController::class, 'crear'])
         ->middleware('can:crear,App\Models\CitaCargo');
@@ -156,6 +166,13 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('can:editar,insumo');
     Route::delete('/insumos/{insumo}', [InsumoController::class, 'eliminar'])
         ->middleware('can:eliminar,insumo');
+        
+    Route::post('/insumos/movimientos/merma', [MovimientoInventarioController::class, 'registrarMerma'])
+        ->middleware('can:gestionar-inventario');
+    Route::post('/insumos/movimientos/compra', [MovimientoInventarioController::class, 'registrarCompra'])
+        ->middleware('can:gestionar-inventario');
+    Route::get('/insumos/{insumo}/movimientos', [MovimientoInventarioController::class, 'historial'])
+        ->middleware('can:gestionar-inventario');
 
     // Prestaciones
     Route::get('/prestaciones', [PrestacionController::class, 'obtenerTodas'])
