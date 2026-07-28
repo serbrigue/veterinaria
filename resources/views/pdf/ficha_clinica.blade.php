@@ -23,10 +23,10 @@
     <div class="section">
         <div class="section-title">Datos Generales</div>
         <table>
-            <tr><th>Paciente</th><td>{{ $cita->mascota->nombre ?? 'N/A' }}</td></tr>
-            <tr><th>Especie/Raza</th><td>{{ $cita->mascota->raza->especie->nombre ?? '' }} / {{ $cita->mascota->raza->nombre ?? '' }}</td></tr>
-            <tr><th>Propietario</th><td>{{ $cita->mascota->cliente->usuario->name ?? 'N/A' }}</td></tr>
-            <tr><th>Médico Tratante</th><td>{{ $cita->veterinario->usuario->name ?? 'N/A' }}</td></tr>
+            <tr><th>Paciente</th><td>{{ $cita->mascota?->nombre ?? 'N/A' }}</td></tr>
+            <tr><th>Especie/Raza</th><td>{{ $cita->mascota?->raza?->especie?->nombre ?? '' }} / {{ $cita->mascota?->raza?->nombre ?? '' }}</td></tr>
+            <tr><th>Propietario</th><td>{{ $cita->mascota?->cliente?->usuario?->name ?? 'N/A' }}</td></tr>
+            <tr><th>Médico Tratante</th><td>{{ $cita->veterinario?->usuario?->name ?? 'N/A' }}</td></tr>
         </table>
     </div>
 

@@ -19,7 +19,13 @@ class FichaClinicaController extends Controller
 
     public function descargarPdf(Cita $cita)
     {
-        $cita->loadMissing(['fichaClinica', 'mascota.raza.especie', 'mascota.cliente.usuario', 'veterinario.usuario']);
+        $cita->loadMissing([
+            'fichaClinica.recetas', 
+            'fichaClinica.vacunas', 
+            'mascota.raza.especie', 
+            'mascota.cliente.usuario', 
+            'veterinario.usuario'
+        ]);
         
         if (!$cita->fichaClinica) {
             return response()->json(['error' => 'No hay ficha clínica registrada para esta cita.'], 404);
