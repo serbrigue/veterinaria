@@ -59,7 +59,15 @@
                 @php
                     $meds = is_string($receta['medicamentos']) ? json_decode($receta['medicamentos'], true) : $receta['medicamentos'];
                     if (is_array($meds)) {
-                        echo implode(', ', $meds);
+                        $nombres = [];
+                        foreach ($meds as $m) {
+                            if (is_array($m)) {
+                                $nombres[] = ($m['nombre'] ?? 'Medicamento') . (isset($m['dosis']) ? ' - ' . $m['dosis'] : '');
+                            } else {
+                                $nombres[] = $m;
+                            }
+                        }
+                        echo implode(', ', $nombres);
                     } else {
                         echo $receta['medicamentos'];
                     }
