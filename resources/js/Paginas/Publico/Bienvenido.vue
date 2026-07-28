@@ -174,7 +174,7 @@
         </main>
 
         <!-- Footer moderno -->
-        <footer class="bg-dark text-white py-5">
+        <footer class="bg-primary text-white py-5">
             <div class="container">
                 <div class="row align-items-center">
                     <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">

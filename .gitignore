@@ -21,8 +21,21 @@ Thumbs.db
 
 # Docker
 docker/mysql/data/
+
 database/migrations/2026_06_24_212058_add_pagado_a_vet_to_citas_table.php
+
 # Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+*.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
 **/terraform/.terraform/
 **/terraform/*.tfstate
 **/terraform/*.tfstate.*
