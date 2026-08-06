@@ -1,4 +1,7 @@
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: Listado -->
+    <!-- ================================================================================== -->
     <Head title="Mascotas" />
     <AuthenticatedLayout>
         <div class="container py-4">
@@ -8,6 +11,7 @@
 
 
                     <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <!-- Si el usuario es admin o secretaria, se muestra el botón de exportar y el botón de importar -->
                         <template v-if="$isAdmin() || $isSecretaria()">
                             <a href="/api/export/mascotas" class="btn btn-sm btn-outline-success">
                                 <i class="bi bi-download me-1"></i> Exportar
@@ -16,6 +20,8 @@
                                 <i class="bi bi-upload me-1"></i> Importar Consolidado
                             </button>
                         </template>
+                        
+                        <!-- Si el usuario es cliente, admin o secretaria, se muestra el botón de crear mascota -->
                         <button v-if="$isCliente() || $isAdmin() || $isSecretaria()" type="button" class="btn btn-sm btn-primary" @click="abrirModalCrear">
                             + Nueva Mascota
                         </button>
@@ -32,14 +38,17 @@
                         <!-- Buscar por Nombre -->
                         <div class="col-12 col-md-6 col-lg-3">
                             <label class="form-label small fw-bold text-secondary mb-1" for="filtroNombre">Buscar por Nombre</label>
+                            <!-- Almacenamos el filtro de nombre -->
                             <input type="text" class="form-control form-control-sm" id="filtroNombre" placeholder="Ej: Toby" v-model="filtros.nombre" @keyup.enter="obtenerMascotas()">
                         </div>
                         
                         <!-- Buscar por Especie -->
                         <div class="col-12 col-md-4 col-lg-2">
                             <label class="form-label small fw-bold text-secondary mb-1" for="filtroEspecie">Especie</label>
+                            <!-- Almacenamos el filtro de especie -->
                             <select class="form-select form-select-sm" id="filtroEspecie" v-model="filtros.especie_id" @change="alCambiarFiltroEspecie">
                                 <option value="">Todas</option>
+                                <!-- Recorremos todas las especies y las mostramos en el select -->
                                 <option v-for="especie in especies" :key="especie.id" :value="especie.id">
                                     {{ especie.nombre }}
                                 </option>
@@ -49,8 +58,10 @@
                         <!-- Buscar por Raza -->
                         <div class="col-12 col-md-4 col-lg-2">
                             <label class="form-label small fw-bold text-secondary mb-1" for="filtroRaza">Raza</label>
+                            <!-- Almacenamos el filtro de raza -->
                             <select class="form-select form-select-sm" id="filtroRaza" v-model="filtros.raza_id" :disabled="!filtros.especie_id" @change="obtenerMascotas()">
                                 <option value="">Todas</option>
+                                <!-- Recorremos todas las razas y las mostramos en el select -->
                                 <option v-for="raza in razasFiltro" :key="raza.id" :value="raza.id">
                                     {{ raza.nombre }}
                                 </option>
@@ -60,8 +71,10 @@
                         <!-- Buscar por Sexo -->
                         <div class="col-12 col-md-4 col-lg-1">
                             <label class="form-label small fw-bold text-secondary mb-1" for="filtroSexo">Sexo</label>
+                            <!-- Almacenamos el filtro de sexo -->
                             <select class="form-select form-select-sm" id="filtroSexo" v-model="filtros.sexo" @change="obtenerMascotas()">
                                 <option value="">Todos</option>
+                                <!-- Mostramos todas las opciones de sexo -->
                                 <option v-for="op in opcionesSexo" :key="op.value" :value="op.value">{{ op.label }}</option>
                             </select>
                         </div>
@@ -69,12 +82,16 @@
                         <!-- Buscar por Esterilizado -->
                         <div class="col-12 col-md-4 col-lg-2">
                             <label class="form-label small fw-bold text-secondary mb-1" for="filtroEsterilizado">Esterilizado</label>
+                            <!-- Almacenamos el filtro de esterilizado -->
                             <select class="form-select form-select-sm" id="filtroEsterilizado" v-model="filtros.esterilizado" @change="obtenerMascotas()">
                                 <option value="">Todos</option>
+                                <!-- Mostramos todas las opciones de esterilizado -->
                                 <option value="1">Sí</option>
                                 <option value="0">No</option>
                             </select>
                         </div>
+
+                        <!-- Botón de limpiar filtros -->
                         <template #texto-limpiar>
                             Limpiar
                         </template>
@@ -87,8 +104,11 @@
                             <span v-show="mascotasEsterilizadas > 0"> · {{ mascotasEsterilizadas }} esterilizada{{ mascotasEsterilizadas === 1 ? '' : 's' }}</span>
                         </p>
                     </div>
+
+                    <!-- Mostrar indicador de carga -->
                     <IndicadorCarga :cargando="cargando" mensaje="mascotas" />
 
+                    <!-- Mostrar estado vacío si no hay mascotas -->
                     <EstadoVacio
                         :visible="!cargando && listaVacia"
                         mensaje="No tienes mascotas registradas aún."
@@ -97,13 +117,16 @@
                         @accion="abrirModalCrear"
                     />
 
+                    <!-- Mostrar sin resultados si no hay mascotas que coincidan con la búsqueda -->
                     <SinResultados
                         :visible="!cargando && sinResultadosFiltro"
                         mensaje="Ninguna mascota coincide con la búsqueda."
                         @limpiar="limpiarFiltros()"
                     />
 
+                    <!-- Renderizado condicional basado en "!cargando && !listaVacia && !sinResultadosFiltro" -->
                     <div v-if="!cargando && !listaVacia && !sinResultadosFiltro" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4 mb-4">
+                        <!-- Renderizado iterativo de la lista de mascotas -->
                         <div v-for="mascota in mascotasVisibles" :key="mascota.id" class="col">
                             <div class="card h-100 border-0 shadow-sm rounded-4 hover-elevate transition-all cursor-pointer overflow-hidden" @click="irADetalle(mascota.id)">
                                 <!-- Encabezado de la tarjeta con color/imagen -->
@@ -113,6 +136,7 @@
                                         <i class="bi bi-heart-pulse-fill text-primary opacity-25" style="font-size: 3rem; transform: rotate(15deg);"></i>
                                     </div>
                                     <div class="position-absolute top-0 end-0 m-2">
+                                        <!-- Renderizado condicional según el sexo de la mascota -->
                                         <span v-if="mascota.sexo === 'macho'" class="badge bg-primary bg-opacity-75 rounded-pill p-2 px-3 shadow-sm" title="Macho"><i class="bi bi-gender-male me-1"></i> Macho</span>
                                         <span v-else-if="mascota.sexo === 'hembra'" class="badge bg-danger bg-opacity-75 rounded-pill p-2 px-3 shadow-sm" title="Hembra"><i class="bi bi-gender-female me-1"></i> Hembra</span>
                                     </div>
@@ -123,6 +147,7 @@
                                         <!-- Avatar circular -->
                                         <div class="bg-white p-1 rounded-circle shadow-sm" style="width: 72px; height: 72px;">
                                             <div class="w-100 h-100 rounded-circle bg-primary bg-gradient text-white d-flex align-items-center justify-content-center fw-bold fs-3 overflow-hidden">
+                                                <!-- Si la mascota tiene imagen, se muestra, si no, se muestra un icono -->
                                                 <img v-if="mascota.imagen_url" :src="mascota.imagen_url" class="w-100 h-100 object-fit-cover" />
                                                 <span v-else>{{ mascota.nombre.charAt(0).toUpperCase() }}</span>
                                             </div>
@@ -132,6 +157,7 @@
                                     <div class="text-center mb-3 mt-3">
                                         <h5 class="fw-bold mb-0 text-dark">{{ mascota.nombre }}</h5>
                                         <small class="text-primary fw-semibold d-block">
+                                            <!-- Si la mascota tiene raza, se muestra, si no, se muestra la especie-->
                                             <span v-if="mascota.raza">{{ mascota.raza.nombre }}</span>
                                             <span v-else-if="mascota.especie">{{ mascota.especie.nombre }}</span>
                                             <span v-else>Especie N/A</span>
@@ -158,6 +184,7 @@
                                         </span>
                                     </div>
                                 </div>
+                                <!-- Renderizado condicional según el rol del usuario -->
                                 <div v-if="$isCliente() || $isAdmin() || $isSecretaria()" class="card-footer bg-white border-top border-light pt-3 pb-3 d-flex gap-2">
                                     <button class="btn btn-sm btn-light text-primary flex-grow-1 fw-bold rounded-pill btn-hover-elevate" @click.stop="abrirModalEditar(mascota)">
                                         <i class="bi bi-pencil-square me-1"></i> Editar
@@ -190,6 +217,7 @@
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label for="nombre" class="form-label fw-semibold text-secondary small text-uppercase">Nombre de la Mascota</label>
+                            <!-- Almacenamos el nombre de la mascota en el formulario -->
                             <input
                                 id="nombre"
                                 v-model="formulario.nombre"
@@ -199,6 +227,7 @@
                                 :class="{ 'is-invalid': formulario.errors.nombre }"
                                 required
                             />
+                            <!-- Mostrar mensaje de error si existe -->
                             <div v-if="formulario.errors.nombre" class="invalid-feedback">
                                 {{ formulario.errors.nombre }}
                             </div>
@@ -206,6 +235,7 @@
 
                         <div class="mb-3">
                             <label for="cliente_id" class="form-label fw-semibold text-secondary small text-uppercase">Propietario / Cliente</label>
+                            <!-- Iteramos sobre los clientes para mostrar la lista de propietarios-->
                             <select
                                 id="cliente_id"
                                 v-model="formulario.cliente_id"
@@ -214,6 +244,7 @@
                                 required
                             >
                                 <option value="" disabled>Seleccione un propietario</option>
+                                <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                                 <option
                                     v-for="cliente in clientes"
                                     :key="cliente.id"
@@ -222,6 +253,7 @@
                                     {{ cliente.usuario?.name || 'Cliente sin nombre' }}
                                 </option>
                             </select>
+                            <!-- Mostrar mensaje de error si existe -->
                             <div v-if="formulario.errors.cliente_id" class="invalid-feedback">
                                 {{ formulario.errors.cliente_id }}
                             </div>
@@ -229,6 +261,7 @@
 
                         <div class="mb-3">
                             <label for="especie_id" class="form-label fw-semibold text-secondary small text-uppercase">Especie</label>
+                            <!-- Almacenamos la especie de la mascota en el formulario -->
                             <select
                                 id="especie_id"
                                 v-model="formulario.especie_id"
@@ -238,6 +271,7 @@
                                 @change="alCambiarEspecieFormulario"
                             >
                                 <option value="" disabled>Seleccione una especie</option>
+                                <!-- Iteramos sobre las especies para mostrar la lista de especies-->
                                 <option
                                     v-for="especie in especies"
                                     :key="especie.id"
@@ -246,13 +280,16 @@
                                     {{ especie.nombre }}
                                 </option>
                             </select>
+                            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.especie_id" -->
                             <div v-if="formulario.errors.especie_id" class="invalid-feedback">
                                 {{ formulario.errors.especie_id }}
                             </div>
                         </div>
 
+                        <!-- Se muestra la raza si la especie ha sido seleccionada -->
                         <div class="mb-3" v-if="formulario.especie_id">
                             <label for="raza_id" class="form-label fw-semibold text-secondary small text-uppercase">Raza</label>
+                            <!-- Almacenamos la raza de la mascota en el formulario -->
                             <select
                                 id="raza_id"
                                 v-model="formulario.raza_id"
@@ -261,6 +298,7 @@
                                 required
                             >
                                 <option value="" disabled>Seleccione una raza</option>
+                                <!-- Iteramos sobre las razas para mostrar la lista de razas-->
                                 <option
                                     v-for="raza in razas"
                                     :key="raza.id"
@@ -269,6 +307,7 @@
                                     {{ raza.nombre }}
                                 </option>
                             </select>
+                            <!-- Mostrar mensaje de error si existe -->
                             <div v-if="formulario.errors.raza_id" class="invalid-feedback">
                                 {{ formulario.errors.raza_id }}
                             </div>
@@ -276,6 +315,7 @@
 
                         <div class="mb-3">
                             <label for="sexo" class="form-label fw-semibold text-secondary small text-uppercase">Sexo</label>
+                            <!-- Almacenamos el sexo de la mascota en el formulario -->
                             <select
                                 id="sexo"
                                 v-model="formulario.sexo"
@@ -284,6 +324,7 @@
                                 required
                             >
                                 <option value="" disabled>Seleccione el sexo</option>
+                                <!-- Iteramos sobre las opciones para mostrar la lista de sexos -->
                                 <option
                                     v-for="op in opcionesSexo"
                                     :key="op.value"
@@ -292,6 +333,7 @@
                                     {{ op.label }}
                                 </option>
                             </select>
+                            <!-- Mostrar mensaje de error si existe -->
                             <div v-if="formulario.errors.sexo" class="invalid-feedback">
                                 {{ formulario.errors.sexo }}
                             </div>
@@ -302,6 +344,7 @@
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label for="fecha_nacimiento" class="form-label fw-semibold text-secondary small text-uppercase">Fecha de Nacimiento</label>
+                            <!-- Almacenamos la fecha de nacimiento de la mascota en el formulario -->
                             <input
                                 id="fecha_nacimiento"
                                 v-model="formulario.fecha_nacimiento"
@@ -309,6 +352,7 @@
                                 class="form-control bg-light border-0 py-2"
                                 :class="{ 'is-invalid': formulario.errors.fecha_nacimiento }"
                             />
+                            <!-- Mostrar mensaje de error si existe -->
                             <div v-if="formulario.errors.fecha_nacimiento" class="invalid-feedback">
                                 {{ formulario.errors.fecha_nacimiento }}
                             </div>
@@ -316,6 +360,7 @@
 
                         <div class="mb-3">
                             <label for="peso_kg" class="form-label fw-semibold text-secondary small text-uppercase">Peso (kg)</label>
+                            <!-- Almacenamos el peso de la mascota en el formulario -->
                             <input
                                 id="peso_kg"
                                 v-model="formulario.peso_kg"
@@ -326,6 +371,7 @@
                                 placeholder="Ej: 5.40"
                                 :class="{ 'is-invalid': formulario.errors.peso_kg }"
                             />
+                            <!-- Mostrar mensaje de error si existe -->
                             <div v-if="formulario.errors.peso_kg" class="invalid-feedback">
                                 {{ formulario.errors.peso_kg }}
                             </div>
@@ -333,6 +379,7 @@
 
                         <div class="mb-3">
                             <label for="color" class="form-label fw-semibold text-secondary small text-uppercase">Color / Pelaje</label>
+                            <!-- Almacenamos el color de la mascota en el formulario -->
                             <input
                                 id="color"
                                 v-model="formulario.color"
@@ -341,6 +388,7 @@
                                 placeholder="Ej: Blanco con manchas negras"
                                 :class="{ 'is-invalid': formulario.errors.color }"
                             />
+                            <!-- Mostrar mensaje de error si existe -->
                             <div v-if="formulario.errors.color" class="invalid-feedback">
                                 {{ formulario.errors.color }}
                             </div>
@@ -357,9 +405,11 @@
                                 @change="seleccionarFoto"
                                 :class="{ 'is-invalid': formulario.errors.foto }"
                             />
+                            <!-- Mostrar mensaje de error si existe -->
                             <div v-if="formulario.errors.foto" class="invalid-feedback">
                                 {{ formulario.errors.foto }}
                             </div>
+                            <!-- Se muestra la imagen si existe -->
                             <div v-if="formulario.imagen_url" class="mt-2 text-center">
                                 <img :src="formulario.imagen_url" class="img-thumbnail" style="max-height: 120px;" alt="Vista previa de la mascota" />
                             </div>
@@ -371,6 +421,7 @@
                                     <label class="form-check-label fw-semibold text-secondary small text-uppercase" for="esterilizado">Esterilizado / Castrado</label>
                                     <span class="d-block text-muted small mt-1" style="font-size: 0.75rem;">¿Ha sido sometido a cirugía de esterilización?</span>
                                 </div>
+                                <!-- Almacenamos si la mascota está esterilizada o castrada en el formulario -->
                                 <input
                                     id="esterilizado"
                                     v-model="formulario.esterilizado"
@@ -381,6 +432,7 @@
                                     :class="{ 'is-invalid': formulario.errors.esterilizado }"
                                 />
                             </div>
+                            <!-- Mostrar mensaje de error si existe -->
                             <div v-if="formulario.errors.esterilizado" class="invalid-feedback d-block mt-1">
                                 {{ formulario.errors.esterilizado }}
                             </div>
@@ -392,6 +444,7 @@
                         <hr class="text-muted opacity-25 my-3">
                         <div class="mb-2">
                             <label for="descripcion" class="form-label fw-semibold text-secondary small text-uppercase">Descripción / Antecedentes Médicos</label>
+                            <!-- Almacenamos la descripción o antecedentes médicos de la mascota en el formulario -->
                             <textarea
                                 id="descripcion"
                                 v-model="formulario.descripcion"
@@ -401,6 +454,7 @@
                                 placeholder="Registra condiciones previas, alergias, comportamiento o detalles relevantes de la mascota."
                                 required
                             ></textarea>
+                            <!-- Mostrar mensaje de error si existe -->
                             <div v-if="formulario.errors.descripcion" class="invalid-feedback">
                                 {{ formulario.errors.descripcion }}
                             </div>
@@ -410,7 +464,9 @@
             </ModalCrud>
         </div>
 
+        <!-- En caso de que el usuario sea administrador o secretaria se muestra el modal para importar mascotas -->
         <ModalImportarConsolidado
+            v-if="$isAdmin() || $isSecretaria()"
             :visible="mostrarModalImportar"
             @cerrar="mostrarModalImportar = false"
             @importado="obtenerMascotas()"
@@ -420,6 +476,10 @@
 </template>
 
 <script>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3)
+// ==================================================================================
+
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import IndicadorCarga from '@/Componentes/IndicadorCarga.vue';
@@ -430,7 +490,11 @@ import Paginador from '@/Componentes/Paginador.vue';
 import ModalCrud from '@/Componentes/ModalCrud.vue';
 import BarraFiltros from '@/Componentes/BarraFiltros.vue';
 
+// ------------------------------------------------------------------------------
+// EXPORT DEFAULT: Definición principal del componente
+// ------------------------------------------------------------------------------
 export default {
+    // COMPONENTES: Registro de componentes importados
     components: {
         AuthenticatedLayout,
         Head,
@@ -443,6 +507,7 @@ export default {
         ModalCrud,
         BarraFiltros,
     },
+    // PROPIEDADES: Datos inyectados desde el componente padre o estado
     props: {
         clientes: {
             type: Array,
@@ -453,8 +518,10 @@ export default {
             default: '',
         },
     },
+    // Variables locales del componente
     data() {
         return {
+            //Inicializamos variables
             especies: [],
             razas: [], // Para el modal de crear/editar
             razasFiltro: [], // Para el filtro
@@ -464,6 +531,7 @@ export default {
             mostrarModalHistorial: false,
             modoEdicion: false,
             mascotaEditando: null,
+            //Filtros para la búsqueda de mascotas
             filtros: {
                 nombre: '',
                 especie_id: '',
@@ -477,6 +545,7 @@ export default {
             ],
             mascotasData: null,
             mascotas:[],
+            //Formulario para crear y editar mascotas
             formulario: {
                 nombre: '',
                 descripcion: '',
@@ -495,30 +564,40 @@ export default {
             },
         }
     },
+    // Variables reactivas que dependen de otras
     computed: {
+        //Se obtiene la lista de mascotas visibles
         mascotasVisibles() {
             return this.mascotas
         },
+        //Se obtiene el total de mascotas
         totalMascotas() {
             return this.mascotasVisibles.length
         },
+        //Se obtiene la lista de mascotas vacía
         listaVacia() {
             return !this.filtros.nombre && !this.filtros.especie_id && !this.filtros.raza_id && !this.filtros.sexo && this.filtros.esterilizado === '' && this.mascotas.length === 0
         },
+        //Se obtiene la lista de mascotas sin resultados
         sinResultadosFiltro() {
             return (this.filtros.nombre || this.filtros.especie_id || this.filtros.raza_id || this.filtros.sexo || this.filtros.esterilizado !== '') && this.mascotas.length === 0
         },
+        //Se obtiene la lista de mascotas esterilizadas
         mascotasEsterilizadas() {
             return this.mascotasVisibles.filter((m) => m.esterilizado).length
         },
+        //Se obtiene el título del modal
         tituloModal() {
             return this.modoEdicion ? 'Editar Mascota' : 'Nueva Mascota'
         },
+        //Se obtiene el texto del botón de guardar
         textoBotonGuardar() {
             return this.modoEdicion ? 'Guardar cambios' : 'Crear mascota'
         },
     },
+    // Métodos del componente
     methods: {
+        //Se abre el modal de crear limpio
         abrirModalCrear() {
             this.modoEdicion = false
             this.mascotaEditando = null
@@ -539,7 +618,9 @@ export default {
             this.formulario.esterilizado = false
             this.formulario.errors = {}
             this.mostrarModal = true
-        },
+        },  
+
+        //Se abre el modal de editar con los datos de la mascota
         abrirModalEditar(mascota) {
             this.modoEdicion = true
             this.mascotaEditando = mascota
@@ -569,6 +650,8 @@ export default {
             this.formulario.errors = {}
             this.mostrarModal = true
         },
+        
+        //Se cambia la raza cuando cambia la especie
         alCambiarEspecieFormulario() {
             this.formulario.raza_id = ''
             if (this.formulario.especie_id) {
@@ -577,20 +660,27 @@ export default {
                 this.razas = []
             }
         },
+
+        //Se cierra el modal
         cerrarModal() {
             this.mostrarModal = false
             this.mascotaEditando = null
         },
+
+        //Se obtiene la edad relativa de la mascota
         edadRelativa(mascota) {
             const edad = this.$edadDesde(mascota.fecha_nacimiento)
             return edad ? `${edad}` : ''
         },
+
+        //Se selecciona la foto
         seleccionarFoto(e) {
             const archivos = e.target.files
             if (archivos && archivos.length > 0) {
                 this.formulario.foto = archivos[0]
             }
-        },
+        },  
+        //Se obtienen los datos del formulario
         datosFormulario() {
             const formData = new FormData()
             formData.append('nombre', this.formulario.nombre)
@@ -616,7 +706,9 @@ export default {
             }
             return formData
         },
-        guardar() {
+
+        //Se guarda la mascota
+            guardar() {
             this.formulario.processing = true
             this.formulario.errors = {}
 
@@ -669,6 +761,8 @@ export default {
                 })
             }
         },
+
+        //Se obtiene la lista de mascotas
         obtenerMascotas(url = '/mascotas'){
             this.cargando = true
             axios.get(url, {
@@ -690,6 +784,8 @@ export default {
                 this.cargando = false
             })
         },
+
+        //Se limpia el formulario de filtros
         limpiarFiltros() {
             this.filtros = {
                 nombre: '',
@@ -700,7 +796,8 @@ export default {
             }
             this.razasFiltro = []
             this.obtenerMascotas()
-        },
+        },  
+        //Se cambia el filtro de especie
         alCambiarFiltroEspecie() {
             this.filtros.raza_id = ''
             if (this.filtros.especie_id) {
@@ -713,12 +810,16 @@ export default {
             }
             this.obtenerMascotas()
         },
+
+        //Se obtiene la lista de especies
         obtenerEspecies() {
             axios.get('/especies')
                 .then((response) => {
                     this.especies = response.data.especies
                 })
         },
+
+        //Se obtiene la lista de razas por especie
         obtenerRazasPorEspecie(especieId) {
             axios.get(`/razas`, {
                 params: {
@@ -729,6 +830,7 @@ export default {
                     this.razas = response.data.razas
                 })
         },
+        //Se confirma la eliminación de la mascota
         confirmarEliminar(mascota) {
             this.$confirmar('¿Eliminar mascota?', `Se eliminará a ${mascota.nombre}.`)
                 .then((resultado) => {
@@ -739,10 +841,13 @@ export default {
                         .catch(() => this.$alertaError('Error', 'No se pudo eliminar la mascota.'))
                 })
         },
+        //Se redirige al detalle de la mascota
         irADetalle(id) {
             router.get(`/mascotas/${id}`);
         }
     },
+    
+    //Se ejecuta al cargar el componente en el DOM
     mounted() {
         this.obtenerEspecies()
         this.obtenerMascotas()

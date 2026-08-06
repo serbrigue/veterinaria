@@ -1,4 +1,7 @@
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: Listado -->
+    <!-- ================================================================================== -->
     <Head title="Veterinarios" />
     <AuthenticatedLayout>
         <div class="container py-4">
@@ -6,15 +9,18 @@
                 <div class="card-header bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
                     <h1 class="h4 mb-0 text-primary fw-bold">Veterinarios</h1>
                     <div class="d-flex gap-2">
+                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "$isAdmin() || $isSecretaria()" -->
                         <template v-if="$isAdmin() || $isSecretaria()">
                             <a href="/api/export/veterinarios" class="btn btn-outline-success rounded-pill shadow-sm px-4">
                                 <i class="bi bi-download me-1"></i> Exportar
                             </a>
+                            <!-- EVENTO (@click): Dispara la acción "mostrarModalImportar = true" -->
                             <button type="button" class="btn btn-outline-primary rounded-pill shadow-sm px-4" @click="mostrarModalImportar = true">
                                 <i class="bi bi-upload me-1"></i> Importar
                             </button>
                         </template>
                         <TieneRol rol="admin">
+                            <!-- EVENTO (@click): Dispara la acción "abrirModalCrear" -->
                             <button type="button" class="btn btn-primary rounded-pill shadow-sm px-4" @click="abrirModalCrear">
                                 <i class="bi bi-person-plus me-1"></i> Registrar Veterinario
                             </button>
@@ -28,6 +34,7 @@
                         <div class="row g-3 align-items-end">
                             <div class="col-12 col-md-4 col-lg-4">
                                 <label class="form-label small fw-bold text-secondary mb-1">Buscar por Nombre</label>
+                                <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "filtros.nombre" -->
                                 <input 
                                     type="text" 
                                     v-model="filtros.nombre" 
@@ -38,19 +45,24 @@
                             </div>
                             <div class="col-12 col-md-4 col-lg-3">
                                 <label class="form-label small fw-bold text-secondary mb-1">Especialidad</label>
+                                <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "filtros.especialidad_id" -->
                                 <select class="form-select form-select-sm" v-model="filtros.especialidad_id" @change="obtenerVeterinarios()">
                                     <option value="">Todas</option>
+                                    <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                                     <option v-for="esp in especialidades" :key="esp.id" :value="esp.id">{{ esp.nombre }}</option>
                                 </select>
                             </div>
                             <div class="col-12 col-md-4 col-lg-3">
                                 <label class="form-label small fw-bold text-secondary mb-1">Sucursal</label>
+                                <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "filtros.sucursal_id" -->
                                 <select class="form-select form-select-sm" v-model="filtros.sucursal_id" @change="obtenerVeterinarios()">
                                     <option value="">Todas</option>
+                                    <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                                     <option v-for="suc in sucursales" :key="suc.id" :value="suc.id">{{ suc.nombre }}</option>
                                 </select>
                             </div>
                             <div class="col-12 col-lg-2 d-flex gap-2 justify-content-lg-end">
+                                <!-- EVENTO (@click): Dispara la acción "limpiarFiltros()" -->
                                 <button class="btn btn-outline-secondary btn-sm w-100 rounded-pill" @click="limpiarFiltros()">
                                     Limpiar
                                 </button>
@@ -79,13 +91,16 @@
                     />
 
                     <!-- Grid de Veterinarios -->
+                    <!-- DIRECTIVA (v-if): Renderizado condicional basado en "!cargando && !listaVacia && !sinResultadosFiltro" -->
                     <div v-if="!cargando && !listaVacia && !sinResultadosFiltro" class="row g-4">
+                        <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                         <div v-for="vet in veterinariosVisibles" :key="vet.id" class="col-12 col-md-6 col-lg-4">
                             <Link :href="route('veterinarios.detalle', vet.id)" class="text-decoration-none text-dark">
                                 <div class="card h-100 border-0 shadow-sm hover-elevate transition-all overflow-hidden group-card cursor-pointer rounded-4">
                                     <div class="position-relative bg-light text-center py-4" style="height: 140px;">
                                         <div class="position-absolute bottom-0 start-0 w-100 h-50 bg-gradient-dark pointer-events-none"></div>
                                         <div class="d-flex align-items-center justify-content-center flex-column position-relative z-index-1">
+                                            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "vet.foto_perfil_url" -->
                                             <img v-if="vet.foto_perfil_url" :src="vet.foto_perfil_url" class="rounded-circle shadow-sm mb-2" style="width: 70px; height: 70px; object-fit: cover; border: 3px solid white;" alt="Foto de perfil">
                                             <div v-else class="rounded-circle shadow-sm mb-2 bg-primary text-white d-flex align-items-center justify-content-center" style="width: 70px; height: 70px; border: 3px solid white;">
                                                 <i class="bi bi-person-fill fs-3"></i>
@@ -106,9 +121,13 @@
                                         
                                         <div class="text-start mb-3 small flex-grow-1">
                                             <div class="text-muted mb-1 text-truncate"><i class="bi bi-envelope me-2"></i>{{ vet.usuario?.email }}</div>
+                                            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "vet.telefono" -->
                                             <div class="text-muted mb-1" v-if="vet.telefono"><i class="bi bi-telephone me-2"></i>{{ vet.telefono }}</div>
+                                            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "vet.direccion" -->
                                             <div class="text-muted" v-if="vet.direccion"><i class="bi bi-geo-alt me-2"></i>{{ vet.direccion }}</div>
                                         </div>
+                                        
+                                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "$isAdmin()" -->
                                         
                                         <div v-if="$isAdmin()" class="d-flex gap-2 pt-3 border-top mt-auto justify-content-between">
                                             <button 
@@ -144,25 +163,32 @@
                 @guardar="guardar"
             >
                 <!-- Campos de Usuario (Solo en creación) -->
+                <!-- DIRECTIVA (v-if): Renderizado condicional basado en "!modoEdicion" -->
                 <template v-if="!modoEdicion">
                     <h6 class="text-uppercase text-muted fw-bold small mb-2 border-bottom pb-2">Datos de Acceso</h6>
                     
                     <div class="row g-3">
                         <div class="col-12 col-md-6">
                             <label for="name" class="form-label fw-semibold text-secondary small">Nombre Completo</label>
+                            <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "formulario.name" -->
                             <input id="name" v-model="formulario.name" type="text" class="form-control bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.name }" required placeholder="Ej: Dr. Juan Pérez" />
+                            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.name" -->
                             <div v-if="formulario.errors.name" class="invalid-feedback">{{ formulario.errors.name }}</div>
                         </div>
 
                         <div class="col-12 col-md-6">
                             <label for="email" class="form-label fw-semibold text-secondary small">Correo Electrónico</label>
+                            <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "formulario.email" -->
                             <input id="email" v-model="formulario.email" type="email" class="form-control bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.email }" required placeholder="ejemplo@veterinaria.com" />
+                            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.email" -->
                             <div v-if="formulario.errors.email" class="invalid-feedback">{{ formulario.errors.email }}</div>
                         </div>
 
                         <div class="col-12 col-md-6">
                             <label for="password" class="form-label fw-semibold text-secondary small">Contraseña</label>
+                            <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "formulario.password" -->
                             <input id="password" v-model="formulario.password" type="password" class="form-control bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.password }" required placeholder="Mínimo 8 caracteres" />
+                            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.password" -->
                             <div v-if="formulario.errors.password" class="invalid-feedback">{{ formulario.errors.password }}</div>
                         </div>
                     </div>
@@ -174,35 +200,45 @@
                 <div class="row g-3">
                     <div class="col-12 col-md-6">
                         <label for="especialidad_id" class="form-label fw-semibold text-secondary small">Especialidad</label>
+                        <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "formulario.especialidad_id" -->
                         <select id="especialidad_id" v-model="formulario.especialidad_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.especialidad_id }" required>
                             <option value="" disabled>Selecciona una especialidad</option>
+                            <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                             <option v-for="esp in especialidades" :key="esp.id" :value="esp.id">
                                 {{ esp.nombre }}
                             </option>
                         </select>
+                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.especialidad_id" -->
                         <div v-if="formulario.errors.especialidad_id" class="invalid-feedback">{{ formulario.errors.especialidad_id }}</div>
                     </div>
 
                     <div class="col-12 col-md-6">
                         <label for="sucursal_id" class="form-label fw-semibold text-secondary small">Sucursal Principal</label>
+                        <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "formulario.sucursal_id" -->
                         <select id="sucursal_id" v-model="formulario.sucursal_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.sucursal_id }" required>
                             <option value="" disabled>Selecciona una sucursal</option>
+                            <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                             <option v-for="sucursal in sucursales" :key="sucursal.id" :value="sucursal.id">
                                 {{ sucursal.nombre }}
                             </option>
                         </select>
+                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.sucursal_id" -->
                         <div v-if="formulario.errors.sucursal_id" class="invalid-feedback">{{ formulario.errors.sucursal_id }}</div>
                     </div>
 
                     <div class="col-12 col-md-6">
                         <label for="telefono" class="form-label fw-semibold text-secondary small">Teléfono de Contacto</label>
+                        <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "formulario.telefono" -->
                         <input id="telefono" v-model="formulario.telefono" type="text" class="form-control bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.telefono }" placeholder="Ej: +56 9 1234 5678" />
+                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.telefono" -->
                         <div v-if="formulario.errors.telefono" class="invalid-feedback">{{ formulario.errors.telefono }}</div>
                     </div>
 
                     <div class="col-12 col-md-6">
                         <label for="direccion" class="form-label fw-semibold text-secondary small">Dirección</label>
+                        <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "formulario.direccion" -->
                         <input id="direccion" v-model="formulario.direccion" type="text" class="form-control bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.direccion }" placeholder="Dirección referencial" />
+                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.direccion" -->
                         <div v-if="formulario.errors.direccion" class="invalid-feedback">{{ formulario.errors.direccion }}</div>
                     </div>
 
@@ -217,9 +253,11 @@
                             @change="seleccionarFoto"
                             :class="{ 'is-invalid': formulario.errors.foto }"
                         />
+                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.foto" -->
                         <div v-if="formulario.errors.foto" class="invalid-feedback">
                             {{ formulario.errors.foto }}
                         </div>
+                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.foto_perfil_url" -->
                         <div v-if="formulario.foto_perfil_url" class="mt-2 text-center">
                             <img :src="formulario.foto_perfil_url" class="rounded-circle img-thumbnail shadow-sm" style="width: 100px; height: 100px; object-fit: cover;" alt="Vista previa de perfil" />
                         </div>
@@ -239,6 +277,10 @@
 </template>
 
 <script>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3)
+// ==================================================================================
+
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import axios from 'axios';
@@ -248,7 +290,11 @@ import SinResultados from '@/Componentes/SinResultados.vue';
 import ModalCrud from '@/Componentes/ModalCrud.vue';
 import ModalImportarSimple from '@/Componentes/ModalImportarSimple.vue';
 
+// ------------------------------------------------------------------------------
+// EXPORT DEFAULT: Definición principal del componente
+// ------------------------------------------------------------------------------
 export default {
+    // COMPONENTES (COMPONENTS): Registro de componentes importados
     components: {
         AuthenticatedLayout,
         Head,
@@ -259,6 +305,7 @@ export default {
         ModalCrud,
         ModalImportarSimple,
     },
+    // PROPIEDADES (PROPS): Datos inyectados desde el componente padre o estado
     props: {
         veterinarios: {
             type: Array,
@@ -273,6 +320,7 @@ export default {
             default: () => [],
         },
     },
+    // ESTADO REACTIVO (DATA): Variables locales del componente
     data() {
         return {
             cargando: false,
@@ -302,6 +350,7 @@ export default {
             },
         }
     },
+    // PROPIEDADES COMPUTADAS (COMPUTED): Variables reactivas que dependen de otras
     computed: {
         listaVacia() {
             return this.veterinariosLocales.length === 0 && !this.filtros.nombre && !this.filtros.especialidad_id && !this.filtros.sucursal_id;
@@ -316,6 +365,7 @@ export default {
             return !this.listaVacia && this.veterinariosVisibles.length === 0;
         }
     },
+    // MÉTODOS (METHODS): Bloque de funciones y eventos
     methods: {
         obtenerVeterinarios() {
             this.cargando = true;

@@ -5,6 +5,15 @@ namespace App\Policies;
 use App\Models\Cita;
 use App\Models\User;
 
+/*
+|--------------------------------------------------------------------------
+| Cita Policy
+|--------------------------------------------------------------------------
+| Administrador: Acceso total automático a todas las acciones.
+| Cliente: Puede agendar, ver, editar (datos generales) y cancelar sus propias citas si tiene los permisos correspondientes ('ver-mis-citas', 'agendar-cita', 'editar-mis-citas', 'eliminar-mis-citas').
+| Veterinario: Puede ver sus propias citas, editar notas y estado de sus citas (o las de su sucursal con el permiso 'editar-citas-sucursal'). No puede crear ni cancelar citas.
+| Secretaria: Puede gestionar (crear, ver, editar datos generales, notas, estado y cancelar) las citas de los veterinarios de su sucursal, siempre que tenga los permisos ('ver-citas-sucursal', 'gestionar-citas-sucursal', 'editar-citas-sucursal').
+*/
 class CitaPolicy
 {
     // El filtro before se ejecuta antes de cualquier otro método de la Policy.

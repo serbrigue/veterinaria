@@ -1,33 +1,50 @@
 name: Construir y Publicar Imagen Docker
 
+# 1. ¿CUÁNDO SE EJECUTA? (Eventos)
+# Este bloque define los 'triggers' (disparadores). El workflow se activará automáticamente
+# cuando alguien haga un 'push' (suba código) a las ramas 'main' o 'master'.
+# También se ejecutará si se crea una etiqueta (tag) que empiece con 'v' (ej. v1.0.0).
 on:
   push:
     branches:
       - main
       - master
-    # Opcional: También ejecutar al crear tags de versión (ej. v1.0.0)
     tags:
       - 'v*.*.*'
 
+# 2. VARIABLES DE ENTORNO
+# Se definen variables que se usarán en el resto del archivo.
+# REGISTRY: El lugar donde se guardará la imagen (GitHub Container Registry).
+# IMAGE_NAME: El nombre de la imagen, que toma dinámicamente el nombre del repositorio.
 env:
   REGISTRY: ghcr.io
-  # IMAGE_NAME será el formato <propietario>/<repositorio> automáticamente
   IMAGE_NAME: ${{ github.repository }}
 
+# 3. TRABAJOS (Jobs)
+# Aquí definimos lo que la acción realmente hará. En este caso tenemos un solo trabajo
+# llamado 'build-and-push-image'.
 jobs:
   build-and-push-image:
+    # Se indica el sistema operativo virtual donde correrá el proceso (Ubuntu en su última versión).
     runs-on: ubuntu-latest
-    # Otorgar permisos al GITHUB_TOKEN para subir paquetes
+    
+    # 4. PERMISOS
+    # Se le otorgan permisos al token de GitHub para que pueda leer el código del repo
+    # y pueda escribir (publicar) paquetes (nuestra imagen Docker) en el Container Registry.
     permissions:
       contents: read
       packages: write
       attestations: write
       id-token: write
 
+    # 5. PASOS A SEGUIR (Steps)
+    # Secuencia de acciones que se ejecutarán en orden dentro del sistema Ubuntu.
     steps:
+      # Paso A: Clona (descarga) el código de nuestro repositorio dentro del entorno virtual.
       - name: Checkout del repositorio
         uses: actions/checkout@v4
 
+      # Paso B: Prepara el entorno instalando PHP 8.4 y Composer, necesarios para el proyecto.
       - name: Setup PHP 8.4
         uses: shivammathur/setup-php@v2
         with:
@@ -35,14 +52,20 @@ jobs:
           tools: composer:v2
           coverage: none
 
+      # Paso C: Verifica que los archivos de dependencias de PHP (composer.json) sean válidos
+      # y luego descarga las librerías necesarias del proyecto para que la imagen las tenga listas.
       - name: Validate Composer files
         run: |
           composer validate --strict
           composer install --no-interaction --no-scripts --prefer-dist
 
+      # Paso D: Configura 'Docker Buildx', que es el motor avanzado de construcción de Docker.
+      # Permite compilar la imagen más rápido y usar caché.
       - name: Configurar Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # Paso E: Inicia sesión en el GitHub Container Registry usando el token automático de Github.
+      # Esto autoriza al sistema a subir la imagen que vamos a crear en el siguiente paso.
       - name: Iniciar sesión en GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -50,6 +73,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Paso F: Genera automáticamente etiquetas (tags) y metadatos para la imagen de Docker.
+      # Por ejemplo, la etiquetará con el nombre de la rama (main) o el commit sha,
+      # para que sepamos exactamente a qué versión del código corresponde la imagen.
       - name: Extraer metadatos (tags, labels) para Docker
         id: meta
         uses: docker/metadata-action@v5
@@ -61,6 +87,9 @@ jobs:
             type=semver,pattern={{version}}
             type=sha,format=long
 
+      # Paso G: El paso final. Toma el 'Dockerfile.prod', construye la imagen final del proyecto
+      # empaquetando el código, y la empuja (push = sube) al GitHub Container Registry.
+      # También usa caché (cache-from/cache-to) para que futuras construcciones sean más veloces.
       - name: Construir y Hacer Push de la Imagen de Producción
         uses: docker/build-push-action@v5
         with:

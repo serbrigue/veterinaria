@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Veterinario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use App\Http\Requests\GuardarPagoVeterinarioRequest;
 use Inertia\Inertia;
 
 class PagoVeterinarioController extends Controller
@@ -228,15 +229,8 @@ class PagoVeterinarioController extends Controller
         ]);
     }
 
-    public function procesarPago(Request $request, User $usuario)
+    public function procesarPago(GuardarPagoVeterinarioRequest $request, User $usuario)
     {
-
-        // Validamos los datos de la solicitud
-        $request->validate([
-            'mes' => 'required|integer|min:1|max:12',
-            'anio' => 'required|integer',
-            'monto_total' => 'required|numeric',
-        ]);
 
         // Verificamos si ya existe un pago para el mes y año
         $existe = PagoVeterinario::where('usuario_id', $usuario->id)

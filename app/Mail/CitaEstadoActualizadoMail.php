@@ -9,37 +9,36 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Mail\Attachment;
 
 class CitaEstadoActualizadoMail extends Mailable implements ShouldQueue
 {
+    //Traits
     use Queueable, SerializesModels;
 
+    //Propiedades
     public Cita $cita;
 
+    //Propiedad
     public string $rol;
 
-    /**
-     * Create a new message instance.
-     */
+    //Constructor
     public function __construct(Cita $cita, string $rol)
     {
         $this->cita = $cita;
         $this->rol = $rol;
     }
 
-    /**
-     * Get the message envelope.
-     */
+    //Método que permite configurar el sobre del correo
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Actualización de Cita Médica - '.config('app.name'),
+            subject: 'Actualización de Cita Médica - ' . config('app.name'),
         );
     }
 
-    /**
-     * Get the message content definition.
-     */
+    //Método que permite configurar el contenido del correo
     public function content(): Content
     {
         return new Content(
@@ -47,11 +46,13 @@ class CitaEstadoActualizadoMail extends Mailable implements ShouldQueue
         );
     }
 
+    //Método que permite configurar los archivos adjuntos del correo
     public function attachments(): array
     {
+        //Inicializamos los adjuntos
         $adjuntos = [];
 
-        // Asegurar que sabemos si tiene ficha clínica y cargos (lazy load si no venía)
+        //Aseguramos la carga de relaciones
         $this->cita->loadMissing([
             'fichaClinica',
             'cargos.insumo.categoriaInsumo',
@@ -59,24 +60,26 @@ class CitaEstadoActualizadoMail extends Mailable implements ShouldQueue
             'transaccion'
         ]);
 
-        // Si la cita está completada y tiene ficha clínica, adjuntamos el PDF
+        //Si la cita está completada y tiene ficha clínica, adjuntamos el PDF
         if ($this->cita->estado === 'completada' && $this->cita->fichaClinica) {
-            // Cargar relaciones necesarias para el PDF
+            //Cargar relaciones necesarias para el PDF
             $this->cita->loadMissing([
-                'fichaClinica.recetas', 
-                'fichaClinica.vacunas', 
-                'mascota.raza.especie', 
-                'mascota.cliente.usuario', 
+                'fichaClinica.recetas',
+                'fichaClinica.vacunas',
+                'mascota.raza.especie',
+                'mascota.cliente.usuario',
                 'veterinario.usuario'
             ]);
 
-            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.ficha_clinica', [
+            //Generamos el PDF
+            $pdf = Pdf::loadView('pdf.ficha_clinica', [
                 'cita' => $this->cita,
                 'ficha' => $this->cita->fichaClinica
             ]);
 
-            $adjuntos[] = \Illuminate\Mail\Mailables\Attachment::fromData(
-                fn () => $pdf->output(),
+            //Adjuntamos el PDF
+            $adjuntos[] = Attachment::fromData(
+                fn() => $pdf->output(),
                 'Ficha_Clinica_' . ($this->cita->mascota->nombre ?? 'Paciente') . '.pdf'
             )->withMime('application/pdf');
         }

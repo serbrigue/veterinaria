@@ -1,4 +1,7 @@
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: ConfirmarContrasena -->
+    <!-- ================================================================================== -->
     <GuestLayout>
         <Head title="Confirmar contraseña" />
 
@@ -12,6 +15,7 @@
                 <div>
                     <div class="mb-3">
                         <label for="password" class="form-label">Password</label>
+                        <!-- Enlace de datos bidireccional con "formulario.password" -->
                         <input
                             id="password"
                             v-model="formulario.password"
@@ -22,10 +26,13 @@
                             autocomplete="current-password"
                             autofocus
                         />
+                        <!-- Si existe un error, lo muestra -->
                         <div v-if="formulario.errors.password" class="invalid-feedback">{{ formulario.errors.password }}</div>
                     </div>
                     <div class="d-flex justify-content-end mt-4">
+                        <!-- Dispara la acción "guardar" -->
                         <button type="button" class="btn btn-primary" :disabled="formulario.processing" @click="guardar">
+                            <!-- Si existe un error, muestra un spinner -->
                             <span v-if="formulario.processing" class="spinner-border spinner-border-sm me-2" />
                             Confirmar
                         </button>
@@ -37,16 +44,26 @@
 </template>
 
 <script>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3)
+// ==================================================================================
+
 import GuestLayout from '@/Disenos/LayoutInvitado.vue';
 import { Head } from '@inertiajs/vue3';
 
+// ------------------------------------------------------------------------------
+// EXPORT DEFAULT: Definición principal del componente
+// ------------------------------------------------------------------------------
 export default {
+    // COMPONENTES: Registro de componentes importados
     components: {
         GuestLayout,
         Head,
     },
+    // ESTADO REACTIVO: Variables locales del componente
     data() {
         return {
+            // Formulario
             formulario: {
                 password: '',
                 errors: {},
@@ -54,21 +71,27 @@ export default {
             },
         }
     },
+    // MÉTODOS: Bloque de funciones y eventos
     methods: {
+        // Guarda el formulario
         guardar() {
             this.formulario.processing = true
             this.formulario.errors = {}
+            // Petición a la API para confirmar la contraseña
             axios.post('/api/confirmar-contrasena', {
                 password: this.formulario.password,
             })
+            // Si la petición es exitosa
             .then((response) => {
                 window.location.href = response.data.redirect || route('panel')
             })
+            // Si la petición falla
             .catch((error) => {
                 if (error.response?.status === 422) {
                     this.formulario.errors = error.response.data.errors
                 }
             })
+            // Siempre se ejecuta al finalizar la petición
             .finally(() => {
                 this.formulario.processing = false
                 this.formulario.password = ''

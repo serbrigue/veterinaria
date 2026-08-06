@@ -4,6 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Modelo FichaClinica
+ *
+ * Representa a la tabla `ficha_clinicas` en la base de datos.
+ * Función: Almacena el historial médico, diagnósticos y atenciones clínicas de cada mascota.
+ */
 class FichaClinica extends Model
 {
     protected $fillable = [

@@ -110,6 +110,9 @@ Route::middleware('auth')->group(function () {
         ->name('transacciones.pagar')
         ->middleware('can:pagar,transaccion');
 
+    Route::get('/transacciones/{transaccion}/comprobante', [TransaccionController::class, 'generarComprobantePdf'])
+        ->name('transacciones.comprobante');
+
     // Importador y Exportador de Datos
     Route::group(['middleware' => ['can:importar-datos']], function () {
         // Importador Consolidado

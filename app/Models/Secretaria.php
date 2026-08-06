@@ -4,6 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Modelo Secretaria
+ *
+ * Representa a la tabla `secretarias` en la base de datos.
+ * Función: Representa al personal administrativo encargado de gestionar citas y clientes en una sucursal.
+ */
 class Secretaria extends Model
 {
     protected $table = 'secretarias';

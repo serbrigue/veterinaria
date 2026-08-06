@@ -1,4 +1,7 @@
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: Detalle -->
+    <!-- ================================================================================== -->
     <Head :title="'Servicio - ' + (prestacion.nombre || 'Detalle')" />
 
     <AuthenticatedLayout>
@@ -26,6 +29,7 @@
                                         <i class="bi bi-star-fill text-warning me-1"></i>
                                         {{ prestacion.especialidad?.nombre || 'Medicina General' }}
                                     </span>
+                                    <!-- DIRECTIVA (v-if): Renderizado condicional basado en "prestacion.categoria_prestacion" -->
                                     <span v-if="prestacion.categoria_prestacion" class="badge bg-white text-dark rounded-pill px-3 py-2 fw-bold shadow-sm">
                                         <i class="bi bi-tags-fill text-secondary me-1"></i>
                                         Categoría: {{ prestacion.categoria_prestacion.nombre }}
@@ -87,16 +91,25 @@
 </template>
 
 <script>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3)
+// ==================================================================================
+
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
 import { Head, Link } from '@inertiajs/vue3';
 
+// ------------------------------------------------------------------------------
+// EXPORT DEFAULT: Definición principal del componente
+// ------------------------------------------------------------------------------
 export default {
     name: 'PrestacionDetalle',
+    // COMPONENTES (COMPONENTS): Registro de componentes importados
     components: {
         AuthenticatedLayout,
         Head,
         Link
     },
+    // PROPIEDADES (PROPS): Datos inyectados desde el componente padre o estado
     props: {
         prestacion: {
             type: Object,

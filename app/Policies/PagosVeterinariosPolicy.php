@@ -4,6 +4,13 @@ namespace App\Policies;
 
 use App\Models\User;
 
+/*
+|--------------------------------------------------------------------------
+| Pagos Veterinarios Policy
+|--------------------------------------------------------------------------
+| Administrador: Acceso total automático a todas las acciones de pagos veterinarios.
+| Otros roles (Veterinario, Cliente, Secretaria): Tienen denegadas por defecto todas las acciones de visualización y gestión en esta política.
+*/
 class PagosVeterinariosPolicy
 {
     // El filtro before se ejecuta antes de cualquier otro método de la Policy.

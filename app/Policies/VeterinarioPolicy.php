@@ -5,6 +5,14 @@ namespace App\Policies;
 use App\Models\User;
 use App\Models\Veterinario;
 
+/*
+|--------------------------------------------------------------------------
+| Veterinario Policy
+|--------------------------------------------------------------------------
+| Administrador: Acceso total automático a todas las acciones (crear, editar, eliminar).
+| Cualquier usuario (incluyendo Cliente, Secretaria, Veterinario): Puede ver el listado general y los detalles de los veterinarios.
+| Ningún otro rol aparte del Administrador puede crear, editar o eliminar veterinarios.
+*/
 class VeterinarioPolicy
 {
     // El filtro before se ejecuta antes de cualquier otro método de la Policy.

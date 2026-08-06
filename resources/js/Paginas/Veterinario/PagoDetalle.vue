@@ -1,4 +1,7 @@
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: PagoDetalle -->
+    <!-- ================================================================================== -->
     <Head :title="`Liquidación - ${personal.nombre}`" />
 
     <AuthenticatedLayout>
@@ -53,11 +56,13 @@
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    <!-- DIRECTIVA (v-if): Renderizado condicional basado en "desglose.length === 0" -->
                                     <tr v-if="desglose.length === 0">
                                         <td colspan="5" class="text-center py-5">
                                             <p class="text-muted mb-0">No hay servicios que generen comisión este mes.</p>
                                         </td>
                                     </tr>
+                                    <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                                     <tr v-for="item in desglose" :key="item.id">
                                         <td class="ps-4 text-muted small">{{ formatearFecha(item.fecha) }}</td>
                                         <td>
@@ -96,16 +101,21 @@
                     </div>
 
                     <div class="d-grid gap-3 d-print-none">
+                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "estado === " -->
+                        <!-- EVENTO (@click): Dispara la acción "procesarPago" -->
                         <button 
                             v-if="estado === 'Pendiente'"
                             @click="procesarPago" 
                             class="btn btn-success btn-lg rounded-3 shadow-sm d-flex align-items-center justify-content-center"
                             :disabled="cargando || total <= 0"
                         >
+                            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "cargando" -->
                             <span v-if="cargando" class="spinner-border spinner-border-sm me-2" role="status"></span>
                             <i v-else class="bi bi-check2-circle fs-4 me-2"></i>
                             Confirmar y Realizar Pago
                         </button>
+
+                        <!-- EVENTO (@click): Dispara la acción "imprimirComprobante" -->
 
                         <button 
                             @click="imprimirComprobante" 
@@ -122,16 +132,25 @@
 </template>
 
 <script>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3)
+// ==================================================================================
+
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import axios from 'axios';
 
+// ------------------------------------------------------------------------------
+// EXPORT DEFAULT: Definición principal del componente
+// ------------------------------------------------------------------------------
 export default {
+    // COMPONENTES (COMPONENTS): Registro de componentes importados
     components: {
         AuthenticatedLayout,
         Head,
         Link
     },
+    // PROPIEDADES (PROPS): Datos inyectados desde el componente padre o estado
     props: {
         personal: Object,
         desglose_inicial: Array,
@@ -140,6 +159,7 @@ export default {
         mes_inicial: [Number, String],
         anio_inicial: [Number, String]
     },
+    // ESTADO REACTIVO (DATA): Variables locales del componente
     data() {
         return {
             desglose: this.desglose_inicial,
@@ -152,11 +172,13 @@ export default {
             }
         };
     },
+    // PROPIEDADES COMPUTADAS (COMPUTED): Variables reactivas que dependen de otras
     computed: {
         nombreMesActual() {
             return this.meses[this.mes_inicial] || '';
         }
     },
+    // MÉTODOS (METHODS): Bloque de funciones y eventos
     methods: {
         formatoDinero(valor) {
             if (!valor) return '0';

@@ -4,6 +4,16 @@ namespace App\Traits;
 
 use Illuminate\Support\Facades\Cache;
 
+/*
+|--------------------------------------------------------------------------
+| ClearsCache Trait
+|--------------------------------------------------------------------------
+| Este trait se encarga de limpiar automáticamente la caché relacionada a un
+| modelo cuando este es creado, actualizado o eliminado.
+| Requiere que el modelo defina una propiedad `$cacheKeys` que contenga un
+| array con los nombres de las claves de caché a limpiar.
+*/
+
 trait ClearsCache
 {
     /**

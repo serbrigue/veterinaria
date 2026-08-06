@@ -4,6 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Modelo PagoVeterinario
+ *
+ * Representa a la tabla `pago_veterinarios` en la base de datos.
+ * Función: Gestiona el registro de pagos, liquidaciones o comisiones entregadas a los veterinarios.
+ */
 class PagoVeterinario extends Model
 {
     // Atributos

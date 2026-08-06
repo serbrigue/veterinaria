@@ -10,6 +10,7 @@ use Exception;
 use App\Http\Requests\AnalyzeImportRequest;
 use App\Http\Requests\ProcessImportRequest;
 use App\Exports\DiscardedImportExport;
+use App\Http\Requests\GuardarImportacionSimpleRequest;
 use App\Imports\EspeciesImport;
 use App\Imports\RazasImport;
 use App\Imports\EspecialidadesImport;
@@ -24,40 +25,39 @@ use Illuminate\Support\Facades\Storage;
 
 class ImportController extends Controller
 {
-    /**
-     * RF-02: Pre-lectura Estructural.
-     * Lee las dos primeras filas del Excel para obtener encabezados y una muestra de datos.
-     * RNF-02: Validación de 10 MB.
-     */
+
     public function analyzeHeaders(AnalyzeImportRequest $request)
     {
         try {
+            //Cargamos el archivo excel
             $file = $request->file('file');
-            
-            // Usamos Excel::toArray para obtener los datos rápidamente.
-            // toArray carga todo a memoria, pero al ser max 10MB es manejable. 
-            // Para ser más eficientes, podríamos leer solo una muestra, pero toArray 
-            // es lo más directo con Laravel Excel para extraer headers.
+
+            //Extraemos los encabezados y una muestra de datos
             $data = Excel::toArray(new \stdClass, $file);
 
+            //Validamos que el archivo no esté vacío
             if (empty($data) || empty($data[0])) {
                 return response()->json(['message' => 'El archivo está vacío.'], 400);
             }
 
-            $sheet = $data[0]; // Primera hoja
-            $headers = $sheet[0] ?? []; // Fila 1: Encabezados
-            $sample = $sheet[1] ?? []; // Fila 2: Muestra (puede estar vacía)
+            //Obtenemos los encabezados y una muestra de datos
+            $sheet = $data[0];
+            $headers = $sheet[0] ?? [];
+            $sample = $sheet[1] ?? [];
 
-            // Limpiar headers (opcional, trim, etc)
+            // Limpiamos los encabezados
             $headers = array_map('trim', $headers);
+
+            //Retornamos los encabezados y una muestra de datos
 
             return response()->json([
                 'success' => true,
                 'headers' => $headers,
                 'sample' => $sample
             ]);
-
         } catch (Exception $e) {
+
+            //Retornamos el mensaje de error
             return response()->json([
                 'success' => false,
                 'message' => 'Error al analizar el archivo: ' . $e->getMessage()
@@ -65,71 +65,82 @@ class ImportController extends Controller
         }
     }
 
-    /**
-     * RF-01, RNF-01, RNF-03: Procesamiento transaccional definitivo.
-     */
     public function importData(ProcessImportRequest $request)
     {
+        //Decodificamos el mapeo y los módulos
         $mapping = json_decode($request->mapping, true);
         $modules = json_decode($request->modules, true);
 
         try {
+            //Instanciamos el importador consolidado
             $import = new ConsolidatedImport($mapping, $modules);
-            // RNF-01: Integridad Transaccional
+
+            //Iniciamos una transacción para asegurar la integridad de los datos
             DB::transaction(function () use ($request, $import) {
-                // Ejecutamos la importación. Las excepciones de negocio por fila ahora
-                // se capturan internamente en $import->descartados
+
+                //Importamos los datos
                 Excel::import($import, $request->file('file'));
             });
 
+            //Retornamos la respuesta
             $response = [
                 'success' => true,
                 'message' => 'Importación procesada.',
                 'descartados_count' => count($import->descartados),
             ];
 
+            //Si hay datos descartados, creamos un archivo excel con ellos
             if (count($import->descartados) > 0) {
+
+                //Obtenemos los encabezados originales
                 $headings = $import->headersOriginales;
+                //Añadimos el motivo de descarte
                 $headings[] = 'Motivo de Descarte';
-                
+
+                //Generamos un nombre de archivo único
                 $fileName = 'importaciones_descartadas_' . time() . '.xlsx';
-                // Guardamos en storage/app/temp_imports/
+
+                //Guardamos el archivo en storage/app/temp_imports/
                 Excel::store(new DiscardedImportExport($import->descartados, $headings), 'temp_imports/' . $fileName, 'local');
-                
+
+                //Añadimos la URL de descarga y el mensaje
                 $response['download_url'] = route('import.download', ['fileName' => $fileName]);
                 $response['message'] = 'Importación parcial completada. Algunas filas fueron descartadas.';
             }
 
+            //Retornamos la respuesta
             return response()->json($response);
-
         } catch (Exception $e) {
-            // RNF-03: Feedback UX de Errores. Capturar excepción y retornar el error exacto (por ej. Fila 42).
+
+            //Retornamos el mensaje de error
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
-            ], 422); // 422 Unprocessable Entity es más adecuado para errores de validación de datos
+            ], 422);
         }
     }
 
     public function downloadDiscarded($fileName)
     {
-        // Validar nombre para evitar vulnerabilidad de Path Traversal
+        //Validamos el nombre para evitar vulnerabilidad de Path Traversal
         if (!preg_match('/^importaciones_descartadas_\d+\.xlsx$/', $fileName)) {
             abort(404);
         }
 
+        //Obtenemos la ruta del archivo
         $path = storage_path('app/temp_imports/' . $fileName);
 
         if (!file_exists($path)) {
             abort(404, 'El archivo ya no está disponible o ya fue descargado.');
         }
 
-        // Descarga el archivo y automáticamente lo elimina del servidor cuando termine la transferencia.
+        //Descarga el archivo y automáticamente lo elimina del servidor cuando termine la transferencia.
         return response()->download($path)->deleteFileAfterSend(true);
     }
 
     private function resolverImportadorSimple(string $entidad): ?string
     {
+        //Obtenemos la clase importadora correspondiente a la entidad
         $importadores = [
             'especies'              => EspeciesImport::class,
             'razas'                 => RazasImport::class,
@@ -143,31 +154,34 @@ class ImportController extends Controller
             'insumos'               => InsumosImport::class,
         ];
 
+        //Retornamos la clase importadora o null si no existe
         return $importadores[$entidad] ?? null;
     }
 
-    public function importarSimple(Request $request, string $entidad)
+    public function importarSimple(GuardarImportacionSimpleRequest $request, string $entidad)
     {
+        //Resolvemos la clase importadora
         $claseImport = $this->resolverImportadorSimple($entidad);
 
+        //Validamos que la entidad sea válida
         if (!$claseImport) {
             return response()->json(['success' => false, 'message' => 'Entidad no válida.'], 404);
         }
 
-        $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
-        ]);
-
+        //Iniciamos una transacción para asegurar la integridad de los datos
         try {
             DB::transaction(function () use ($request, $claseImport) {
+                //Importamos los datos
                 Excel::import(new $claseImport(), $request->file('file'));
             });
 
+            //Retornamos la respuesta
             return response()->json([
                 'success' => true,
                 'message' => 'Importación de ' . str_replace('-', ' ', $entidad) . ' completada con éxito.',
             ]);
         } catch (Exception $e) {
+            //Retornamos el mensaje de error
             return response()->json([
                 'success' => false,
                 'message' => 'Error al importar: ' . $e->getMessage(),

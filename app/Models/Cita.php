@@ -4,6 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Modelo Cita
+ *
+ * Representa a la tabla `citas` en la base de datos.
+ * Función: Gestiona las citas o reservas médicas agendadas para las mascotas con los veterinarios.
+ */
 class Cita extends Model
 {
     protected $fillable = [

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\PagoConfirmadoMail;
+use App\Http\Requests\ActualizarTransaccionRequest;
 use App\Models\Sucursal;
 use App\Models\Transaccion;
 use App\Models\Cliente;
@@ -11,6 +12,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class TransaccionController extends Controller
 {
@@ -81,12 +83,8 @@ class TransaccionController extends Controller
         ]);
     }
 
-    public function procesarPago(Request $request, Transaccion $transaccion)
+    public function procesarPago(ActualizarTransaccionRequest $request, Transaccion $transaccion)
     {
-        // Validamos la solicitud
-        $request->validate([
-            'metodo_pago' => 'required|string|in:tarjeta,efectivo,transferencia',
-        ]);
 
         // Si la transacción no está pendiente, devolvemos error
         if ($transaccion->estado !== 'pendiente') {
@@ -127,5 +125,19 @@ class TransaccionController extends Controller
         $transacciones = $query->orderByDesc('created_at')->paginate(5);
 
         return response()->json($transacciones);
+    }
+
+    public function generarComprobantePdf(Transaccion $transaccion)
+    {
+        // Cargamos las relaciones necesarias para el comprobante
+        $transaccion->loadMissing(['cita.mascota.cliente.usuario', 'cliente.usuario']);
+
+        $cita = $transaccion->cita;
+        $clienteNombre = $cita ? ($cita->cliente->nombre ?? ($cita->mascota->cliente->usuario->name ?? 'Desconocido')) : ($transaccion->cliente->usuario->name ?? 'Desconocido');
+        $mascotaNombre = $cita ? ($cita->mascota->nombre ?? 'N/A') : 'N/A';
+
+        $pdf = Pdf::loadView('pdf.comprobante', compact('transaccion', 'clienteNombre', 'mascotaNombre'));
+        
+        return $pdf->stream('comprobante_' . $transaccion->id . '.pdf');
     }
 }

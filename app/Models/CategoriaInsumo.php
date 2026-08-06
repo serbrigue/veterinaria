@@ -4,6 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Modelo CategoriaInsumo
+ *
+ * Representa a la tabla `categorias_insumos` en la base de datos.
+ * Función: Agrupa y clasifica los diferentes tipos de insumos médicos y administrativos de la clínica.
+ */
 class CategoriaInsumo extends Model
 {
     // Trait para limpiar el cache

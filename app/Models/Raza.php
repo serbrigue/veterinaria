@@ -6,6 +6,12 @@ use App\Traits\ClearsCache;
 use App\Traits\HasStorageAttributes;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Modelo Raza
+ *
+ * Representa a la tabla `razas` en la base de datos.
+ * Función: Catálogo de razas específicas que pertenecen a una especie en particular.
+ */
 class Raza extends Model
 {
     // Trait para limpiar la caché

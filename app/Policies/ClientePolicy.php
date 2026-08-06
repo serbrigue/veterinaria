@@ -5,6 +5,15 @@ namespace App\Policies;
 use App\Models\Cliente;
 use App\Models\User;
 
+/*
+|--------------------------------------------------------------------------
+| Cliente Policy
+|--------------------------------------------------------------------------
+| Administrador: Tiene acceso a todas las acciones (ver, crear, editar, eliminar).
+| Secretaria: Tiene acceso completo a la gestión de clientes (ver, crear, editar, eliminar).
+| Veterinario: Solo puede ver el listado y los detalles de los clientes. No puede crearlos, editarlos ni eliminarlos.
+| Cliente: Solo puede editar sus propios detalles (si su user_id coincide con el cliente). No puede ver la lista general, crear ni eliminar.
+*/
 class ClientePolicy
 {
     // Verifica si el usuario tiene permiso para ver todos los clientes

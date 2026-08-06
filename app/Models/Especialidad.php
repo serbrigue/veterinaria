@@ -5,6 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Modelo Especialidad
+ *
+ * Representa a la tabla `especialidades` en la base de datos.
+ * Función: Define las diferentes especialidades médicas que pueden tener los veterinarios (ej. Cirugía, Dermatología).
+ */
 class Especialidad extends Model
 {
     // Usamos el trait para limpiar la caché

@@ -12,34 +12,31 @@ use Illuminate\Queue\SerializesModels;
 
 class CitaCanceladaMail extends Mailable implements ShouldQueue
 {
+    //Traits
     use Queueable, SerializesModels;
 
+    //Propiedades
     public Cita $cita;
 
+    //Propiedad
     public string $rol;
 
-    /**
-     * Create a new message instance.
-     */
+    //Constructor
     public function __construct(Cita $cita, string $rol)
     {
         $this->cita = $cita;
         $this->rol = $rol;
     }
 
-    /**
-     * Get the message envelope.
-     */
+    //Método que permite configurar el sobre del correo
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Cita Médica Cancelada - '.config('app.name'),
+            subject: 'Cita Médica Cancelada - ' . config('app.name'),
         );
     }
 
-    /**
-     * Get the message content definition.
-     */
+    //Método que permite configurar el contenido del correo
     public function content(): Content
     {
         return new Content(
@@ -47,11 +44,7 @@ class CitaCanceladaMail extends Mailable implements ShouldQueue
         );
     }
 
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
-     */
+    //Método que permite configurar los archivos adjuntos del correo
     public function attachments(): array
     {
         return [];

@@ -4,6 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Modelo RecetaMedica
+ *
+ * Representa a la tabla `receta_medicas` en la base de datos.
+ * Función: Almacena las recetas de medicamentos prescritas por el veterinario durante una atención.
+ */
 class RecetaMedica extends Model
 {
     protected $fillable = [

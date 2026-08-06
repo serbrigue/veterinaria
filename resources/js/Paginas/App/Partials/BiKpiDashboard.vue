@@ -1,4 +1,8 @@
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: BiKpiDashboard -->
+    <!-- ================================================================================== -->
+
     <div class="bi-dashboard mt-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="h4 fw-bold text-dark mb-0">
@@ -23,16 +27,19 @@
                             <div class="col-6">
                                 <div class="p-3 bg-light rounded-3 text-center h-100">
                                     <div class="text-muted small mb-1">Tasa Ocupación Boxes</div>
+                                    <!-- Muestra la tasa de ocupación de boxes -->
                                     <div class="fs-4 fw-bold text-primary">{{ biData.operacion?.tasa_ocupacion_boxes || 0 }}%</div>
                                 </div>
                             </div>
                             <div class="col-6">
                                 <div class="p-3 bg-light rounded-3 text-center h-100">
+                                    <!-- Muestra la tasa de ausentismo -->
                                     <div class="text-muted small mb-1">Tasa de Ausentismo</div>
                                     <div class="fs-4 fw-bold text-danger">{{ biData.operacion?.tasa_ausentismo || 0 }}%</div>
                                 </div>
                             </div>
                             <div class="col-12">
+                                <!-- Muestra el ticket promedio por cita -->
                                 <div class="p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
                                     <span class="text-muted small">Ticket Promedio por Cita</span>
                                     <span class="fs-5 fw-bold text-success">${{ formatoDinero(biData.operacion?.ticket_promedio) }}</span>
@@ -54,19 +61,23 @@
                         <div class="row g-3">
                             <div class="col-6">
                                 <div class="p-3 bg-success bg-opacity-10 rounded-3 text-center h-100">
+                                    <!-- Muestra los ingresos brutos -->
                                     <div class="text-success small fw-medium mb-1">Ingresos Brutos</div>
                                     <div class="fs-5 fw-bold text-success">${{ formatoDinero(biData.financiero?.ingresos_brutos) }}</div>
                                 </div>
                             </div>
                             <div class="col-6">
                                 <div class="p-3 bg-danger bg-opacity-10 rounded-3 text-center h-100">
+                                    <!-- Muestra el costo de nómina variable -->
                                     <div class="text-danger small fw-medium mb-1">Costo Nómina Var.</div>
                                     <div class="fs-5 fw-bold text-danger">${{ formatoDinero(biData.financiero?.costo_nomina_variable) }}</div>
                                 </div>
                             </div>
                             <div class="col-12">
+                                <!-- Muestra el margen neto por sucursal -->
                                 <div class="mt-2">
                                     <div class="text-muted small fw-medium mb-2">Margen Neto por Sucursal:</div>
+                                    <!-- Muestra el margen neto por sucursal iterando los datos financieros -->
                                     <div v-for="suc in biData.financiero?.margen_neto_sucursal" :key="suc.nombre" class="d-flex justify-content-between align-items-center mb-1 p-2 bg-light rounded">
                                         <span class="small fw-semibold">{{ suc.nombre }}</span>
                                         <div class="text-end">
@@ -95,6 +106,7 @@
                                     <div class="bg-primary bg-opacity-10 p-3 rounded-circle text-primary me-3">
                                         <i class="bi bi-gem fs-4"></i>
                                     </div>
+                                    <!-- Muestra el valor de vida del cliente -->
                                     <div class="flex-grow-1">
                                         <div class="text-muted small mb-0">Valor de Vida del Cliente (LTV)</div>
                                         <div class="fs-4 fw-bold text-dark">${{ formatoDinero(biData.clientes?.ltv) }}</div>
@@ -103,12 +115,14 @@
                             </div>
                             <div class="col-6">
                                 <div class="p-3 bg-light rounded-3 text-center h-100">
+                                    <!-- Muestra la frecuencia de visita -->
                                     <div class="text-muted small mb-1">Frecuencia Visita Anual</div>
                                     <div class="fs-5 fw-bold text-info">{{ biData.clientes?.frecuencia_visita }} <span class="fs-6 fw-normal">citas/mascota</span></div>
                                 </div>
                             </div>
                             <div class="col-6">
                                 <div class="p-3 bg-light rounded-3 text-center h-100">
+                                    <!-- Muestra la tasa de conversión -->
                                     <div class="text-muted small mb-1">Conversión Registro &rarr; Cita</div>
                                     <div class="fs-5 fw-bold text-primary">{{ biData.clientes?.tasa_conversion }}%</div>
                                 </div>
@@ -126,14 +140,17 @@
                             <h5 class="fw-bold text-dark mb-0">4. Logística e Inventario</h5>
                             <p class="text-muted small">Control de stock y movimiento</p>
                         </div>
+                        <!-- Muestra las alertas de stock -->
                         <span class="badge bg-warning text-dark align-self-start py-1">
                             <i class="bi bi-exclamation-triangle"></i> {{ biData.inventario?.alertas_stock?.length || 0 }} Alertas
                         </span>
                     </div>
                     <div class="card-body p-4 pt-2">
                         <div class="mb-3">
+                            <!-- Muestra el índice de rotación por insumo -->
                             <div class="text-muted small fw-medium mb-2">Índice de Rotación (Top 3):</div>
                             <div class="list-group list-group-flush">
+                                <!-- Muestra el índice de rotación por insumo iterando los datos financieros -->
                                 <div v-for="insumo in topRotacion" :key="insumo.insumo" class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center">
                                     <span class="small text-truncate" style="max-width: 60%;">{{ insumo.insumo }}</span>
                                     <span class="badge bg-secondary rounded-pill">Índice: {{ insumo.indice_rotacion }}</span>
@@ -152,27 +169,44 @@
 </template>
 
 <script>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3)
+// ==================================================================================
+
+// ------------------------------------------------------------------------------
+// EXPORT DEFAULT: Definición principal del componente
+// ------------------------------------------------------------------------------
 export default {
     name: 'BiKpiDashboard',
+    // PROPIEDADES: Datos inyectados desde el componente padre o estado
     props: {
+        // Muestra los datos del dashboard procesados desde el backend
         biData: {
             type: Object,
             required: true,
             default: () => ({})
         }
     },
+    // PROPIEDADES COMPUTADAS: Variables reactivas que dependen de otras
     computed: {
+        // TOP rotación de insumos
         topRotacion() {
+            // Si no hay datos de rotación de insumos, devolver un array vacío
             if (!this.biData.inventario?.rotacion_insumos) return [];
-            // Sort by indice_rotacion descending and take top 3
+            
+            // Ordenar por indice_rotacion descendente y tomar los 3 primeros
             return [...this.biData.inventario.rotacion_insumos]
                 .sort((a, b) => b.indice_rotacion - a.indice_rotacion)
                 .slice(0, 3);
         }
     },
+    // MÉTODOS: Bloque de funciones y eventos
     methods: {
+        // Formatear el valor a dinero chileno
         formatoDinero(valor) {
+            // Si el valor es nulo o indefinido, devolver '0'
             if (!valor) return '0';
+            // Redondear el valor y formatearlo a dinero chileno
             return Math.round(valor).toLocaleString('es-CL');
         }
     }

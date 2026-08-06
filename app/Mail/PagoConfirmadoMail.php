@@ -12,31 +12,27 @@ use Illuminate\Queue\SerializesModels;
 
 class PagoConfirmadoMail extends Mailable implements ShouldQueue
 {
+    //Traits
     use Queueable, SerializesModels;
 
+    //Propiedades
     public Transaccion $transaccion;
 
-    /**
-     * Create a new message instance.
-     */
+    //Constructor
     public function __construct(Transaccion $transaccion)
     {
         $this->transaccion = $transaccion;
     }
 
-    /**
-     * Get the message envelope.
-     */
+    //Método que permite configurar el sobre del correo
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Comprobante de Pago - '.config('app.name'),
+            subject: 'Comprobante de Pago - ' . config('app.name'),
         );
     }
 
-    /**
-     * Get the message content definition.
-     */
+    //Método que permite configurar el contenido del correo
     public function content(): Content
     {
         return new Content(
@@ -44,11 +40,7 @@ class PagoConfirmadoMail extends Mailable implements ShouldQueue
         );
     }
 
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
-     */
+    //Método que permite configurar los archivos adjuntos del correo
     public function attachments(): array
     {
         return [];

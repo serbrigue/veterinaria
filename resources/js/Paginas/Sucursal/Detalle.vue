@@ -1,4 +1,7 @@
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: Detalle -->
+    <!-- ================================================================================== -->
     <AuthenticatedLayout>
         <Head :title="`Detalle - ${sucursal.nombre}`" />
 
@@ -55,7 +58,9 @@
                                         <i class="bi bi-person-badge text-primary me-2"></i>Veterinarios
                                     </h3>
                                     <div class="d-flex flex-wrap gap-2">
+                                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "veterinarios && veterinarios.length > 0" -->
                                         <template v-if="veterinarios && veterinarios.length > 0">
+                                            <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                                             <span 
                                                 v-for="veterinario in veterinarios" 
                                                 :key="veterinario.id"
@@ -76,7 +81,9 @@
                                         <i class="bi bi-door-closed text-primary me-2"></i>Boxes
                                     </h3>
                                     <div class="d-flex flex-wrap gap-2">
+                                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "boxes && boxes.length > 0" -->
                                         <template v-if="boxes && boxes.length > 0">
+                                            <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                                             <span 
                                                 v-for="box in boxes" 
                                                 :key="box.id"
@@ -126,15 +133,24 @@
 </template>
 
 <script>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3)
+// ==================================================================================
+
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
 import { Head, Link } from '@inertiajs/vue3';
 
+// ------------------------------------------------------------------------------
+// EXPORT DEFAULT: Definición principal del componente
+// ------------------------------------------------------------------------------
 export default {
+    // COMPONENTES (COMPONENTS): Registro de componentes importados
     components: {
         AuthenticatedLayout,
         Head,
         Link 
     },
+    // PROPIEDADES (PROPS): Datos inyectados desde el componente padre o estado
     props: {
         sucursal: Object,
         veterinarios: Array,

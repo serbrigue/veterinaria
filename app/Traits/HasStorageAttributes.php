@@ -2,6 +2,15 @@
 
 namespace App\Traits;
 
+/*
+|--------------------------------------------------------------------------
+| HasStorageAttributes Trait
+|--------------------------------------------------------------------------
+| Trait utilizado en los modelos para normalizar las URLs de imágenes y archivos.
+| Asegura que las rutas de storage locales se devuelvan como URLs relativas '/storage/...',
+| previniendo problemas con cambios de dominio o puerto. También provee accessors predeterminados.
+*/
+
 trait HasStorageAttributes
 {
     /**
@@ -11,32 +20,34 @@ trait HasStorageAttributes
      */
     protected function resolveStorageUrl(?string $value): ?string
     {
+        //Si no hay valor, devolvemos null
         if (! $value) {
             return null;
         }
 
-        // Si es una URL externa completa (ej: Pinterest, Pravatar, etc.) y no pertenece a storage local
+        //Si es una URL externa completa (ej: Pinterest, Pravatar, etc.) y no pertenece a storage local
         if (filter_var($value, FILTER_VALIDATE_URL) && ! str_contains($value, '/storage/')) {
             return $value;
         }
 
-        // Si ya contiene '/storage/', extrae la ruta relativa de la web a partir de allí.
-        // Esto previene URLs absolutas con hosts o puertos incorrectos (ej: http://localhost vs http://localhost:8000).
+        //Si ya contiene '/storage/', extrae la ruta relativa de la web a partir de allí.
+        //Esto previene URLs absolutas con hosts o puertos incorrectos (ej: http://localhost vs http://localhost:8000).
         if (str_contains($value, '/storage/')) {
             $pos = strpos($value, '/storage/');
 
             return substr($value, $pos);
         }
 
-        // Si es una ruta interna relativa (ej: 'especies/fotos/imagen.png')
-        $url = asset('storage/'.$value);
+        //Si es una ruta interna relativa (ej: 'especies/fotos/imagen.png')
+        $url = asset('storage/' . $value);
         if (str_contains($url, '/storage/')) {
             $pos = strpos($url, '/storage/');
 
             return substr($url, $pos);
         }
 
-        return '/storage/'.ltrim($value, '/');
+        //Devolvemos la URL relativa
+        return '/storage/' . ltrim($value, '/');
     }
 
     /**
@@ -48,7 +59,7 @@ trait HasStorageAttributes
     }
 
     /**
-     * Accessor para la propiedad foto_perfil_url.
+     * Accessor para la propiedad foto_perfil_url.  
      */
     public function getFotoPerfilUrlAttribute(?string $value): ?string
     {

@@ -4,6 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Modelo Sucursal
+ *
+ * Representa a la tabla `sucursales` en la base de datos.
+ * Función: Define las diferentes sedes físicas o ubicaciones operativas de la clínica veterinaria.
+ */
 class Sucursal extends Model
 {
     // Trait para limpiar la caché

@@ -5,6 +5,14 @@ namespace App\Policies;
 use App\Models\Sucursal;
 use App\Models\User;
 
+/*
+|--------------------------------------------------------------------------
+| Sucursal Policy
+|--------------------------------------------------------------------------
+| Administrador: Acceso total automático a todas las acciones.
+| Veterinario: Puede ver, crear, editar y eliminar sucursales si cuenta con los permisos correspondientes ('ver-sucursales', 'crear-sucursales', 'editar-sucursales', 'eliminar-sucursales').
+| Cliente y Secretaria: No tienen acceso a ninguna acción sobre las sucursales.
+*/
 class SucursalPolicy
 {
     // El filtro before se ejecuta antes de cualquier otro método de la Policy.

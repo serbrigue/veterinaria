@@ -5,6 +5,14 @@ namespace App\Policies;
 use App\Models\Box;
 use App\Models\User;
 
+/*
+|--------------------------------------------------------------------------
+| Box Policy
+|--------------------------------------------------------------------------
+| Administrador: Acceso total automático a todas las acciones.
+| Veterinario: Puede ver, crear, editar y eliminar boxes si cuenta con los permisos correspondientes ('ver-boxes', 'crear-boxes', 'editar-boxes', 'eliminar-boxes').
+| Cliente y Secretaria: No tienen acceso a las acciones de esta política.
+*/
 class BoxPolicy
 {
     // El filtro before se ejecuta antes de cualquier otro método de la Policy.

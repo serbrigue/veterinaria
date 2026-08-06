@@ -11,17 +11,15 @@ use Illuminate\Queue\SerializesModels;
 
 class NotificacionMasivaMail extends Mailable implements ShouldQueue
 {
+    //Traits
     use Queueable, SerializesModels;
 
+    //Propiedades
     public string $asunto;
-
     public string $mensaje;
-
     public string $clienteNombre;
 
-    /**
-     * Create a new message instance.
-     */
+    //Constructor
     public function __construct(string $asunto, string $mensaje, string $clienteNombre)
     {
         $this->asunto = $asunto;
@@ -29,9 +27,7 @@ class NotificacionMasivaMail extends Mailable implements ShouldQueue
         $this->clienteNombre = $clienteNombre;
     }
 
-    /**
-     * Get the message envelope.
-     */
+    //Método que permite configurar el sobre del correo
     public function envelope(): Envelope
     {
         return new Envelope(
@@ -39,9 +35,7 @@ class NotificacionMasivaMail extends Mailable implements ShouldQueue
         );
     }
 
-    /**
-     * Get the message content definition.
-     */
+    //Método que permite configurar el contenido del correo
     public function content(): Content
     {
         return new Content(
@@ -49,9 +43,7 @@ class NotificacionMasivaMail extends Mailable implements ShouldQueue
         );
     }
 
-    /**
-     * Get the attachments for the message.
-     */
+    //Método que permite configurar los archivos adjuntos del correo
     public function attachments(): array
     {
         return [];

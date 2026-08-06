@@ -1,4 +1,8 @@
 <script setup>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3 - COMPOSITION API)
+// ==================================================================================
+
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 
@@ -43,6 +47,9 @@ const submitPayment = () => {
 </script>
 
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: Checkout -->
+    <!-- ================================================================================== -->
     <Head title="Checkout Segura" />
 
     <div class="min-vh-100 bg-light py-5">
@@ -51,6 +58,7 @@ const submitPayment = () => {
                 <div class="col-12 col-lg-10 col-xl-8">
                     
                     <!-- Animación de Éxito -->
+                    <!-- DIRECTIVA (v-if): Renderizado condicional basado en "isSuccess" -->
                     <div v-if="isSuccess" class="card border-0 shadow-lg rounded-4 overflow-hidden text-center p-5">
                         <div class="mb-4">
                             <i class="bi bi-check-circle-fill text-success" style="font-size: 5rem;"></i>
@@ -113,19 +121,24 @@ const submitPayment = () => {
                                         <label class="form-label fw-semibold text-muted small text-uppercase" style="letter-spacing: 0.5px;">Método de Pago</label>
                                         <div class="d-flex gap-3">
                                             <div class="form-check form-check-inline border rounded p-3 m-0 flex-grow-1 position-relative" :class="{'border-primary bg-primary bg-opacity-10': form.metodo_pago === 'tarjeta'}">
+                                                <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "form.metodo_pago" -->
                                                 <input class="form-check-input ms-0 me-2" type="radio" name="metodo" id="tarjeta" value="tarjeta" v-model="form.metodo_pago">
                                                 <label class="form-check-label stretched-link fw-semibold" for="tarjeta">Tarjeta</label>
                                             </div>
                                             <div class="form-check form-check-inline border rounded p-3 m-0 flex-grow-1 position-relative" :class="{'border-primary bg-primary bg-opacity-10': form.metodo_pago === 'efectivo'}">
+                                                <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "form.metodo_pago" -->
                                                 <input class="form-check-input ms-0 me-2" type="radio" name="metodo" id="efectivo" value="efectivo" v-model="form.metodo_pago">
                                                 <label class="form-check-label stretched-link fw-semibold" for="efectivo">Efectivo / Caja</label>
                                             </div>
                                         </div>
                                     </div>
                                     
+                                    <!-- DIRECTIVA (v-if): Renderizado condicional basado en "form.metodo_pago === " -->
+                                    
                                     <div v-if="form.metodo_pago === 'tarjeta'" class="tarjeta-form slide-down">
                                         <div class="mb-3">
                                             <label class="form-label fw-semibold text-muted small">Nombre en la tarjeta</label>
+                                            <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "form.nombre_titular" -->
                                             <input type="text" class="form-control form-control-lg bg-light" v-model="form.nombre_titular" placeholder="Ej. Juan Pérez" required>
                                         </div>
                                         
@@ -133,6 +146,7 @@ const submitPayment = () => {
                                             <label class="form-label fw-semibold text-muted small">Número de Tarjeta</label>
                                             <div class="input-group input-group-lg">
                                                 <span class="input-group-text bg-light border-end-0"><i class="bi bi-credit-card"></i></span>
+                                                <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "form.numero_tarjeta" -->
                                                 <input type="text" class="form-control bg-light border-start-0 ps-0" v-model="form.numero_tarjeta" placeholder="0000 0000 0000 0000" maxlength="19" required>
                                             </div>
                                         </div>
@@ -140,11 +154,13 @@ const submitPayment = () => {
                                         <div class="row g-3 mb-4">
                                             <div class="col-6">
                                                 <label class="form-label fw-semibold text-muted small">Vencimiento</label>
+                                                <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "form.vencimiento" -->
                                                 <input type="text" class="form-control form-control-lg bg-light" v-model="form.vencimiento" placeholder="MM/AA" maxlength="5" required>
                                             </div>
                                             <div class="col-6">
                                                 <label class="form-label fw-semibold text-muted small">CVV</label>
                                                 <div class="input-group input-group-lg">
+                                                    <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "form.cvv" -->
                                                     <input type="text" class="form-control bg-light" v-model="form.cvv" placeholder="123" maxlength="4" required>
                                                     <span class="input-group-text bg-light" title="Código de 3 o 4 dígitos al reverso"><i class="bi bi-question-circle"></i></span>
                                                 </div>
@@ -152,12 +168,15 @@ const submitPayment = () => {
                                         </div>
                                     </div>
                                     
+                                    <!-- DIRECTIVA (v-if): Renderizado condicional basado en "form.metodo_pago === " -->
+                                    
                                     <div v-if="form.metodo_pago === 'efectivo'" class="mb-4 p-4 bg-warning bg-opacity-10 text-warning-emphasis rounded text-center">
                                         <i class="bi bi-info-circle-fill fs-3 mb-2 d-block"></i>
                                         <p class="mb-0 fw-semibold">Al seleccionar Efectivo, el pago debe ser registrado físicamente en caja por el personal de la clínica.</p>
                                     </div>
 
                                     <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold d-flex align-items-center justify-content-center gap-2" :disabled="isProcessing" style="height: 56px;">
+                                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "isProcessing" -->
                                         <span v-if="isProcessing" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                                         <span v-else><i class="bi bi-lock-fill"></i> Pagar ${{ Number(transaccion.monto_total).toLocaleString('es-CL') }}</span>
                                     </button>

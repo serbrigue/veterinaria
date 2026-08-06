@@ -21,28 +21,30 @@ class Handler extends ExceptionHandler
         'password_confirmation',
     ];
 
-    /**
-     * Register the exception handling callbacks for the application.
-     */
+
+    // Codigo para capturar errores y mostrar paginas personalizadas 
+
     public function register(): void
     {
         $this->reportable(function (Throwable $e) {
             //
         });
 
+        // Manejo de errores HTTP para redireccionamiento a paginas personalizadas
         $this->renderable(function (HttpException $e, $request) {
+
+            // Si hay un error 403 o 404,
             if (in_array($e->getStatusCode(), [403, 404])) {
+                // Y la peticion es JSON,
                 if ($request->expectsJson() || $request->wantsJson()) {
+                    // Devolvemos un JSON con el mensaje de error
                     $msg = $e->getStatusCode() === 403 ? 'No autorizado.' : 'No encontrado.';
                     return response()->json(['error' => $msg], $e->getStatusCode());
                 }
 
-                if ($e->getStatusCode() === 403 && ! auth()->check()) {
-                    return redirect()->route('iniciar-sesion');
-                }
-
-                $msg = $e->getStatusCode() === 403 
-                    ? 'No tienes permisos para acceder a esta sección.' 
+                // Mostramos la pagina de error 404 o 403 con Inertia
+                $msg = $e->getStatusCode() === 403
+                    ? 'No tienes permisos para acceder a esta sección.'
                     : 'La página que buscas no existe o ha sido movida.';
 
                 return Inertia::render('Errores/Error', [
@@ -55,10 +57,6 @@ class Handler extends ExceptionHandler
         $this->renderable(function (AuthorizationException $e, $request) {
             if ($request->expectsJson() || $request->wantsJson()) {
                 return response()->json(['error' => 'No autorizado.'], 403);
-            }
-
-            if (! auth()->check()) {
-                return redirect()->route('iniciar-sesion');
             }
 
             return Inertia::render('Errores/Error', [

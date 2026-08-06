@@ -4,6 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Modelo CitaCargo
+ *
+ * Representa a la tabla `citas_cargo` en la base de datos.
+ * Función: Registra los cargos, costos o detalles financieros asociados a una cita específica.
+ */
 class CitaCargo extends Model
 {
     // Definimos el nombre de la tabla

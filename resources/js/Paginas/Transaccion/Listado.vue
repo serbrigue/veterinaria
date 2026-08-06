@@ -1,4 +1,7 @@
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: Listado -->
+    <!-- ================================================================================== -->
     <Head title="Desglose de Ingresos" />
 
     <AuthenticatedLayout>
@@ -22,12 +25,14 @@
                     <div class="row g-3">
                         <div class="col-12 col-md-3">
                             <label class="form-label text-muted small fw-semibold text-uppercase tracking-wide">Mes</label>
+                            <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "filtros.mes" -->
                             <select 
                                 class="form-select form-select-lg rounded-3 shadow-none border-light bg-light" 
                                 v-model="filtros.mes"
                                 @change="aplicarFiltros"
                             >
                                 <option value="">Todos los Meses</option>
+                                <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                                 <option v-for="(nombre, num) in meses" :key="num" :value="num">
                                     {{ nombre }}
                                 </option>
@@ -35,12 +40,14 @@
                         </div>
                         <div class="col-12 col-md-2">
                             <label class="form-label text-muted small fw-semibold text-uppercase tracking-wide">Año</label>
+                            <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "filtros.anio" -->
                             <select 
                                 class="form-select form-select-lg rounded-3 shadow-none border-light bg-light" 
                                 v-model="filtros.anio"
                                 @change="aplicarFiltros"
                             >
                                 <option value="">Todos</option>
+                                <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                                 <option v-for="a in anios" :key="a" :value="a">
                                     {{ a }}
                                 </option>
@@ -48,23 +55,27 @@
                         </div>
                         <div class="col-12 col-md-4">
                             <label class="form-label text-muted small fw-semibold text-uppercase tracking-wide">Sucursal</label>
+                            <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "filtros.sucursal_id" -->
                             <select 
                                 class="form-select form-select-lg rounded-3 shadow-none border-light bg-light" 
                                 v-model="filtros.sucursal_id" 
                                 @change="aplicarFiltros"
                             >
                                 <option value="">Todas las Sucursales</option>
+                                <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                                 <option v-for="suc in sucursales" :key="suc.id" :value="suc.id">
                                     {{ suc.nombre }}
                                 </option>
                             </select>
                         </div>
                         <div class="col-12 col-md-3 d-flex align-items-end">
+                            <!-- EVENTO (@click): Dispara la acción "aplicarFiltros" -->
                             <button 
                                 class="btn btn-primary btn-lg rounded-3 w-100 shadow-sm"
                                 @click="aplicarFiltros"
                                 :disabled="cargando"
                             >
+                                <!-- DIRECTIVA (v-if): Renderizado condicional basado en "cargando" -->
                                 <span v-if="cargando" class="spinner-border spinner-border-sm me-2" role="status"></span>
                                 <i v-else class="bi bi-funnel me-2"></i> Filtrar
                             </button>
@@ -100,6 +111,7 @@
                             </tr>
                         </thead>
                         <tbody>
+                            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "cargando" -->
                             <tr v-if="cargando">
                                 <td colspan="6" class="text-center py-5">
                                     <div class="spinner-border text-primary" role="status"></div>
@@ -114,6 +126,7 @@
                                     </div>
                                 </td>
                             </tr>
+                            <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                             <tr v-for="t in transacciones" :key="t.id" v-else class="border-bottom row-hover cursor-pointer transition-all" @click="verComprobante(t)">
                                 <td class="ps-4">
                                     <span class="fw-bold text-dark">{{ formatearFecha(t.fecha_pago) }}</span>
@@ -158,11 +171,13 @@
             </div>
 
             <!-- MODAL COMPROBANTE DE PAGO -->
+            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "mostrarModalComprobante && transaccionSeleccionada" -->
             <div v-if="mostrarModalComprobante && transaccionSeleccionada" class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content border-0 shadow rounded-4">
                         <div class="modal-header bg-light border-bottom-0 rounded-top-4 p-4">
                             <h5 class="modal-title fw-bold text-dark"><i class="bi bi-receipt me-2 text-primary"></i> Comprobante de Pago</h5>
+                            <!-- EVENTO (@click): Dispara la acción "mostrarModalComprobante = false" -->
                             <button type="button" class="btn-close" @click="mostrarModalComprobante = false"></button>
                         </div>
                         <div class="modal-body p-4" id="comprobante-imprimir">
@@ -206,7 +221,9 @@
                             </div>
                         </div>
                         <div class="modal-footer border-top-0 p-4">
+                            <!-- EVENTO (@click): Dispara la acción "mostrarModalComprobante = false" -->
                             <button type="button" class="btn btn-secondary rounded-pill px-4" @click="mostrarModalComprobante = false">Cerrar</button>
+                            <!-- EVENTO (@click): Dispara la acción "imprimirComprobante" -->
                             <button type="button" class="btn btn-primary rounded-pill px-4" @click="imprimirComprobante"><i class="bi bi-printer me-2"></i>Imprimir</button>
                         </div>
                     </div>
@@ -218,18 +235,27 @@
 </template>
 
 <script>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3)
+// ==================================================================================
+
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import axios from 'axios';
 import Paginador from '@/Componentes/Paginador.vue';
 
+// ------------------------------------------------------------------------------
+// EXPORT DEFAULT: Definición principal del componente
+// ------------------------------------------------------------------------------
 export default {
+    // COMPONENTES (COMPONENTS): Registro de componentes importados
     components: {
         AuthenticatedLayout,
         Head,
         Link,
         Paginador
     },
+    // PROPIEDADES (PROPS): Datos inyectados desde el componente padre o estado
     props: {
         transacciones_iniciales: {
             type: Object,
@@ -244,6 +270,7 @@ export default {
             required: true
         }
     },
+    // ESTADO REACTIVO (DATA): Variables locales del componente
     data() {
         return {
             transaccionesData: this.transacciones_iniciales,
@@ -264,21 +291,23 @@ export default {
             }
         };
     },
+    // PROPIEDADES COMPUTADAS (COMPUTED): Variables reactivas que dependen de otras
     computed: {
         totalFiltrado() {
             return this.formatoDinero(this.totalFiltradoAPI);
         }
     },
+    // MÉTODOS (METHODS): Bloque de funciones y eventos
     methods: {
         verComprobante(transaccion) {
             this.transaccionSeleccionada = transaccion;
             this.mostrarModalComprobante = true;
         },
         imprimirComprobante() {
-            // Un enfoque sencillo para imprimir el comprobante es usar window.print() 
-            // ocultando lo demás mediante CSS de @media print. 
-            // Como esto es un mockup, simplemente llamaremos a print().
-            window.print();
+            if (this.transaccionSeleccionada) {
+                const urlPdf = route('transacciones.comprobante', this.transaccionSeleccionada.id);
+                window.open(urlPdf, '_blank');
+            }
         },
         async aplicarFiltros(url = null) {
             this.cargando = true;
@@ -338,6 +367,7 @@ export default {
             }
         }
     },
+    // CICLO DE VIDA (MOUNTED): Se ejecuta al cargar el componente en el DOM
     mounted() {
         // Inicializar el input month con el mes actual si se desea
         // const hoy = new Date();

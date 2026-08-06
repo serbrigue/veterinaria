@@ -8,41 +8,55 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Requests\GuardarFichaClinicaRequest;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\Insumo;
+use App\Models\CitaCargo;
+use App\Models\MovimientoInventario;
 
 class FichaClinicaController extends Controller
 {
+    // Muestra la ficha clínica de una cita
     public function mostrar(Cita $cita)
     {
+        // Carga la ficha clínica y las recetas y vacunas
         $ficha = $cita->fichaClinica()->with(['recetas', 'vacunas'])->first();
+
+        // Retorna la ficha clínica
         return response()->json($ficha);
     }
 
     public function descargarPdf(Cita $cita)
     {
+        // Carga la ficha clínica y las recetas y vacunas
         $cita->loadMissing([
-            'fichaClinica.recetas', 
-            'fichaClinica.vacunas', 
-            'mascota.raza.especie', 
-            'mascota.cliente.usuario', 
+            'fichaClinica.recetas',
+            'fichaClinica.vacunas',
+            'mascota.raza.especie',
+            'mascota.cliente.usuario',
             'veterinario.usuario'
         ]);
-        
+
+        // Si no hay ficha clínica, retorna un error 404
         if (!$cita->fichaClinica) {
             return response()->json(['error' => 'No hay ficha clínica registrada para esta cita.'], 404);
         }
 
+        // Genera el PDF de la ficha clínica
         $pdf = Pdf::loadView('pdf.ficha_clinica', [
             'cita' => $cita,
             'ficha' => $cita->fichaClinica
         ]);
 
+        // Descarga el PDF
         return $pdf->download('Ficha_Clinica_' . ($cita->mascota->nombre ?? 'Paciente') . '.pdf');
     }
     public function guardar(GuardarFichaClinicaRequest $request, Cita $cita)
     {
+        // Valida los datos de la solicitud
         $request->validated();
 
+        // Inicia una transacción para garantizar la integridad de los datos
         return DB::transaction(function () use ($request, $cita) {
+
             // Guardar Ficha
             $ficha = FichaClinica::updateOrCreate(
                 ['cita_id' => $cita->id],
@@ -68,10 +82,10 @@ class FichaClinicaController extends Controller
                         'comprado_en_clinica' => $receta['comprado_en_clinica'] ?? false,
                     ]);
                     if (!empty($receta['comprado_en_clinica'])) {
-                        $insumo = \App\Models\Insumo::where('nombre', $receta['medicamentos'])
+                        $insumo = Insumo::where('nombre', $receta['medicamentos'])
                             ->where('sucursal_id', $cita->box->sucursal_id ?? $cita->veterinario->sucursal_id ?? null)
                             ->first();
-                        
+
                         if ($insumo) {
                             $this->agregarCargoSiNoExiste($cita, $insumo);
                         }
@@ -82,7 +96,11 @@ class FichaClinicaController extends Controller
             // Guardar Vacunas
             $ficha->vacunas()->delete();
             if ($request->has('vacunas')) {
+                // Itera sobre las vacunas
                 foreach ($request->vacunas as $vacuna) {
+
+                    //Registra la vacuna en la ficha clínica
+
                     $ficha->vacunas()->create([
                         'mascota_id' => $cita->mascota_id,
                         'nombre_vacuna' => $vacuna['nombre_vacuna'],
@@ -92,27 +110,11 @@ class FichaClinicaController extends Controller
                         'notas' => $vacuna['notas'] ?? null,
                     ]);
 
-                    $insumo = \App\Models\Insumo::where('nombre', $vacuna['nombre_vacuna'])
+                    // Busca la vacuna en la sucursal para agregarla como cargo
+                    $insumo = Insumo::where('nombre', $vacuna['nombre_vacuna'])
                         ->where('sucursal_id', $cita->box->sucursal_id ?? $cita->veterinario->sucursal_id ?? null)
                         ->first();
-                        
-                    // Si la vacuna no existe en esta sucursal, la creamos (clonando de la global)
-                    if (!$insumo) {
-                        $insumoGlobal = \App\Models\Insumo::where('nombre', $vacuna['nombre_vacuna'])->first();
-                        if ($insumoGlobal) {
-                            $insumo = \App\Models\Insumo::create([
-                                'nombre' => $insumoGlobal->nombre,
-                                'descripcion' => $insumoGlobal->descripcion,
-                                'precio_venta' => $insumoGlobal->precio_venta,
-                                'sucursal_id' => $cita->box->sucursal_id ?? $cita->veterinario->sucursal_id ?? null,
-                                'stock_actual' => 0,
-                                'stock_minimo' => 5,
-                                'estado' => 'activo',
-                                'categoria_insumo_id' => $insumoGlobal->categoria_insumo_id,
-                            ]);
-                        }
-                    }
-                        
+
                     if ($insumo) {
                         $this->agregarCargoSiNoExiste($cita, $insumo);
                     }
@@ -123,15 +125,15 @@ class FichaClinicaController extends Controller
         });
     }
 
-    private function agregarCargoSiNoExiste(Cita $cita, \App\Models\Insumo $insumo)
+    private function agregarCargoSiNoExiste(Cita $cita, Insumo $insumo)
     {
-        $existe = \App\Models\CitaCargo::where('cita_id', $cita->id)->where('insumo_id', $insumo->id)->exists();
+        $existe = CitaCargo::where('cita_id', $cita->id)->where('insumo_id', $insumo->id)->exists();
         if (!$existe) {
             // Descontamos el stock (permitiendo que quede en negativo si es necesario)
             $insumo->decrement('stock_actual', 1);
 
             // Registramos el movimiento para la trazabilidad
-            \App\Models\MovimientoInventario::create([
+            MovimientoInventario::create([
                 'insumo_id' => $insumo->id,
                 'tipo' => 'salida',
                 'cantidad' => 1,
@@ -141,7 +143,7 @@ class FichaClinicaController extends Controller
             ]);
 
             // Creamos el cargo
-            \App\Models\CitaCargo::create([
+            CitaCargo::create([
                 'cita_id' => $cita->id,
                 'prestacion_id' => $cita->prestacion_id,
                 'insumo_id' => $insumo->id,

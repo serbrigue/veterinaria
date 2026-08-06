@@ -4,6 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Modelo Rol
+ *
+ * Representa a la tabla `roles` en la base de datos.
+ * Función: Define los roles de usuario del sistema (ej. admin, veterinario, cliente, secretaria) para agrupar permisos.
+ */
 class Rol extends Model
 {
     // Definimos el nombre de la tabla

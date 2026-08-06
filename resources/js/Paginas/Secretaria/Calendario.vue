@@ -1,4 +1,7 @@
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: Calendario -->
+    <!-- ================================================================================== -->
     <Head title="Calendario General de Citas" />
     <AuthenticatedLayout>
         <div class="container py-4">
@@ -70,13 +73,15 @@
                     <span>Haz clic en un espacio vacío para agendar una nueva cita. Haz clic en una cita existente para ver sus detalles.</span>
                 </div>
                 <div class="calendar-wrapper">
-                    <FullCalendar :options="calendarOptions" />
+                    <FullCalendar :options="opcionesCalendario" />
                 </div>
             </div>
         </div>
 
         <!-- Modal de Detalle de Cita -->
+        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "citaSeleccionada" -->
         <div v-if="citaSeleccionada" class="modal-backdrop fade show" @click="cerrarDetalle"></div>
+        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "citaSeleccionada" -->
         <div v-if="citaSeleccionada" class="modal fade show d-block" tabindex="-1" @click.self="cerrarDetalle">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content border-0 shadow-lg rounded-4">
@@ -84,7 +89,9 @@
                         <span class="badge" :class="badgeClass(citaSeleccionada.estado)">
                             {{ citaSeleccionada.estado.toUpperCase() }}
                         </span>
+                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "citaSeleccionada.tipo === " -->
                         <span v-if="citaSeleccionada.tipo === 'urgencia'" class="badge bg-danger ms-2">URGENCIA</span>
+                        <!-- EVENTO (@click): Dispara la acción "cerrarDetalle" -->
                         <button type="button" class="btn-close" @click="cerrarDetalle" aria-label="Close"></button>
                     </div>
                     <div class="modal-body pt-3">
@@ -159,17 +166,20 @@
                             </div>
 
                             <!-- Notas -->
+                            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "citaSeleccionada.notas" -->
                             <div v-if="citaSeleccionada.notas" class="mt-2 p-3 bg-light rounded-3">
                                 <span class="d-block small text-muted mb-1 fw-bold">Notas Clínicas / Administrativas</span>
                                 <p class="mb-0 small text-dark">{{ citaSeleccionada.notas }}</p>
                             </div>
 
                             <!-- Alertas para Secretaría -->
+                            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "citaSeleccionada.alertas_secretaria?.length" -->
                             <div v-if="citaSeleccionada.alertas_secretaria?.length" class="mt-3 p-3 bg-danger bg-opacity-10 rounded-3 border border-danger border-opacity-25">
                                 <span class="d-block small text-danger mb-2 fw-bold">
                                     <i class="bi bi-exclamation-triangle-fill me-1"></i>Alertas pendientes
                                 </span>
                                 <div class="d-flex flex-column gap-1">
+                                    <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                                     <div
                                         v-for="alerta in citaSeleccionada.alertas_secretaria"
                                         :key="alerta.tipo"
@@ -184,12 +194,17 @@
                     </div>
                     <div class="modal-footer border-top-0 pt-0 pb-4 d-flex justify-content-between">
                         <div class="d-flex gap-2">
+                            <!-- EVENTO (@click): Dispara la acción "cerrarDetalle" -->
                             <button type="button" class="btn btn-outline-secondary rounded-pill px-3" @click="cerrarDetalle">Cerrar</button>
+                            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "citaSeleccionada.estado === " -->
+                            <!-- EVENTO (@click): Dispara la acción "iniciarEdicion(citaSeleccionada)" -->
                             <button v-if="citaSeleccionada.estado === 'pendiente'" type="button" class="btn btn-outline-primary rounded-pill px-3" @click="iniciarEdicion(citaSeleccionada)">
                                 <i class="bi bi-pencil me-1"></i> Editar
                             </button>
                         </div>
                         <div class="d-flex gap-2">
+                            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "citaSeleccionada.estado === " -->
+                            <!-- EVENTO (@click): Dispara la acción "confirmarCancelar(citaSeleccionada)" -->
                             <button v-if="citaSeleccionada.estado === 'pendiente'" type="button" class="btn btn-outline-warning rounded-pill px-3" @click="confirmarCancelar(citaSeleccionada)">
                                 <i class="bi bi-x-circle-fill me-1"></i> Cancelar
                             </button>
@@ -220,6 +235,7 @@
                 <!-- Columna izquierda: datos de la cita -->
                 <div class="col-md-5 p-3 border-end">
                     <div class="row g-3">
+                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "errorGeneral" -->
                         <div v-if="errorGeneral" class="col-12">
                             <div class="alert alert-danger d-flex align-items-center mb-0 border-0 shadow-sm" role="alert">
                                 <i class="bi bi-exclamation-triangle-fill flex-shrink-0 me-2"></i>
@@ -228,12 +244,16 @@
                         </div>
                         <div class="col-12">
                             <label for="titulo" class="form-label fw-semibold text-secondary small text-uppercase">Título</label>
+                            <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "formulario.titulo" -->
                             <input id="titulo" v-model="formulario.titulo" type="text" class="form-control bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.titulo }" required placeholder="Ej: Control general" />
+                            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.titulo" -->
                             <div v-if="formulario.errors.titulo" class="invalid-feedback">{{ formulario.errors.titulo }}</div>
                         </div>
                         <div class="col-12">
                             <label for="descripcion" class="form-label fw-semibold text-secondary small text-uppercase">Descripción</label>
+                            <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "formulario.descripcion" -->
                             <textarea id="descripcion" v-model="formulario.descripcion" class="form-control bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.descripcion }" rows="2" required placeholder="Motivo de la cita..."></textarea>
+                            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.descripcion" -->
                             <div v-if="formulario.errors.descripcion" class="invalid-feedback">{{ formulario.errors.descripcion }}</div>
                         </div>
                         <div class="col-12 position-relative">
@@ -247,9 +267,11 @@
                                 >
                                     <span>{{ nombreClienteSeleccionado || 'Selecciona un cliente' }}</span>
                                 </div>
+                                <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.cliente_id" -->
                                 <div v-if="formulario.errors.cliente_id" class="invalid-feedback d-block">{{ formulario.errors.cliente_id }}</div>
                                 
                                 <!-- Backdrop transparente para cerrar al hacer click fuera -->
+                                <!-- DIRECTIVA (v-if): Renderizado condicional basado en "mostrarDropdownCliente" -->
                                 <div 
                                     v-if="mostrarDropdownCliente" 
                                     class="position-fixed top-0 start-0 w-100 h-100" 
@@ -257,11 +279,14 @@
                                     @click.stop="mostrarDropdownCliente = false"
                                 ></div>
                                 
+                                <!-- DIRECTIVA (v-if): Renderizado condicional basado en "mostrarDropdownCliente" -->
+                                
                                 <div 
                                     v-if="mostrarDropdownCliente" 
                                     class="dropdown-menu show w-100 p-2 shadow border-0 mt-1 bg-white" 
                                     style="max-height: 350px; overflow-y: auto; z-index: 1050; display: block;"
                                 >
+                                    <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "busquedaCliente" -->
                                     <input 
                                         type="text" 
                                         class="form-control form-control-sm mb-2" 
@@ -270,7 +295,9 @@
                                         @click.stop
                                     />
                                     <ul class="list-unstyled mb-0">
+                                        <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                                         <li v-for="cliente in clientesFiltradosPorBusqueda" :key="cliente.id">
+                                             <!-- EVENTO (@click): Dispara la acción "seleccionarClienteDropdown(cliente)" -->
                                              <button 
                                                 type="button" 
                                                 class="dropdown-item py-2 rounded text-start"
@@ -280,6 +307,7 @@
                                                  {{ cliente.nombre }} ({{ cliente.email }})
                                              </button>
                                         </li>
+                                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "clientesFiltradosPorBusqueda.length === 0" -->
                                         <li v-if="clientesFiltradosPorBusqueda.length === 0" class="text-muted small p-2 text-center">
                                             No se encontraron resultados
                                         </li>
@@ -290,14 +318,18 @@
 
                         <div class="col-12">
                             <label for="mascota_id" class="form-label fw-semibold text-secondary small text-uppercase">Mascota</label>
+                            <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "formulario.mascota_id" -->
                             <select id="mascota_id" v-model="formulario.mascota_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.mascota_id }" required :disabled="!formulario.cliente_id">
                                 <option value="" disabled>{{ !formulario.cliente_id ? 'Debe seleccionar un cliente primero' : 'Selecciona una mascota' }}</option>
+                                <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                                 <option v-for="mascota in mascotasFiltradas" :key="mascota.id" :value="mascota.id">
                                     {{ mascota.nombre }} {{ mascota.sexo ? `(${mascota.sexo})` : '' }}
                                 </option>
                             </select>
+                            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.mascota_id" -->
                             <div v-if="formulario.errors.mascota_id" class="invalid-feedback">{{ formulario.errors.mascota_id }}</div>
                         </div>
+                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.mascota_id" -->
                         <div v-if="formulario.mascota_id" class="col-12 position-relative">
                             <label class="form-label fw-semibold text-secondary small text-uppercase mb-1">Prestación o Servicio</label>
                             <div class="dropdown">
@@ -309,9 +341,11 @@
                                 >
                                     <span>{{ nombrePrestacionSeleccionada || 'Selecciona una prestación o servicio' }}</span>
                                 </div>
+                                <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.prestacion_id" -->
                                 <div v-if="formulario.errors.prestacion_id" class="invalid-feedback d-block">{{ formulario.errors.prestacion_id }}</div>
                                 
                                 <!-- Backdrop transparente para cerrar al hacer click fuera -->
+                                <!-- DIRECTIVA (v-if): Renderizado condicional basado en "mostrarDropdownPrestacion" -->
                                 <div 
                                     v-if="mostrarDropdownPrestacion" 
                                     class="position-fixed top-0 start-0 w-100 h-100" 
@@ -319,11 +353,14 @@
                                     @click.stop="mostrarDropdownPrestacion = false"
                                 ></div>
                                 
+                                <!-- DIRECTIVA (v-if): Renderizado condicional basado en "mostrarDropdownPrestacion" -->
+                                
                                 <div 
                                     v-if="mostrarDropdownPrestacion" 
                                     class="dropdown-menu show w-100 p-2 shadow border-0 mt-1 bg-white" 
                                     style="max-height: 350px; overflow-y: auto; z-index: 1050; display: block;"
                                 >
+                                    <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "busquedaPrestacion" -->
                                     <input 
                                         type="text" 
                                         class="form-control form-control-sm mb-2" 
@@ -332,7 +369,9 @@
                                         @click.stop
                                     />
                                     <ul class="list-unstyled mb-0">
+                                        <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                                         <li v-for="prestacion in prestacionesFiltradasPorBusqueda" :key="prestacion.id">
+                                             <!-- EVENTO (@click): Dispara la acción "seleccionarPrestacionDropdown(prestacion)" -->
                                              <button 
                                                 type="button" 
                                                 class="dropdown-item py-2 rounded text-start"
@@ -342,6 +381,7 @@
                                                  {{ prestacion.nombre }} ({{ prestacion.sucursal?.nombre }})
                                              </button>
                                         </li>
+                                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "prestacionesFiltradasPorBusqueda.length === 0" -->
                                         <li v-if="prestacionesFiltradasPorBusqueda.length === 0" class="text-muted small p-2 text-center">
                                             No se encontraron resultados
                                         </li>
@@ -350,26 +390,36 @@
                             </div>
                         </div>
 
+                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.prestacion_id" -->
+
                         <div v-if="formulario.prestacion_id" class="col-12">
                             <label class="form-label fw-semibold text-secondary small text-uppercase">Sucursal</label>
+                            <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "formulario.sucursal_id" -->
                             <select id="sucursal_id" v-model="formulario.sucursal_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.sucursal_id }" required disabled>
                                 <option value="" disabled>Selecciona una sucursal</option>
+                                <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                                 <option v-for="sucursal in sucursalesFiltradas" :key="sucursal.id" :value="sucursal.id">
                                     {{ sucursal.nombre }}
                                 </option>
                             </select>
+                            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.sucursal_id" -->
                             <div v-if="formulario.errors.sucursal_id" class="invalid-feedback">{{ formulario.errors.sucursal_id }}</div>
                         </div>
+
+                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.sucursal_id" -->
 
                         <template v-if="formulario.sucursal_id">
                             <div class="col-12">
                                 <label class="form-label fw-semibold text-secondary small text-uppercase">Veterinario (Aptos)</label>
+                                <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "formulario.veterinario_id" -->
                                 <select id="veterinario_id" v-model="formulario.veterinario_id" class="form-select bg-light border-0 py-2" :class="{ 'is-invalid': formulario.errors.veterinario_id }">
                                     <option value="">Cualquier veterinario (opcional)</option>
+                                    <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                                     <option v-for="vet in veterinariosFiltrados" :key="vet.id" :value="vet.id">
                                         {{ vet.usuario.name }}
                                     </option>
                                 </select>
+                                <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.veterinario_id" -->
                                 <div v-if="formulario.errors.veterinario_id" class="invalid-feedback">{{ formulario.errors.veterinario_id }}</div>
                             </div>
                         </template>
@@ -378,9 +428,11 @@
 
                 <!-- Columna derecha: fecha y horarios -->
                 <div class="col-md-7 p-3 bg-light bg-opacity-50">
+                    <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.sucursal_id" -->
                     <template v-if="formulario.sucursal_id">
                         <div class="mb-3">
                             <label for="fecha_seleccionada" class="form-label fw-semibold text-secondary small text-uppercase">Fecha</label>
+                            <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "formulario.fecha_seleccionada" -->
                             <input
                                 id="fecha_seleccionada"
                                 type="date"
@@ -390,14 +442,18 @@
                                 :min="hoy"
                                 @change="cargarHorarios"
                             />
+                            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.fecha_hora" -->
                             <div v-if="formulario.errors.fecha_hora" class="invalid-feedback">{{ formulario.errors.fecha_hora }}</div>
                         </div>
 
                         <!-- Banner explicativo si hay preselección desde el calendario semanal/diario -->
+                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "horaPreseleccionada" -->
                         <div v-if="horaPreseleccionada" class="alert alert-info py-2 px-3 mb-3 border-0 small rounded-3 d-flex align-items-center">
                             <i class="bi bi-info-circle-fill me-2"></i>
                             <span>Horario clickeado en calendario: <strong>{{ horaPreseleccionada }}</strong>. Selecciona el veterinario deseado abajo para confirmar la disponibilidad en ese bloque.</span>
                         </div>
+
+                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "cargandoHorarios" -->
 
                         <div v-if="cargandoHorarios" class="text-center py-4">
                             <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
@@ -406,12 +462,16 @@
 
                         <template v-else-if="formulario.fecha_seleccionada">
                             <!-- CASO 1: Veterinario seleccionado -->
+                            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.veterinario_id" -->
                             <template v-if="formulario.veterinario_id">
                                 <!-- Horarios normales -->
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold text-secondary small text-uppercase">Horarios disponibles</label>
                                     <div class="d-flex flex-wrap gap-2">
+                                        <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                                         <template v-for="slot in horariosNormales" :key="slot.hora">
+                                            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "slot.disponible" -->
+                                            <!-- EVENTO (@click): Dispara la acción "seleccionarHorario(slot)" -->
                                             <button
                                                 v-if="slot.disponible"
                                                 type="button"
@@ -426,6 +486,7 @@
                                                 {{ slot.hora }}
                                             </button>
                                         </template>
+                                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "horariosNormales.filter(s => s.disponible).length === 0" -->
                                         <div v-if="horariosNormales.filter(s => s.disponible).length === 0" class="text-muted small">
                                             No hay horarios normales disponibles.
                                         </div>
@@ -439,7 +500,10 @@
                                         Urgencia (fuera de horario)
                                     </label>
                                     <div class="d-flex flex-wrap gap-2">
+                                        <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                                         <template v-for="slot in horariosUrgencia" :key="slot.hora">
+                                            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "slot.disponible" -->
+                                            <!-- EVENTO (@click): Dispara la acción "seleccionarHorario(slot)" -->
                                             <button
                                                 v-if="slot.disponible"
                                                 type="button"
@@ -454,6 +518,7 @@
                                                 {{ slot.hora }}
                                             </button>
                                         </template>
+                                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "horariosUrgencia.filter(s => s.disponible).length === 0" -->
                                         <div v-if="horariosUrgencia.filter(s => s.disponible).length === 0" class="text-muted small">
                                             No hay horarios de urgencia disponibles.
                                         </div>
@@ -467,8 +532,10 @@
                                 <div class="mb-2 text-secondary small fw-semibold text-uppercase">Selecciona un veterinario y horario</div>
 
                                 <div class="accordion border border-light rounded-3 overflow-hidden shadow-sm" id="vetSchedulesAccordion">
+                                    <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                                     <div v-for="vet in veterinariosFiltrados" :key="vet.id" class="accordion-item border-0 border-bottom border-light">
                                         <h4 class="accordion-header mb-0">
+                                            <!-- EVENTO (@click): Dispara la acción "toggleAcordeon(vet.id)" -->
                                             <button 
                                                 class="accordion-button d-flex align-items-center justify-content-between w-100 py-3 px-4 text-start border-0 fw-semibold"
                                                 :class="vetAcordeonAbiertoId === vet.id ? 'bg-primary bg-opacity-10 text-primary' : 'bg-white text-dark'"
@@ -485,17 +552,22 @@
                                                 </span>
                                             </button>
                                         </h4>
+                                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "vetAcordeonAbiertoId === vet.id" -->
                                         <div 
                                             v-if="vetAcordeonAbiertoId === vet.id" 
                                             class="accordion-body p-4 bg-light bg-opacity-25"
                                         >
                                             <!-- Horarios del veterinario -->
+                                            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "horariosPorVeterinario[vet.id]" -->
                                             <div v-if="horariosPorVeterinario[vet.id]">
                                                 <!-- Horarios normales -->
                                                 <div class="mb-3">
                                                     <label class="form-label fw-semibold text-secondary small text-uppercase">Horarios disponibles</label>
                                                     <div class="d-flex flex-wrap gap-2">
+                                                        <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                                                         <template v-for="slot in horariosPorVeterinario[vet.id].normal" :key="slot.hora">
+                                                            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "slot.disponible" -->
+                                                            <!-- EVENTO (@click): Dispara la acción "seleccionarHorarioAcordeon(slot, vet.id)" -->
                                                             <button
                                                                 v-if="slot.disponible"
                                                                 type="button"
@@ -510,6 +582,7 @@
                                                                 {{ slot.hora }}
                                                             </button>
                                                         </template>
+                                                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "horariosPorVeterinario[vet.id].normal.filter(s => s.disponible).length === 0" -->
                                                         <div v-if="horariosPorVeterinario[vet.id].normal.filter(s => s.disponible).length === 0" class="text-muted small">
                                                             No hay horarios normales disponibles.
                                                         </div>
@@ -523,7 +596,10 @@
                                                         Urgencia (fuera de horario)
                                                     </label>
                                                     <div class="d-flex flex-wrap gap-2">
+                                                        <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                                                         <template v-for="slot in horariosPorVeterinario[vet.id].urgencia" :key="slot.hora">
+                                                            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "slot.disponible" -->
+                                                            <!-- EVENTO (@click): Dispara la acción "seleccionarHorarioAcordeon(slot, vet.id)" -->
                                                             <button
                                                                 v-if="slot.disponible"
                                                                 type="button"
@@ -538,6 +614,7 @@
                                                                 {{ slot.hora }}
                                                             </button>
                                                         </template>
+                                                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "horariosPorVeterinario[vet.id].urgencia.filter(s => s.disponible).length === 0" -->
                                                         <div v-if="horariosPorVeterinario[vet.id].urgencia.filter(s => s.disponible).length === 0" class="text-muted small">
                                                             No hay horarios de urgencia disponibles.
                                                         </div>
@@ -572,6 +649,10 @@
 </template>
 
 <script>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3)
+// ==================================================================================
+
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import FullCalendar from '@fullcalendar/vue3';
@@ -581,7 +662,11 @@ import interactionPlugin from '@fullcalendar/interaction';
 import ModalCrud from '@/Componentes/ModalCrud.vue';
 import axios from 'axios';
 
+// ------------------------------------------------------------------------------
+// EXPORT DEFAULT: Definición principal del componente
+// ------------------------------------------------------------------------------
 export default {
+    // COMPONENTES (COMPONENTS): Registro de componentes importados
     components: {
         AuthenticatedLayout,
         Head,
@@ -589,6 +674,7 @@ export default {
         FullCalendar,
         ModalCrud
     },
+    // PROPIEDADES (PROPS): Datos inyectados desde el componente padre o estado
     props: {
         citas: {
             type: Array,
@@ -611,6 +697,7 @@ export default {
             default: () => []
         }
     },
+    // ESTADO REACTIVO (DATA): Variables locales del componente
     data() {
         return {
             citaSeleccionada: null,
@@ -644,7 +731,7 @@ export default {
                 errors: {},
                 processing: false
             },
-            calendarOptions: {
+            opcionesCalendario: {
                 plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
                 initialView: 'dayGridMonth',
                 locale: 'es',
@@ -662,8 +749,8 @@ export default {
                     day: 'Día'
                 },
                 events: [],
-                eventClick: this.handleEventClick,
-                dateClick: this.handleDateClick,
+                eventClick: this.manejarClickEvento,
+                dateClick: this.manejarClickFecha,
                 slotMinTime: '08:00:00',
                 slotMaxTime: '21:00:00',
                 allDaySlot: false,
@@ -676,6 +763,7 @@ export default {
             }
         };
     },
+    // PROPIEDADES COMPUTADAS (COMPUTED): Variables reactivas que dependen de otras
     computed: {
         totalCitas() {
             return this.citas.length;
@@ -751,11 +839,12 @@ export default {
             return cliente ? `${cliente.nombre} (${cliente.email})` : '';
         }
     },
+    // OBSERVADORES (WATCH): Reaccionan a cambios en propiedades o variables
     watch: {
         citas: {
             immediate: true,
             handler() {
-                this.loadEvents();
+                this.cargarEventos();
             }
         },
         'formulario.prestacion_id'(newVal, oldVal) {
@@ -797,35 +886,36 @@ export default {
             this.cargarHorarios(); 
         }
     },
+    // MÉTODOS (METHODS): Bloque de funciones y eventos
     methods: {
-        loadEvents() {
-            this.calendarOptions.events = this.citas.map(cita => {
-                let colorBg = 'rgba(99, 102, 241, 0.1)';
-                let colorBorder = '#6366f1';
-                let colorText = '#4f46e5';
+        cargarEventos() {
+            this.opcionesCalendario.events = this.citas.map(cita => {
+                let colorFondo = 'rgba(99, 102, 241, 0.1)';
+                let colorBorde = '#6366f1';
+                let colorTexto = '#4f46e5';
 
                 if (cita.estado === 'completada') {
-                    colorBg = 'rgba(16, 185, 129, 0.1)';
-                    colorBorder = '#10b981';
-                    colorText = '#065f46';
+                    colorFondo = 'rgba(16, 185, 129, 0.1)';
+                    colorBorde = '#10b981';
+                    colorTexto = '#065f46';
                 } else if (cita.estado === 'cancelada') {
-                    colorBg = 'rgba(239, 68, 68, 0.1)';
-                    colorBorder = '#ef4444';
-                    colorText = '#991b1b';
+                    colorFondo = 'rgba(239, 68, 68, 0.1)';
+                    colorBorde = '#ef4444';
+                    colorTexto = '#991b1b';
                 } else if (cita.estado === 'pendiente') {
-                    colorBg = 'rgba(245, 158, 11, 0.1)';
-                    colorBorder = '#f59e0b';
-                    colorText = '#92400e';
+                    colorFondo = 'rgba(245, 158, 11, 0.1)';
+                    colorBorde = '#f59e0b';
+                    colorTexto = '#92400e';
                 } else if (cita.estado === 'en_curso') {
-                    colorBg = 'rgba(6, 182, 212, 0.1)';
-                    colorBorder = '#06b6d4';
-                    colorText = '#0891b2';
+                    colorFondo = 'rgba(6, 182, 212, 0.1)';
+                    colorBorde = '#06b6d4';
+                    colorTexto = '#0891b2';
                 }
 
                 if (cita.tipo === 'urgencia') {
-                    colorBg = 'rgba(220, 38, 38, 0.15)';
-                    colorBorder = '#dc2626';
-                    colorText = '#7f1d1d';
+                    colorFondo = 'rgba(220, 38, 38, 0.15)';
+                    colorBorde = '#dc2626';
+                    colorTexto = '#7f1d1d';
                 }
 
                 return {
@@ -833,44 +923,44 @@ export default {
                     title: `${cita.alertas_secretaria?.length ? '⚠ ' : ''}${cita.mascota?.nombre || 'Paciente'} - ${cita.prestacion?.nombre || 'Consulta'}`,
                     start: cita.fecha_hora,
                     end: cita.hora_termino || null,
-                    backgroundColor: colorBg,
-                    borderColor: colorBorder,
-                    textColor: colorText,
+                    backgroundColor: colorFondo,
+                    borderColor: colorBorde,
+                    textColor: colorTexto,
                     extendedProps: {
                         cita: cita
                     }
                 };
             });
         },
-        handleEventClick(info) {
+        manejarClickEvento(info) {
             this.citaSeleccionada = info.event.extendedProps.cita;
         },
-        handleDateClick(info) {
-            // Check if clicked date is before today (supports monthly and timeGrid formats)
-            const dateOnlyStr = info.dateStr.split('T')[0];
-            const clickedDate = new Date(dateOnlyStr + 'T00:00:00');
-            const today = new Date();
-            today.setHours(0,0,0,0);
-            if (clickedDate < today) {
+        manejarClickFecha(info) {
+            // Comprobar si la fecha clickeada es anterior a hoy (soporta formatos mensual y timeGrid)
+            const cadenaSoloFecha = info.dateStr.split('T')[0];
+            const fechaClickeada = new Date(cadenaSoloFecha + 'T00:00:00');
+            const hoy = new Date();
+            hoy.setHours(0,0,0,0);
+            if (fechaClickeada < hoy) {
                 return;
             }
 
-            // Close details modal if open
+            // Cerrar modal de detalles si está abierto
             this.cerrarDetalle();
             this.abrirModalCrear();
 
-            // Extract clicked date and optional time
-            const dateParts = info.dateStr.split('T');
-            const date = dateParts[0];
-            const time = dateParts[1] ? dateParts[1].substring(0, 5) : null;
+            // Extraer fecha clickeada y hora opcional
+            const partesFecha = info.dateStr.split('T');
+            const fecha = partesFecha[0];
+            const hora = partesFecha[1] ? partesFecha[1].substring(0, 5) : null;
 
-            this.formulario.fecha_seleccionada = date;
+            this.formulario.fecha_seleccionada = fecha;
             
-            if (time) {
-                this.horaPreseleccionada = time;
-                this.formulario.fecha_hora = `${date} ${time}:00`;
+            if (hora) {
+                this.horaPreseleccionada = hora;
+                this.formulario.fecha_hora = `${fecha} ${hora}:00`;
                 this.evitarResetHorario = true;
-                // Wait for components to bind, then retrieve schedules
+                // Esperar a que los componentes se vinculen, luego recuperar los horarios
                 setTimeout(() => {
                     this.cargarHorarios();
                     this.evitarResetHorario = false;
@@ -929,7 +1019,7 @@ export default {
             this.errorGeneral = null;
             this.horaPreseleccionada = null;
 
-            // Fill form with existing values
+            // Llenar formulario con valores existentes
             this.formulario.titulo = cita.titulo;
             this.formulario.descripcion = cita.descripcion;
             this.formulario.tipo = cita.tipo;
@@ -1061,17 +1151,17 @@ export default {
                     this.horariosNormales = r.data.normal;
                     this.horariosUrgencia = r.data.urgencia;
 
-                    // If a specific hour was clicked, verify if it's in the returned slot list
-                    // and pre-select it
+                    // Si se hizo click en una hora específica, verificar si está en la lista de slots devueltos
+                    // y preseleccionarla
                     if (this.horaPreseleccionada) {
-                        const targetFechaHora = `${this.formulario.fecha_seleccionada} ${this.horaPreseleccionada}:00`;
-                        const foundNormal = this.horariosNormales.find(s => s.fecha_hora === targetFechaHora && s.disponible);
-                        const foundUrgencia = this.horariosUrgencia.find(s => s.fecha_hora === targetFechaHora && s.disponible);
+                        const fechaHoraObjetivo = `${this.formulario.fecha_seleccionada} ${this.horaPreseleccionada}:00`;
+                        const encontradoNormal = this.horariosNormales.find(s => s.fecha_hora === fechaHoraObjetivo && s.disponible);
+                        const encontradoUrgencia = this.horariosUrgencia.find(s => s.fecha_hora === fechaHoraObjetivo && s.disponible);
 
-                        if (foundNormal) {
-                            this.seleccionarHorario(foundNormal);
-                        } else if (foundUrgencia) {
-                            this.seleccionarHorario(foundUrgencia);
+                        if (encontradoNormal) {
+                            this.seleccionarHorario(encontradoNormal);
+                        } else if (encontradoUrgencia) {
+                            this.seleccionarHorario(encontradoUrgencia);
                         }
                     }
                 }).catch(error => {
@@ -1095,15 +1185,17 @@ export default {
                             urgencia: r.data.urgencia
                         };
 
+                        // Si se hizo click en una hora específica, verificar si está en la lista de slots devueltos
+                        // y preseleccionarla
                         if (this.horaPreseleccionada) {
-                            const targetFechaHora = `${this.formulario.fecha_seleccionada} ${this.horaPreseleccionada}:00`;
-                            const foundNormal = r.data.normal.find(s => s.fecha_hora === targetFechaHora && s.disponible);
-                            const foundUrgencia = r.data.urgencia.find(s => s.fecha_hora === targetFechaHora && s.disponible);
+                            const fechaHoraObjetivo = `${this.formulario.fecha_seleccionada} ${this.horaPreseleccionada}:00`;
+                            const encontradoNormal = r.data.normal.find(s => s.fecha_hora === fechaHoraObjetivo && s.disponible);
+                            const encontradoUrgencia = r.data.urgencia.find(s => s.fecha_hora === fechaHoraObjetivo && s.disponible);
 
-                            if (foundNormal) {
-                                this.seleccionarHorarioAcordeon(foundNormal, vet.id);
-                            } else if (foundUrgencia) {
-                                this.seleccionarHorarioAcordeon(foundUrgencia, vet.id);
+                            if (encontradoNormal) {
+                                this.seleccionarHorarioAcordeon(encontradoNormal, vet.id);
+                            } else if (encontradoUrgencia) {
+                                this.seleccionarHorarioAcordeon(encontradoUrgencia, vet.id);
                             }
                         }
                     }).catch(error => {

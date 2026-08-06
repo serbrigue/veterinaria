@@ -6,6 +6,12 @@ use App\Traits\HasStorageAttributes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
+/**
+ * Modelo Mascota
+ *
+ * Representa a la tabla `mascotas` en la base de datos.
+ * Función: Representa a los pacientes animales registrados en el sistema, pertenecientes a un cliente.
+ */
 class Mascota extends Model
 {
     use HasStorageAttributes;

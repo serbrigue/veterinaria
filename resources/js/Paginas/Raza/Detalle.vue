@@ -1,4 +1,7 @@
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: Detalle -->
+    <!-- ================================================================================== -->
     <AuthenticatedLayout>
         <Head :title="`Detalle - ${raza.nombre}`" />
 
@@ -13,6 +16,7 @@
                 <div class="row g-0">
                     <!-- Columna de Imagen -->
                     <div class="col-md-5 col-lg-4 bg-light position-relative">
+                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "raza.imagen_url" -->
                         <div v-if="raza.imagen_url" class="h-100 position-relative group-image" style="min-height: 350px;">
                             <img 
                                 :src="raza.imagen_url" 
@@ -62,6 +66,7 @@
                                     <i class="bi bi-tags text-primary"></i> Especie:
                                 </h4>
                                 <div class="d-flex flex-wrap gap-2 m-3">
+                                    <!-- DIRECTIVA (v-if): Renderizado condicional basado en "especie" -->
                                     <template v-if="especie">
                                         <Link 
                                             :key="especie.id" 
@@ -107,11 +112,13 @@
                     </div>
                 </div>
                 <!-- MODAL DE IMAGEN Sleek & Premium Lightbox -->
+                <!-- DIRECTIVA (v-if): Renderizado condicional basado en "verModalImagen" -->
                 <div v-if="verModalImagen" class="modal fade show d-block" tabindex="-1" role="dialog" style="background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 1060;" @click.self="cerrarImagenCompleta">
                     <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
                         <div class="modal-content border-0 bg-dark bg-opacity-75 text-white rounded-4 shadow-lg overflow-hidden">
                             <div class="modal-header border-bottom border-secondary border-opacity-25 p-3 d-flex justify-content-between align-items-center">
                                 <h5 class="modal-title fw-bold text-white mb-0"><i class="bi bi-image me-2 text-primary"></i> Raza: {{ raza.nombre }}</h5>
+                                <!-- EVENTO (@click): Dispara la acción "cerrarImagenCompleta" -->
                                 <button type="button" class="btn-close btn-close-white" @click="cerrarImagenCompleta" aria-label="Close"></button>
                             </div>
                             <div class="modal-body p-2 text-center bg-black bg-opacity-25 d-flex align-items-center justify-content-center" style="min-height: 300px;">
@@ -131,24 +138,35 @@
 </template>
 
 <script>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3)
+// ==================================================================================
+
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
 import { Head, Link } from '@inertiajs/vue3';
 
+// ------------------------------------------------------------------------------
+// EXPORT DEFAULT: Definición principal del componente
+// ------------------------------------------------------------------------------
 export default {
+    // COMPONENTES (COMPONENTS): Registro de componentes importados
     components: {
         AuthenticatedLayout,
         Head,
         Link 
     },
+    // PROPIEDADES (PROPS): Datos inyectados desde el componente padre o estado
     props: {
         raza: Object,
         especie: Object,
     },
+    // ESTADO REACTIVO (DATA): Variables locales del componente
     data() {
         return {
             verModalImagen: false,
         }
     },
+    // MÉTODOS (METHODS): Bloque de funciones y eventos
     methods: {
         abrirModalImagen() {
             this.verModalImagen = true;

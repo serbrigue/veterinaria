@@ -5,6 +5,14 @@ namespace App\Policies;
 use App\Models\Insumo;
 use App\Models\User;
 
+/*
+|--------------------------------------------------------------------------
+| Insumo Policy
+|--------------------------------------------------------------------------
+| Administrador: Acceso total automático para ver, crear, editar y eliminar insumos.
+| Veterinario: Solo puede ver el listado de insumos y sus detalles si tiene el permiso 'ver-insumos'. No puede crear, editar ni eliminar.
+| Cliente y Secretaria: No tienen acceso a las acciones de esta política.
+*/
 class InsumoPolicy
 {
     // El filtro before se ejecuta antes de cualquier otro método de la Policy.

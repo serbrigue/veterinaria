@@ -1,4 +1,7 @@
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: EliminarUsuario -->
+    <!-- ================================================================================== -->
     <section>
         <header class="mb-4">
             <h2 class="h5 mb-2">Eliminar cuenta</h2>
@@ -8,7 +11,11 @@
             </p>
         </header>
 
+        <!-- EVENTO (@click): Dispara la acción "confirmarEliminacion" -->
+
         <button type="button" class="btn btn-danger" @click="confirmarEliminacion">Eliminar cuenta</button>
+
+        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "confirmandoEliminacion" -->
 
         <template v-if="confirmandoEliminacion">
             <div class="modal fade show d-block" tabindex="-1" @click.self="cerrarModal">
@@ -16,6 +23,7 @@
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">¿Estás seguro de querer eliminar tu cuenta?</h5>
+                            <!-- EVENTO (@click): Dispara la acción "cerrarModal" -->
                             <button type="button" class="btn-close" @click="cerrarModal" />
                         </div>
                         <div class="modal-body">
@@ -25,6 +33,7 @@
                             </p>
                             <div class="mb-3">
                                 <label for="delete_password" class="form-label">Contraseña</label>
+                                <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "formulario.password" -->
                                 <input
                                     id="delete_password"
                                     ref="entradaContrasena"
@@ -35,12 +44,16 @@
                                     placeholder="Contraseña"
                                     @keyup.enter="eliminarUsuario"
                                 />
+                                <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.password" -->
                                 <div v-if="formulario.errors.password" class="invalid-feedback">{{ formulario.errors.password }}</div>
                             </div>
                         </div>
                         <div class="modal-footer">
+                            <!-- EVENTO (@click): Dispara la acción "cerrarModal" -->
                             <button type="button" class="btn btn-secondary" @click="cerrarModal">Cancelar</button>
+                            <!-- EVENTO (@click): Dispara la acción "eliminarUsuario" -->
                             <button type="button" class="btn btn-danger" :disabled="formulario.processing" @click="eliminarUsuario">
+                                <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.processing" -->
                                 <span v-if="formulario.processing" class="spinner-border spinner-border-sm me-2" />
                                 Eliminar cuenta
                             </button>
@@ -54,7 +67,15 @@
 </template>
 
 <script>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3)
+// ==================================================================================
+
+// ------------------------------------------------------------------------------
+// EXPORT DEFAULT: Definición principal del componente
+// ------------------------------------------------------------------------------
 export default {
+    // ESTADO REACTIVO (DATA): Variables locales del componente
     data() {
         return {
             confirmandoEliminacion: false,
@@ -65,6 +86,7 @@ export default {
             },
         }
     },
+    // MÉTODOS (METHODS): Bloque de funciones y eventos
     methods: {
         confirmarEliminacion() {
             this.confirmandoEliminacion = true;

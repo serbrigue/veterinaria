@@ -1,14 +1,17 @@
-<template>
+   <template>
     <div class="min-vh-100 d-flex flex-column bg-light">
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm sticky-top">
             <div class="container-fluid px-4">
+
+                <!--Logo y redireccionamiento a home-->
                 <Link href="/" class="navbar-brand d-flex align-items-center gap-2 fw-bold fs-4 text-white">
                     <div class="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center p-2 shadow-sm" style="width: 38px; height: 38px;">
                         <i class="bi bi-heart-pulse-fill"></i>
                     </div>
                     <span class="d-none d-sm-inline">Veterinaria</span>
                 </Link>
-                
+
+                <!--Boton para desplegar el menu en dispositivos moviles-->
                 <button 
                     class="navbar-toggler border-0 shadow-none" 
                     type="button" 
@@ -17,6 +20,7 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
+                <!--Menu principal-->
                 <div class="collapse navbar-collapse" :class="{ 'show': menuAbierto }">
                     <div class="navbar-nav ms-auto mb-2 mb-lg-0 py-3 py-lg-0 gap-3 gap-lg-2 align-items-lg-center">
                         
@@ -37,6 +41,7 @@
                         </div>
                         
                         <!-- Sección Administración (Secretaria / Vet) -->
+                        <!-- Verificación de roles para secretaria y veterinario-->
                         <TieneRol :rol="['veterinario','secretaria']">
                             <div class="nav-section d-flex flex-column flex-lg-row align-items-lg-center bg-warning bg-opacity-25 border border-warning border-opacity-50 rounded-4 px-3 px-lg-2 py-2 py-lg-1 gap-2 gap-lg-0 shadow-sm">
                                 <div class="d-flex align-items-center gap-2 mb-1 mb-lg-0 pe-lg-2 border-end-lg border-warning border-opacity-50">
@@ -51,6 +56,7 @@
                         </TieneRol>
                         
                         <!-- Sección Administración (Admin) -->
+                        <!-- Verificación de roles para admin-->
                         <TieneRol :rol="['admin']">
                             <div class="nav-section d-flex flex-column flex-lg-row align-items-lg-center bg-warning bg-opacity-25 border border-warning border-opacity-50 rounded-4 px-3 px-lg-2 py-2 py-lg-1 gap-2 gap-lg-0 shadow-sm">
                                 <div class="d-flex align-items-center gap-2 mb-1 mb-lg-0 pe-lg-2 border-end-lg border-warning border-opacity-50">
@@ -66,6 +72,7 @@
                         </TieneRol>
 
                         <!-- Usuario -->
+                        <!-- Dropdown del usuario-->
                         <div class="nav-section dropdown position-relative d-flex flex-column align-items-lg-center border-top border-lg-0 border-start-lg border-white border-opacity-25 pt-3 pt-lg-0 ps-lg-3 mt-2 mt-lg-0">
                             <button 
                                 class="btn btn-link nav-link text-white text-start px-lg-2 py-lg-1 transition-all fw-medium rounded hover-bg d-flex align-items-center gap-2 w-100" 
@@ -124,18 +131,22 @@ import TieneRol from '@/Componentes/TieneRol.vue';
 import BotonChatbotn8n from '@/Componentes/BotonChatbotn8n.vue';
 import { Link } from '@inertiajs/vue3';
 
+// Exportamos el componente
 export default {
+    // Componentes que se utilizan en el layout
     components: {
         TieneRol,
         BotonChatbotn8n,
         Link
-    },
+    },  
+    // Datos del componente
     data() {
-        return {
+        return {    
             menuAbierto: false,
             dropdownUsuario: false
         }
     },
+    // Métodos del componente
     methods: {
         irSiExiste(nombreRuta) {
             this.menuAbierto = false;
@@ -150,7 +161,9 @@ export default {
             })
         }
     },
+    // Observadores para el manejo del menú y dropdown
     watch: {
+        // Al cambiar la ruta, cerramos el menú y el dropdown
         '$page.url'() {
             this.menuAbierto = false;
             this.dropdownUsuario = false;

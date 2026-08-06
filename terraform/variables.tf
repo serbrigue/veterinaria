@@ -1,7 +1,10 @@
 # =============================================================
-# Variables de Configuración — GCP
+# 2. Variables de Configuración — Entradas del Sistema
 # =============================================================
+# Aquí definimos todas las variables que nuestro código de infraestructura va a necesitar.
 
+
+# ----- Configuración de Google Cloud -----
 variable "project_id" {
   description = "ID del proyecto en Google Cloud Platform (GCP)"
   type        = string
@@ -26,6 +29,7 @@ variable "machine_type" {
 }
 
 # ----- Base de Datos MySQL (Contenedor local en la VM) -----
+# Variables para inicializar y conectar la base de datos.
 variable "db_name" {
   description = "Nombre de la base de datos MySQL"
   type        = string
@@ -41,7 +45,7 @@ variable "db_username" {
 variable "db_password" {
   description = "Contraseña de la base de datos MySQL"
   type        = string
-  sensitive   = true
+  sensitive   = true # 'sensitive' oculta el valor en los logs de la consola
 }
 
 variable "db_root_password" {
@@ -52,7 +56,7 @@ variable "db_root_password" {
 
 # ----- Redis -----
 variable "redis_password" {
-  description = "Contraseña para Redis"
+  description = "Contraseña para Redis (Caché y Colas)"
   type        = string
   sensitive   = true
   default     = "redis_secret"
@@ -66,14 +70,14 @@ variable "app_key" {
 }
 
 variable "ghcr_image" {
-  description = "Imagen Docker de la aplicación en GitHub Container Registry"
+  description = "Imagen Docker de la aplicación en GitHub Container Registry que la VM descargará"
   type        = string
   default     = "ghcr.io/serbrigue/veterinaria:main"
 }
 
 # ----- Correo (SMTP / Gmail) -----
 variable "mail_username" {
-  description = "Correo Gmail para envío SMTP"
+  description = "Correo Gmail para envío SMTP (notificaciones del sistema)"
   type        = string
   default     = "vaalavet@gmail.com"
 }

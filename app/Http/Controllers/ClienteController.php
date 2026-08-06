@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ActualizarClienteRequest;
 use App\Http\Requests\GuardarClienteRequest;
+use App\Http\Requests\GuardarCorreoMasivoRequest;
+use App\Http\Requests\GuardarCorreoMoraRequest;
 use App\Mail\NotificacionMasivaMail;
 use App\Models\Cliente;
 use App\Models\Sucursal;
@@ -12,6 +14,7 @@ use App\Models\Rol;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
+use App\Mail\MoraPagoMail;
 
 class ClienteController extends Controller
 {
@@ -166,7 +169,7 @@ class ClienteController extends Controller
         return response()->json(['mensaje' => 'Cliente eliminado correctamente']);
     }
 
-    public function enviarCorreoMasivo(Request $request)
+    public function enviarCorreoMasivo(GuardarCorreoMasivoRequest $request)
     {
 
         // Verificamos que el usuario sea administrador o secretaria
@@ -175,12 +178,7 @@ class ClienteController extends Controller
         }
 
         // Validamos la solicitud
-        $validated = $request->validate([
-            'clientes_ids' => 'required|array',
-            'clientes_ids.*' => 'exists:clientes,id',
-            'asunto' => 'required|string|max:255',
-            'mensaje' => 'required|string|max:2000',
-        ]);
+        $validated = $request->validated();
 
         // Obtenemos los clientes
         $clientes = Cliente::whereIn('id', $validated['clientes_ids'])->with('usuario')->get();
@@ -205,7 +203,7 @@ class ClienteController extends Controller
         return response()->json(['mensaje' => 'Correos enviados correctamente a ' . $clientes->count() . ' clientes.']);
     }
 
-    public function enviarCorreoMora(Request $request, Cliente $cliente)
+    public function enviarCorreoMora(GuardarCorreoMoraRequest $request, Cliente $cliente)
     {
         // Verificamos que el usuario sea administrador o secretaria
         if (! auth()->user()->isAdmin() && ! auth()->user()->isSecretaria()) {
@@ -213,18 +211,15 @@ class ClienteController extends Controller
         }
 
         // Validamos la solicitud
-        $validated = $request->validate([
-            'transacciones_ids' => 'required|array',
-            'transacciones_ids.*' => 'exists:transacciones,id',
-        ]);
+        $validated = $request->validated();
 
         // Obtenemos las transacciones seleccionadas
         $transacciones = $cliente->transacciones()->whereIn('id', $validated['transacciones_ids'])->with('cita')->get();
-        
+
         $email = $cliente->usuario?->email;
         if ($email) {
             // Enviamos el correo
-            Mail::to($email)->send(new \App\Mail\MoraPagoMail($cliente, $transacciones));
+            Mail::to($email)->send(new MoraPagoMail($cliente, $transacciones));
         }
 
         return response()->json(['mensaje' => 'Correo de mora de pago enviado correctamente.']);

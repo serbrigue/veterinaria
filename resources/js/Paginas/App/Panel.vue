@@ -1,4 +1,7 @@
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: Panel -->
+    <!-- ================================================================================== -->
     <Head title="Panel de Inteligencia de Negocios" />
     <AuthenticatedLayout>
         <div class="container py-4">
@@ -76,8 +79,9 @@
                                 </div>
                                 <div class="small">
                                     <span :class="{'text-danger fw-bold': estadisticas.inventario?.bajo_stock > 0, 'text-success': estadisticas.inventario?.bajo_stock === 0}">
+                                        <!-- Si hay stock bajo, muestra una exclamación, si no, muestra un check -->
                                         <i class="bi bi-exclamation-triangle me-1" v-if="estadisticas.inventario?.bajo_stock > 0"></i>
-                                        <i class="bi bi-check-circle me-1" v-else></i>
+                                        <i class="bi bi-check-circle me-1" v-else></i>  
                                         {{ estadisticas.inventario?.bajo_stock || 0 }} insumos con stock bajo
                                     </span>
                                 </div>
@@ -108,8 +112,8 @@
                     </div>
                 </div>
 
-                <!-- Centro de Comando Analítico (Solo Administrador) -->
-                <div v-if="$isAdmin()">
+                <!-- Centro de Comando Analítico -->
+                <div>
                     <!-- Fila 1: Ingresos por Sucursal y Estado de Citas -->
                     <div class="row g-4 mb-5">
                         <!-- Ingresos por Sucursal (Línea) -->
@@ -230,6 +234,7 @@
                         </div>
                     </div>
                     <!-- Panel Avanzado de BI KPIs -->
+                    <!-- Si existen los datos de BI KPIs, renderiza el componente BiKpiDashboard -->
                     <BiKpiDashboard v-if="estadisticas.bi_kpis" :biData="estadisticas.bi_kpis" />
                 </div>
             </div>
@@ -238,56 +243,77 @@
 </template>
 
 <script>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3)
+// ==================================================================================
+
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import { Chart } from 'chart.js';
 import BiKpiDashboard from '@/Paginas/App/Partials/BiKpiDashboard.vue';
 
+// ------------------------------------------------------------------------------
+// EXPORT DEFAULT: Definición principal del componente
+// ------------------------------------------------------------------------------
 export default {
+    // Componentes: Registro de componentes importados
     components: {
         AuthenticatedLayout,
         Head,
         Link,
         BiKpiDashboard
     },
+    // Propiedades: Datos inyectados desde el componente padre o estado
     props: {
+        // Datos de estadisticas
         estadisticas: {
             type: Object,
             default: () => ({}),
-        },
-        ultimasMascotas: {
-            type: Array,
-            default: () => [],
-        },
+        }
     },
+    // Propiedades computadas: Variables reactivas que dependen de otras
     computed: {
+        // Fecha actual en formato largo texto y añadir mayuscula al inicio
         fechaActual() {
             const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             const str = new Date().toLocaleDateString('es-CL', opciones);
             return str.charAt(0).toUpperCase() + str.slice(1);
         }
     },
+    // CICLO DE VIDA: Se ejecuta al cargar el componente en el DOM
     mounted() {
         this.renderCharts();
     },
+    // antes de desmontar el componente, destruye los gráficos
     beforeUnmount() {
         this.destroyCharts();
     },
+    // Métodos: Bloque de funciones y eventos
     methods: {
+        // Método para renderizar los gráficos
         renderCharts() {
+            //Destruimos los gráficos existentes antes de renderizar nuevos
             this.destroyCharts();
             this.charts = [];
 
+            // Si el usuario no es admin, no renderizamos gráficos
             if (!this.$isAdmin()) {
                 return;
             }
 
-            // 1. CHART INGRESOS MENSUALES POR SUCURSAL (Línea)
+            // 1. GRAFICO INGRESOS MENSUALES POR SUCURSAL (Línea)
+
+            //Obtenemos el canvas donde se renderizara el gráfico
             const ctxIngresos = document.getElementById('chartIngresosSucursales')?.getContext('2d');
+
+            // Si el canvas existe y tenemos datos de ingresos
             if (ctxIngresos && this.estadisticas.ingresos_sucursales) {
+
+                // Obtenemos los meses y datos de las sucursales a través de las propiedades 
                 const meses = this.estadisticas.ingresos_sucursales.meses || [];
                 const datosSucursales = this.estadisticas.ingresos_sucursales.datos_sucursales || [];
                 
+                // Definimos los colores para cada sucursal
                 const colors = [
                     { border: '#4f46e5', background: 'rgba(79, 70, 229, 0.05)' }, // Indigo
                     { border: '#06b6d4', background: 'rgba(6, 182, 212, 0.05)' }, // Cyan
@@ -295,13 +321,20 @@ export default {
                     { border: '#f59e0b', background: 'rgba(245, 158, 11, 0.05)' }   // Amber
                 ];
 
+                // Preparamos los datasets para el grafico y mapeamos los colores
                 const datasets = datosSucursales.map((ds, idx) => {
+
                     const color = colors[idx % colors.length];
                     return {
+                        // Etiqueta del dataset
                         label: ds.sucursal,
+                        // Datos del dataset
                         data: ds.data,
+                        // Color del borde
                         borderColor: color.border,
+                        // Color de fondo
                         backgroundColor: color.background,
+                        // Relleno
                         fill: true,
                         tension: 0.4,
                         borderWidth: 3,
@@ -310,10 +343,17 @@ export default {
                     };
                 });
 
+                // Creamos el gráfico
                 this.charts.push(new Chart(ctxIngresos, {
+                    // Tipo de gráfico
                     type: 'line',
-                    data: { labels: meses, datasets },
+                    data: { 
+                        // Meses
+                        labels: meses,
+                        // Data
+                        datasets },
                     options: {
+                        // Opciones del grafico
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
@@ -335,17 +375,24 @@ export default {
                 }));
             }
 
-            // 2. CHART ESTADO CITAS (Dona)
+            // 2. GRAFICO ESTADO CITAS (Dona)
             const ctxEstado = document.getElementById('chartEstadoCitas')?.getContext('2d');
+            
+            // Verificamos que el canvas y los datos existan
             if (ctxEstado && this.estadisticas.operativo) {
+                // Obtenemos los datos
                 const completadas = this.estadisticas.operativo.citas_completadas || 0;
                 const pendientes = this.estadisticas.operativo.citas_agendadas || 0;
                 const canceladas = this.estadisticas.operativo.citas_canceladas || 0;
 
+                // Creamos el gráfico
                 this.charts.push(new Chart(ctxEstado, {
+                    // Tipo de gráfico
                     type: 'doughnut',
                     data: {
+                        // Etiquetas
                         labels: ['Completadas', 'Pendientes', 'Canceladas'],
+                        // Data
                         datasets: [{
                             data: [completadas, pendientes, canceladas],
                             backgroundColor: [
@@ -372,16 +419,22 @@ export default {
                 }));
             }
 
-            // 3. CHART RENDIMIENTO VETERINARIOS (Barras)
+            // 3. GRAFICO RENDIMIENTO VETERINARIOS (Barras)
             const ctxRendimiento = document.getElementById('chartRendimientoVeterinarios')?.getContext('2d');
+            // Verificamos que el canvas y los datos existan
             if (ctxRendimiento && this.estadisticas.veterinarios_estadisticas) {
+                // Obtenemos los datos
                 const nombres = this.estadisticas.veterinarios_estadisticas.map(v => v.nombre);
                 const citas = this.estadisticas.veterinarios_estadisticas.map(v => v.citas_completadas);
 
+                // Creamos el gráfico
                 this.charts.push(new Chart(ctxRendimiento, {
+                    // Tipo de gráfico
                     type: 'bar',
                     data: {
+                        // Etiquetas
                         labels: nombres,
+                        // Data
                         datasets: [{
                             label: 'Citas Completadas',
                             data: citas,
@@ -404,13 +457,17 @@ export default {
                 }));
             }
 
-            // 4. CHART COMISIONES VETERINARIOS (Barras)
+            // 4. GRAFICO COMISIONES VETERINARIOS (Barras)
             const ctxComisiones = document.getElementById('chartComisionesVeterinarios')?.getContext('2d');
+            // Verificamos que el canvas y los datos existan
             if (ctxComisiones && this.estadisticas.veterinarios_estadisticas) {
+                // Obtenemos los datos
                 const nombres = this.estadisticas.veterinarios_estadisticas.map(v => v.nombre);
                 const comisiones = this.estadisticas.veterinarios_estadisticas.map(v => v.comisiones_acumuladas);
 
+                // Creamos el gráfico
                 this.charts.push(new Chart(ctxComisiones, {
+                    // Tipo de gráfico
                     type: 'bar',
                     data: {
                         labels: nombres,
@@ -446,9 +503,11 @@ export default {
                 }));
             }
 
-            // 5. CHART TOP PRESTACIONES (Barras Horizontales)
+            // 5. GRAFICO TOP PRESTACIONES (Barras Horizontales)
             const ctxPrestaciones = document.getElementById('chartTopPrestaciones')?.getContext('2d');
+            // Verificamos que el canvas y los datos existan
             if (ctxPrestaciones && this.estadisticas.top_prestaciones) {
+                // Obtenemos los datos
                 const nombres = this.estadisticas.top_prestaciones.map(p => p.nombre);
                 const cantidades = this.estadisticas.top_prestaciones.map(p => p.cantidad);
 
@@ -475,9 +534,11 @@ export default {
                 }));
             }
 
-            // 6. CHART TOP INSUMOS (Barras Horizontales)
+            // 6. GRAFICO TOP INSUMOS (Barras Horizontales)
             const ctxInsumos = document.getElementById('chartTopInsumos')?.getContext('2d');
+            // Verificamos que el canvas y los datos existan
             if (ctxInsumos && this.estadisticas.top_insumos) {
+                // Obtenemos los datos
                 const nombres = this.estadisticas.top_insumos.map(i => i.nombre);
                 const cantidades = this.estadisticas.top_insumos.map(i => i.cantidad);
 
@@ -504,7 +565,9 @@ export default {
                 }));
             }
         },
+        // Destruye los gráficos existentes
         destroyCharts() {
+            // Si existen gráficos, los destruye
             if (this.charts && this.charts.length > 0) {
                 this.charts.forEach(chart => {
                     if (chart && typeof chart.destroy === 'function') {
@@ -514,29 +577,42 @@ export default {
             }
             this.charts = [];
         },
+        // Formatea el valor como dinero
         formatoDinero(valor) {
+            // Si el valor es nulo, retorna 0
             if (!valor) return '0';
+            // Retorna el valor formateado como dinero
             return Math.round(valor).toLocaleString('es-CL');
         },
+        // Formatea el día
         formatearDia(fechaStr) {
+            // Si la fecha es nula, retorna vacío
             if(!fechaStr) return '';
             const f = new Date(fechaStr);
+            // Retorna el día formateado con ceros a la izquierda
             return f.getDate().toString().padStart(2, '0');
         },
+        // Formatea el mes
         formatearMes(fechaStr) {
-            if(!fechaStr) return '';
+            // Si la fecha es nula, retorna vacío
             const f = new Date(fechaStr);
             return f.toLocaleDateString('es-CL', { month: 'short' });
         },
+        // Formatea la hora
         formatearHora(fechaStr) {
             if(!fechaStr) return '';
             const f = new Date(fechaStr);
             return f.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
         },
+        // Calcula el porcentaje de citas
         porcentajeCitas(tipo) {
+            // Obtenemos el total de citas
             const total = this.estadisticas.operativo?.citas_totales || 0;
+            // Si el total es 0, retorna 0
             if (total === 0) return 0;
+            // Obtenemos la cantidad de citas
             const cantidad = this.estadisticas.operativo?.[`citas_${tipo}`] || 0;
+            // Retorna el porcentaje
             return Math.round((cantidad / total) * 100);
         }
     }

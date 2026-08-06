@@ -4,6 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Modelo AplicacionVacuna
+ *
+ * Representa a la tabla `aplicacion_vacunas` en la base de datos.
+ * Función: Registra las aplicaciones de vacunas administradas a las mascotas.
+ */
+
+
 class AplicacionVacuna extends Model
 {
     protected $fillable = [

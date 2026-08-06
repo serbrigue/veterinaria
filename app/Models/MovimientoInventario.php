@@ -5,6 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Modelo MovimientoInventario
+ *
+ * Representa a la tabla `movimiento_inventarios` en la base de datos.
+ * Función: Registra las entradas y salidas de stock de los diferentes insumos para llevar el control de inventario.
+ */
 class MovimientoInventario extends Model
 {
     use HasFactory;

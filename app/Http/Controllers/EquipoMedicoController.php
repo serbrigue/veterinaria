@@ -6,9 +6,12 @@ use App\Models\Cita;
 use App\Models\EquipoMedico;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use App\Http\Requests\GuardarEquipoMedicoRequest;
 
 class EquipoMedicoController extends Controller
 {
+
+
     public function porCita(Cita $cita)
     {
         // Obtenemos los miembros del equipo médico
@@ -16,10 +19,12 @@ class EquipoMedicoController extends Controller
             ->with(['usuario', 'rol'])
             ->get();
 
+
+        //Retornamos los miembros del equipo médico
         return response()->json($equipo);
     }
 
-    public function agregar(Request $request, Cita $cita)
+    public function agregar(GuardarEquipoMedicoRequest $request, Cita $cita)
     {
         // Autorizamos la gestión
         $this->autorizarGestion($cita);
@@ -28,10 +33,7 @@ class EquipoMedicoController extends Controller
         $this->validarCategoriaCirugia($cita);
 
         // Validamos los datos
-        $validated = $request->validate([
-            'usuario_id' => 'required|exists:users,id',
-            'rol_id' => 'required|exists:roles,id',
-        ]);
+        $validated = $request->validated();
 
         // Verificamos que el usuario no esté duplicado
         $existe = EquipoMedico::where('cita_id', $cita->id)

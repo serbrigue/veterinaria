@@ -4,6 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Modelo EquipoMedico
+ *
+ * Representa a la tabla `equipos_medicos` en la base de datos.
+ * Función: Registra el inventario de equipos e instrumentos médicos disponibles en las sucursales.
+ */
 class EquipoMedico extends Model
 {
     // Definimos el nombre de la tabla

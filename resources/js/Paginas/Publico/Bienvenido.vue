@@ -1,4 +1,7 @@
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: Bienvenido -->
+    <!-- ================================================================================== -->
     <Head title="Bienvenido — Cuidado Profesional para tu Mascota" />
 
     <div class="min-vh-100 d-flex flex-column" style="background-color: #f8fafc;">
@@ -13,8 +16,10 @@
                 </span>
                 
                 <div class="d-flex gap-3 ms-auto align-items-center">
+                    <!-- DIRECTIVA (v-if): Renderizado condicional basado en "$page.props.auth.user" -->
                     <template v-if="$page.props.auth.user">
-                        <Link v-if="esAdmin" :href="route('panel')" class="btn btn-primary fw-semibold rounded-pill px-4 shadow-sm btn-hover-elevate">
+                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "esAdmin" -->
+                        <Link v-if="$isAdmin()" :href="route('panel')" class="btn btn-primary fw-semibold rounded-pill px-4 shadow-sm btn-hover-elevate">
                             <i class="bi bi-speedometer2 me-1"></i> Panel
                         </Link>
                         <Link v-else :href="route('perfil.editar')" class="btn btn-primary fw-semibold rounded-pill px-4 shadow-sm btn-hover-elevate">
@@ -25,6 +30,7 @@
                         <Link :href="route('iniciar-sesion')" class="text-dark fw-semibold text-decoration-none nav-link-custom d-none d-sm-block">
                             Ingresar
                         </Link>
+                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "puedeRegistrarse" -->
                         <Link v-if="puedeRegistrarse" :href="route('registrarse')" class="btn btn-primary fw-bold rounded-pill px-4 shadow-sm btn-hover-elevate">
                             Regístrate
                         </Link>
@@ -57,12 +63,14 @@
                             </p>
                             
                             <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center justify-content-lg-start animate-fade-in-up" style="animation-delay: 0.3s;">
+                                <!-- DIRECTIVA (v-if): Renderizado condicional basado en "$page.props.auth.user" -->
                                 <template v-if="$page.props.auth.user">
-                                    <Link :href="esAdmin ? route('panel') : route('perfil.editar')" class="btn btn-primary btn-lg rounded-pill px-5 shadow-lg btn-hover-elevate fw-semibold">
+                                    <Link :href="$isAdmin() ? route('panel') : route('perfil.editar')" class="btn btn-primary btn-lg rounded-pill px-5 shadow-lg btn-hover-elevate fw-semibold">
                                         Ir al Panel <i class="bi bi-arrow-right ms-2"></i>
                                     </Link>
                                 </template>
                                 <template v-else>
+                                    <!-- DIRECTIVA (v-if): Renderizado condicional basado en "puedeRegistrarse" -->
                                     <Link v-if="puedeRegistrarse" :href="route('registrarse')" class="btn btn-primary btn-lg rounded-pill px-5 shadow-lg btn-hover-elevate fw-semibold">
                                         Comenzar ahora
                                     </Link>
@@ -166,6 +174,7 @@
                 <div class="container text-center py-5">
                     <h2 class="display-5 fw-bold mb-4">¿Listo para unirte a la familia?</h2>
                     <p class="lead mb-5 opacity-75 mx-auto" style="max-width: 600px;">Crea tu cuenta gratuita hoy mismo y experimenta la tranquilidad de tener el control total sobre la salud de tus mascotas.</p>
+                    <!-- DIRECTIVA (v-if): Renderizado condicional basado en "puedeRegistrarse" -->
                     <Link v-if="puedeRegistrarse" :href="route('registrarse')" class="btn btn-light btn-lg rounded-pill px-5 py-3 shadow fw-bold text-primary btn-hover-elevate">
                         Crear mi cuenta gratis
                     </Link>
@@ -197,13 +206,22 @@
 </template>
 
 <script>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3)
+// ==================================================================================
+
 import { Head, Link } from '@inertiajs/vue3';
 
+// ------------------------------------------------------------------------------
+// EXPORT DEFAULT: Definición principal del componente
+// ------------------------------------------------------------------------------
 export default {
+    // COMPONENTES (COMPONENTS): Registro de componentes importados
     components: {
         Head,
         Link,
     },
+    // PROPIEDADES (PROPS): Datos inyectados desde el componente padre o estado
     props: {
         puedeIniciarSesion: {
             type: Boolean,
@@ -220,12 +238,8 @@ export default {
             required: true,
         },
     },
-    computed: {
-        esAdmin() {
-            const user = this.$page.props.auth.user;
-            return user && user.rol && user.rol.nombre_interno === 'admin';
-        }
-    }
+    // PROPIEDADES COMPUTADAS (COMPUTED): Variables reactivas que dependen de otras
+
 }
 </script>
 

@@ -15,6 +15,9 @@ use App\Models\Rol;
 use App\Models\Sucursal;
 use App\Models\Transaccion;
 use App\Models\User;
+use App\Http\Requests\ActualizarCitaEstadoRequest;
+use App\Http\Requests\ObtenerHorariosDisponiblesRequest;
+use App\Http\Requests\ActualizarCitaNotasRequest;
 use App\Models\Veterinario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -35,8 +38,7 @@ class CitaController extends Controller
             $mascotas = Mascota::where('cliente_id', auth()->user()->cliente?->id)->get();
         }
 
-        // Filtros de citas, con eager loading
-
+        // Cargamos todas las citas con sus relaciones y aplicamos filtros
         $query = Cita::with([
             'mascota.cliente.usuario',
             'veterinario.usuario',
@@ -45,15 +47,17 @@ class CitaController extends Controller
             'prestacion.categoriaPrestacion',
             'equipoMedico.rol',
         ])
-            ->when($request->filled('mascota'), fn ($q) => $q->whereHas('mascota', fn($m) => $m->where('nombre', 'like', '%'.$request->mascota.'%')))
-            ->when($request->filled('veterinario_id'), fn ($q) => $q->where('veterinario_id', $request->veterinario_id))
-            ->when($request->filled('sucursal_id'), fn ($q) => $q->where(function ($subq) use ($request) {
-                $subq->whereHas('box', fn ($b) => $b->where('sucursal_id', $request->sucursal_id))
-                     ->orWhereHas('veterinario', fn ($v) => $v->where('sucursal_id', $request->sucursal_id));
+            ->when($request->filled('mascota'), fn($q) => $q->whereHas('mascota', fn($m) => $m->where('nombre', 'like', '%' . $request->mascota . '%')))
+            ->when($request->filled('veterinario_id'), fn($q) => $q->where('veterinario_id', $request->veterinario_id))
+            //Si hay sucursal seleccionada, filtramos por ella
+            ->when($request->filled('sucursal_id'), fn($q) => $q->where(function ($subq) use ($request) {
+                // Filtra citas cuyo box pertenezca a la sucursal o cuyo veterinario pertenezca a la sucursal
+                $subq->whereHas('box', fn($b) => $b->where('sucursal_id', $request->sucursal_id))
+                    ->orWhereHas('veterinario', fn($v) => $v->where('sucursal_id', $request->sucursal_id));
             }))
-            ->when($request->filled('titulo'), fn ($q) => $q->where('titulo', 'like', '%'.$request->titulo.'%'))
-            ->when($request->filled('cliente'), fn ($q) => $q->whereHas('mascota.cliente.usuario', fn ($u) => $u->where('name', 'like', '%'.$request->cliente.'%')))
-            ->when($request->filled('estado') && $request->estado !== 'todos', fn ($q) => $q->where('estado', $request->estado));
+            ->when($request->filled('titulo'), fn($q) => $q->where('titulo', 'like', '%' . $request->titulo . '%'))
+            ->when($request->filled('cliente'), fn($q) => $q->whereHas('mascota.cliente.usuario', fn($u) => $u->where('name', 'like', '%' . $request->cliente . '%')))
+            ->when($request->filled('estado') && $request->estado !== 'todos', fn($q) => $q->where('estado', $request->estado));
 
         // Aplicamos restricciones según el rol del usuario
         if (auth()->user()->isAdmin()) {
@@ -63,11 +67,11 @@ class CitaController extends Controller
             $query->where('veterinario_id', auth()->user()->veterinario?->id);
         } elseif (auth()->user()->rol?->nombre_interno === 'secretaria') {
             // Secretaria ve las citas de su sucursal
-            $query->whereHas('veterinario', fn ($v) => $v->where('sucursal_id', auth()->user()->secretaria?->sucursal_id));
+            $query->whereHas('veterinario', fn($v) => $v->where('sucursal_id', auth()->user()->secretaria?->sucursal_id));
         } else {
             // Cliente ve solo sus citas
             $clienteId = auth()->user()->cliente?->id;
-            $query->whereHas('mascota', fn ($q) => $q->where('cliente_id', $clienteId));
+            $query->whereHas('mascota', fn($q) => $q->where('cliente_id', $clienteId));
         }
 
         // Aparte si no se especifica estado, no mostramos canceladas por defecto
@@ -132,7 +136,7 @@ class CitaController extends Controller
 
         // Si es secretaria, traemos las de su sucursal
         if (auth()->user()->rol?->nombre_interno === 'secretaria') {
-            return Cita::whereHas('veterinario', fn ($v) => $v->where('sucursal_id', auth()->user()->secretaria?->sucursal_id))
+            return Cita::whereHas('veterinario', fn($v) => $v->where('sucursal_id', auth()->user()->secretaria?->sucursal_id))
                 ->with(['mascota.cliente.usuario', 'veterinario.usuario', 'box'])
                 ->get();
         }
@@ -230,22 +234,22 @@ class CitaController extends Controller
         });
     }
 
-    private function verificarBox(
-        int $boxId,
-        int $prestacionId,
-        int $citaIdExcluida,
-        string $fechaHora,
-        Carbon $horaTermino
-    ): ?string {
+    private function verificarBox(int $boxId, int $prestacionId, int $citaIdExcluida, string $fechaHora, Carbon $horaTermino): ?string
+    {
+
+        //Traemos el box y la prestacion
         $box = Box::find($boxId);
         $prestacion = Prestacion::find($prestacionId);
 
+        //Verificamos que el box sea compatible con la prestacion
         if ($box && $box->categoria_prestacion_id !== null && $prestacion && $box->categoria_prestacion_id !== $prestacion->categoria_prestacion_id) {
-            return 'El box "'.$box->nombre.'" no es compatible con el tipo de prestación seleccionada.';
+            return 'El box "' . $box->nombre . '" no es compatible con el tipo de prestación seleccionada.';
         }
 
+        //Bloqueamos el box para evitar condiciones de carrera
         Box::where('id', $boxId)->lockForUpdate()->first();
 
+        //Verificamos si hay solapamiento de citas
         $solapamiento = Cita::where('box_id', $boxId)
             ->where('id', '!=', $citaIdExcluida)
             ->where('fecha_hora', '<', $horaTermino)
@@ -253,21 +257,20 @@ class CitaController extends Controller
             ->where('estado', '!=', 'cancelada')
             ->exists();
 
+        //Si hay solapamiento, devolvemos error
         if ($solapamiento) {
             return 'No se puede actualizar la cita, el box ya está ocupado en ese horario';
         }
 
+        //Si no hay solapamiento, devolvemos null
         return null;
     }
 
-    public function horariosDisponibles(Request $request)
+    public function horariosDisponibles(ObtenerHorariosDisponiblesRequest $request)
     {
-        // Validamos la solicitud
-        $request->validate([
-            'fecha' => 'required|date_format:Y-m-d',
-            'veterinario_id' => 'required|exists:veterinarios,id',
-        ]);
+        // Validamos la solicitud (en ObtenerHorariosDisponiblesRequest)
 
+        //Traemos la fecha de la solicitud y el veterinario
         $fecha = $request->fecha;
         $veterinario = Veterinario::findOrFail($request->veterinario_id);
 
@@ -278,6 +281,7 @@ class CitaController extends Controller
         $horarioCustom = $veterinario->horario;
         $diaConfig = $this->resolverConfiguracionDia($horarioCustom, $diaSemana, $fecha);
 
+        //Traemos las citas del veterinario en la fecha seleccionada
         $citasVeterinario = Cita::where('veterinario_id', $request->veterinario_id)
             ->whereDate('fecha_hora', $fecha)
             ->where('estado', '!=', 'cancelada')
@@ -289,7 +293,10 @@ class CitaController extends Controller
             ->whereDate('fecha_fin', '>=', $fecha)
             ->get();
 
+        //Generamos los slots horarios
         $normalSlots = [];
+
+        //Revisamos los horarios "normales" para generar slots
         if (! empty($diaConfig['normal']['activo']) && ! empty($diaConfig['normal']['inicio']) && ! empty($diaConfig['normal']['fin'])) {
             $inicioNormal = Carbon::parse($diaConfig['normal']['inicio']);
             $finNormal = Carbon::parse($diaConfig['normal']['fin']);
@@ -305,7 +312,10 @@ class CitaController extends Controller
             );
         }
 
+        //Generamos los slots horarios
         $urgenciaSlots = [];
+
+        //Revisamos los horarios "urgencia" para generar slots
         if (! empty($diaConfig['urgencia']['activo']) && ! empty($diaConfig['urgencia']['inicio']) && ! empty($diaConfig['urgencia']['fin'])) {
             $inicioUrgencia = Carbon::parse($diaConfig['urgencia']['inicio']);
             $finUrgencia = Carbon::parse($diaConfig['urgencia']['fin']);
@@ -321,6 +331,7 @@ class CitaController extends Controller
             );
         }
 
+        //Retornamos los slots
         return response()->json([
             'normal' => $normalSlots,
             'urgencia' => $urgenciaSlots,
@@ -329,7 +340,6 @@ class CitaController extends Controller
 
     // Genera los slots horarios para un tipo de slot específico (normal o urgencia)
     private function generarSlotsHorarios(
-
         string $fecha,
         int $horaInicio,
         int $minutoInicio,
@@ -339,17 +349,25 @@ class CitaController extends Controller
         $citasVeterinario,
         $bloqueos
     ): array {
+        //Traemos la fecha y la hora de inicio y fin, la transformamos a Carbon
         $inicio = Carbon::parse($fecha)->setTime($horaInicio, $minutoInicio);
         $fin = Carbon::parse($fecha)->setTime($horaFin, $minutoFin);
 
         // Evitar generar slots en el pasado para el día actual,
         // redondeando la hora mínima a los próximos 30 minutos.
         $ahora = now();
+
+        //Si el dia del slot es el mismo que el dia actual
         if ($inicio->isSameDay($ahora)) {
+            //Calculamos los minutos restantes para el siguiente slot
             $minutosRestantes = 30 - ($ahora->minute % 30);
+
+            //Si los minutos restantes son 30, adelantamos 30 minutos
             if ($minutosRestantes === 30) {
                 $minutosRestantes = 0;
             }
+
+            //Definimos la hora minima
             $horaMinima = $ahora->copy()->addMinutes($minutosRestantes)->setSeconds(0);
 
             // Si la hora de inicio del turno es anterior a la hora actual redondeada, adelantamos el cursor
@@ -358,15 +376,20 @@ class CitaController extends Controller
             }
         }
 
+        //Generamos los slots
         $slots = [];
+
+        //Cursor que avanza en bloques de 30 minutos
         $cursor = $inicio->copy();
 
+        //Recorremos mientras el cursor sea menor que la hora de fin
         while ($cursor->lt($fin)) {
+            //Copia del cursor para calcular el fin del slot
             $slotFin = $cursor->copy()->addMinutes(30);
 
             // Verificar si el slot actual se encuentra ocupado por alguna cita
             $ocupadoVeterinario = $citasVeterinario->some(
-                fn ($cita) => Carbon::parse($cita->fecha_hora)->lt($slotFin)
+                fn($cita) => Carbon::parse($cita->fecha_hora)->lt($slotFin)
                     && Carbon::parse($cita->hora_termino)->gt($cursor)
             );
 
@@ -377,12 +400,15 @@ class CitaController extends Controller
                     return true;
                 }
 
-                $bloqueoInicio = Carbon::parse($fecha.' '.$bloqueo->hora_inicio);
-                $bloqueoFin = Carbon::parse($fecha.' '.$bloqueo->hora_fin);
+                //Obtenemos la fecha y la hora de inicio y fin del bloqueo
+                $bloqueoInicio = Carbon::parse($fecha . ' ' . $bloqueo->hora_inicio);
+                $bloqueoFin = Carbon::parse($fecha . ' ' . $bloqueo->hora_fin);
 
+                //Si el slot se encuentra dentro del bloqueo, lo marcamos como bloqueado
                 return $bloqueoInicio->lt($slotFin) && $bloqueoFin->gt($cursor);
             });
 
+            //Agregamos el slot a los slots horarios
             $slots[] = [
                 'hora' => $cursor->format('H:i'),
                 'fecha_hora' => $cursor->toDateTimeString(),
@@ -390,6 +416,7 @@ class CitaController extends Controller
                 'tipo' => $tipoSlot,
             ];
 
+            //Avanzamos el cursor en 30 minutos
             $cursor->addMinutes(30);
         }
 
@@ -398,54 +425,72 @@ class CitaController extends Controller
 
     private function resolverConfiguracionDia(?array $horario, int $diaSemana, string $fecha): array
     {
+        //Verificamos si el horario existe
         if ($horario && is_array($horario) && count($horario) > 0) {
+
+            //Obtenemos el primer elemento del horario
             $primerElemento = $horario[0];
 
+            //Si el primer elemento tiene dias, lo buscamos en los planes
             if (isset($primerElemento['dias'])) {
                 return $this->buscarDiaEnPlanes($horario, $diaSemana, $fecha);
             }
 
+            //Buscamos el dia en formato plano
             return $this->buscarDiaEnFormatoPlano($horario, $diaSemana);
         }
 
+        //Retornamos la configuracion por defecto
         return $this->configuracionDiaPorDefecto($diaSemana);
     }
 
     private function buscarDiaEnPlanes(array $planes, int $diaSemana, string $fecha): array
     {
+        //Recorremos los planes
         foreach ($planes as $plan) {
+
+            //Obtenemos la fecha de inicio y fin del plan
             $fechaInicio = $plan['fecha_inicio'] ?? null;
             $fechaFin = $plan['fecha_fin'] ?? null;
 
+            //Si la fecha actual se encuentra dentro del rango del plan, continuamos
             if ($fechaInicio && $fechaFin && ($fecha < $fechaInicio || $fecha > $fechaFin)) {
                 continue;
             }
 
             foreach ($plan['dias'] ?? [] as $dia) {
                 if (isset($dia['dia']) && (int) $dia['dia'] === $diaSemana) {
+
                     return $dia;
                 }
             }
         }
-
+        //Retornamos la configuracion por defecto
         return $this->configuracionDiaPorDefecto($diaSemana);
     }
 
     private function buscarDiaEnFormatoPlano(array $horario, int $diaSemana): array
     {
+        //Recorremos los dias
         foreach ($horario as $dia) {
+
+            //Si el dia se encuentra dentro del rango del plan, continuamos
             if (isset($dia['dia']) && (int) $dia['dia'] === $diaSemana) {
                 return $dia;
             }
         }
+
+        //Retornamos la configuracion por defecto
 
         return $this->configuracionDiaPorDefecto($diaSemana);
     }
 
     private function configuracionDiaPorDefecto(int $diaSemana): array
     {
+        //Verificamos si el dia es fin de semana
         $esFinSemana = in_array($diaSemana, [6, 7]);
 
+        //Retornamos la configuracion por defecto
         return [
             'dia' => $diaSemana,
             'normal' => [
@@ -576,11 +621,10 @@ class CitaController extends Controller
         ]);
     }
 
-    public function actualizarNotas(Request $request, Cita $cita)
+    public function actualizarNotas(ActualizarCitaNotasRequest $request, Cita $cita)
     {
 
-        // Validamos la solicitud
-        $request->validate(['notas' => 'nullable|string']);
+        // Validamos la solicitud (en ActualizarCitaNotasRequest)
 
         // Actualizamos la cita
         $cita->update(['notas' => $request->notas]);
@@ -589,11 +633,8 @@ class CitaController extends Controller
         return response()->json($cita);
     }
 
-    public function actualizarEstado(Request $request, Cita $cita)
+    public function actualizarEstado(ActualizarCitaEstadoRequest $request, Cita $cita)
     {
-
-        // Validamos la solicitud
-        $request->validate(['estado' => 'required|in:pendiente,en_curso,completada,cancelada']);
 
         // Obtenemos el nuevo estado
         $nuevoEstado = $request->estado;
@@ -621,7 +662,9 @@ class CitaController extends Controller
 
     private function validarBoxAsignado(Cita $cita, string $nuevoEstado): ?string
     {
+        //Verificamos si la cita tiene un box asignado
         if (in_array($nuevoEstado, ['en_curso', 'completada']) && ! $cita->box_id) {
+
             return 'Debe asignar un box a la cita antes de iniciarla o completarla.';
         }
 
@@ -630,14 +673,20 @@ class CitaController extends Controller
 
     private function validarPersonalCirugia(Cita $cita, string $nuevoEstado): ?string
     {
+        //Verificamos si la cita es una cirugía
         if ($cita->prestacion?->categoriaPrestacion?->nombre === 'Cirugia') {
+
+            //Verificamos si la cita tiene un box asignado
             if (in_array($nuevoEstado, ['en_curso', 'completada'])) {
+
+                //Verificamos si la cita tiene un arsenalero
                 $tieneArsenalero = $cita->equipoMedico()
                     ->whereHas('rol', function ($q) {
                         $q->where('nombre_interno', 'arsenalero');
                     })
                     ->exists();
 
+                //Si no tiene arsenalero, retornamos un mensaje de error    
                 if (! $tieneArsenalero) {
                     return 'Para iniciar o completar una cirugía, debe asignar al menos un arsenalero en el equipo médico.';
                 }
@@ -649,16 +698,20 @@ class CitaController extends Controller
 
     private function procesarTransaccionCita(Cita $cita, string $nuevoEstado): void
     {
+        //Si la cita es completada y no tiene una transacción
         if ($nuevoEstado === 'completada' && ! $cita->transaccion) {
             $cita->load('prestacion');
             $mascota = Mascota::find($cita->mascota_id);
 
+            //Calculamos el total de los cargos
             $totalCargos = CitaCargo::where('cita_id', $cita->id)
                 ->whereNotNull('insumo_id')
                 ->sum('subtotal');
 
+            //Calculamos el monto total de la transacción
             $montoTotal = ($cita->prestacion ? $cita->prestacion->precio_base : 0) + $totalCargos;
 
+            //Creamos la transacción
             Transaccion::create([
                 'cita_id' => $cita->id,
                 'cliente_id' => $mascota->cliente_id,
@@ -666,8 +719,11 @@ class CitaController extends Controller
                 'monto_pagado' => 0,
                 'estado' => 'pendiente',
             ]);
+
+            //Si la cita es cancelada y tiene una transacción
         } elseif ($nuevoEstado === 'cancelada') {
             if ($cita->transaccion) {
+                //Anulamos la transacción
                 $cita->transaccion->update(['estado' => 'anulado']);
             }
         }
@@ -675,16 +731,23 @@ class CitaController extends Controller
 
     public function agendaSecretaria()
     {
+        //Verificamos si el usuario es secretaria
         if (auth()->user()->rol->nombre_interno !== 'secretaria') {
             abort(403, 'Acceso exclusivo para el personal de secretaría.');
         }
 
+        //Obtenemos la sucursal de la secretaria
         $secretaria = auth()->user()->secretaria;
+
+        //Si la secretaria no tiene una sucursal, retornamos un mensaje de error
         if (!$secretaria || !$secretaria->sucursal_id) {
             abort(403, 'No tienes una sucursal asignada para gestionar la agenda.');
         }
+
+        //Obtenemos la sucursal
         $sucursalId = $secretaria->sucursal_id;
 
+        //Obtenemos las citas de la sucursal
         $citas = Cita::with([
             'mascota.cliente.usuario',
             'veterinario.usuario',
@@ -692,18 +755,28 @@ class CitaController extends Controller
             'prestacion.categoriaPrestacion',
             'equipoMedico.rol',
         ])
+            //Aplicamos filtros
             ->where('fecha_hora', '>=', Carbon::today())
-            ->whereHas('veterinario', fn ($q) => $q->where('sucursal_id', $sucursalId))
+            ->whereHas('veterinario', fn($q) => $q->where('sucursal_id', $sucursalId))
             ->orderBy('fecha_hora', 'asc')
             ->get();
 
+        //Agregamos el atributo alertas_secretaria a las citas
         $this->adjuntarAlertasSecretaria($citas);
 
+        //Obtenemos las mascotas de la sucursal
         $mascotas = Mascota::with('cliente.usuario', 'raza.especie')->get();
+
+        //Obtenemos las sucursales
         $sucursales = Sucursal::where('id', $sucursalId)->with(['veterinarios.usuario', 'boxes'])->orderBy('nombre')->get();
+
+        //Obtenemos las prestaciones de la sucursal
         $prestaciones = Prestacion::where('sucursal_id', $sucursalId)->with(['sucursal', 'especialidad'])->orderBy('nombre')->get();
+
+        //Obtenemos los veterinarios de la sucursal
         $veterinarios = Veterinario::where('sucursal_id', $sucursalId)->with('usuario')->get();
 
+        //Retornamos la vista con las citas y los datos necesarios
         return Inertia::render('Secretaria/Calendario', [
             'citas' => $citas,
             'mascotas' => $mascotas,
@@ -713,16 +786,15 @@ class CitaController extends Controller
         ]);
     }
 
-    /**
-     * Adjunta el atributo alertas_secretaria a cada cita,
-     * solo cuando el usuario autenticado es secretaria.
-     */
+
     private function adjuntarAlertasSecretaria($citas): void
     {
-        if (!auth()->user()->isAdmin() && auth()->user()->rol?->nombre_interno !== 'secretaria') {
+        //Verificamos si el usuario es secretaria
+        if (!auth()->user()->isSecretaria()) {
             return;
         }
 
+        //Agregamos el atributo alertas_secretaria a las citas
         $citas->each(function (Cita $cita) {
             $cita->append('alertas_secretaria');
         });

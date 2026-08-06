@@ -1,4 +1,7 @@
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: MisPagos -->
+    <!-- ================================================================================== -->
     <Head title="Mis Pagos y Honorarios" />
 
     <AuthenticatedLayout>
@@ -41,9 +44,12 @@
                         </div>
                         <div class="card-body p-0">
                             <div class="list-group list-group-flush rounded-bottom-4">
+                                <!-- DIRECTIVA (v-if): Renderizado condicional basado en "historial.length === 0" -->
                                 <div v-if="historial.length === 0" class="p-4 text-center text-muted small">
                                     No tienes pagos anteriores registrados.
                                 </div>
+                                <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
+                                <!-- EVENTO (@click): Dispara la acción "verMes(pago.mes, pago.anio)" -->
                                 <button v-for="pago in historial" :key="pago.id" 
                                      @click="verMes(pago.mes, pago.anio)"
                                      class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-4 text-start transition-all"
@@ -69,12 +75,17 @@
                             <h5 class="fw-bold mb-0">Detalle de Servicios</h5>
                             
                             <div class="d-flex flex-wrap align-items-center gap-2 d-print-none">
+                                <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "filtroMes" -->
                                 <select v-model="filtroMes" class="form-select form-select-sm rounded-pill shadow-sm" style="width: auto;">
+                                    <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                                     <option v-for="(nombre, num) in meses" :key="num" :value="num">{{ nombre }}</option>
                                 </select>
+                                <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "filtroAnio" -->
                                 <select v-model="filtroAnio" class="form-select form-select-sm rounded-pill shadow-sm" style="width: auto;">
+                                    <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                                     <option v-for="anio in aniosDisponibles" :key="anio" :value="anio">{{ anio }}</option>
                                 </select>
+                                <!-- EVENTO (@click): Dispara la acción "verMes(filtroMes, filtroAnio)" -->
                                 <button @click="verMes(filtroMes, filtroAnio)" class="btn btn-sm btn-primary rounded-pill shadow-sm px-3 fw-medium">
                                     <i class="bi bi-search me-1"></i> Filtrar
                                 </button>
@@ -92,6 +103,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    <!-- DIRECTIVA (v-if): Renderizado condicional basado en "desglose.length === 0" -->
                                     <tr v-if="desglose.length === 0">
                                         <td colspan="5" class="text-center py-5">
                                             <div class="text-muted mb-0">
@@ -100,6 +112,7 @@
                                             </div>
                                         </td>
                                     </tr>
+                                    <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                                     <tr v-for="item in desglose" :key="item.id">
                                         <td class="ps-4 text-muted small">{{ formatearFecha(item.fecha) }}</td>
                                         <td>
@@ -128,15 +141,24 @@
 </template>
 
 <script>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3)
+// ==================================================================================
+
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 
+// ------------------------------------------------------------------------------
+// EXPORT DEFAULT: Definición principal del componente
+// ------------------------------------------------------------------------------
 export default {
+    // COMPONENTES (COMPONENTS): Registro de componentes importados
     components: {
         AuthenticatedLayout,
         Head,
         Link
     },
+    // PROPIEDADES (PROPS): Datos inyectados desde el componente padre o estado
     props: {
         historial: Array,
         desglose_inicial: Array,
@@ -145,6 +167,7 @@ export default {
         mes_inicial: [Number, String],
         anio_inicial: [Number, String]
     },
+    // ESTADO REACTIVO (DATA): Variables locales del componente
     data() {
         return {
             filtroMes: this.mes_inicial,
@@ -155,6 +178,7 @@ export default {
             }
         };
     },
+    // OBSERVADORES (WATCH): Reaccionan a cambios en propiedades o variables
     watch: {
         mes_inicial(newVal) {
             this.filtroMes = newVal;
@@ -163,6 +187,7 @@ export default {
             this.filtroAnio = newVal;
         }
     },
+    // PROPIEDADES COMPUTADAS (COMPUTED): Variables reactivas que dependen de otras
     computed: {
         desglose() {
             return this.desglose_inicial;
@@ -186,6 +211,7 @@ export default {
             return Array.from(anios).sort((a,b) => b - a);
         }
     },
+    // MÉTODOS (METHODS): Bloque de funciones y eventos
     methods: {
         formatoDinero(valor) {
             if (!valor) return '0';

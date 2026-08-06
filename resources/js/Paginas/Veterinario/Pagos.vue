@@ -1,4 +1,7 @@
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: Pagos -->
+    <!-- ================================================================================== -->
     <Head title="Realizar Pagos" />
 
     <AuthenticatedLayout>
@@ -22,11 +25,13 @@
                     <div class="row g-3">
                         <div class="col-12 col-md-3">
                             <label class="form-label text-muted small fw-semibold text-uppercase tracking-wide">Rol Personal</label>
+                            <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "filtros.rol_id" -->
                             <select 
                                 class="form-select form-select-lg rounded-3 shadow-none border-light bg-light" 
                                 v-model="filtros.rol_id"
                                 @change="aplicarFiltros"
                             >
+                                <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                                 <option v-for="r in roles" :key="r.id" :value="r.id">
                                     {{ r.nombre_legible }}
                                 </option>
@@ -34,11 +39,13 @@
                         </div>
                         <div class="col-12 col-md-3">
                             <label class="form-label text-muted small fw-semibold text-uppercase tracking-wide">Mes</label>
+                            <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "filtros.mes" -->
                             <select 
                                 class="form-select form-select-lg rounded-3 shadow-none border-light bg-light" 
                                 v-model="filtros.mes"
                                 @change="aplicarFiltros"
                             >
+                                <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                                 <option v-for="(nombre, num) in meses" :key="num" :value="parseInt(num)">
                                     {{ nombre }}
                                 </option>
@@ -46,17 +53,20 @@
                         </div>
                         <div class="col-12 col-md-3">
                             <label class="form-label text-muted small fw-semibold text-uppercase tracking-wide">Año</label>
+                            <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "filtros.anio" -->
                             <select 
                                 class="form-select form-select-lg rounded-3 shadow-none border-light bg-light" 
                                 v-model="filtros.anio"
                                 @change="aplicarFiltros"
                             >
+                                <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                                 <option v-for="a in anios" :key="a" :value="parseInt(a)">
                                     {{ a }}
                                 </option>
                             </select>
                         </div>
                         <div class="col-12 col-md-3 d-flex align-items-end">
+                            <!-- EVENTO (@click): Dispara la acción "imprimirReporte" -->
                             <button 
                                 class="btn btn-primary btn-lg rounded-3 w-100 shadow-sm"
                                 @click="imprimirReporte"
@@ -93,6 +103,7 @@
                             </tr>
                         </thead>
                         <tbody>
+                            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "cargando" -->
                             <tr v-if="cargando">
                                 <td colspan="4" class="text-center py-5">
                                     <div class="spinner-border text-primary" role="status"></div>
@@ -115,6 +126,7 @@
                                     </div>
                                 </td>
                             </tr>
+                            <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                             <tr v-for="vet in liquidacionesFiltradas" :key="vet.id" class="border-bottom cursor-pointer hover-bg-light transition-all" @click="irADetalle(vet)">
                                 <td class="ps-4 py-3">
                                     <div class="d-flex align-items-center">
@@ -141,6 +153,7 @@
                                         <button class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-sm d-print-none" @click.stop="irADetalle(vet)">
                                             Ver Detalle
                                         </button>
+                                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "vet.estado === " -->
                                         <button v-if="vet.estado === 'Pagado'" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm d-print-none" @click.stop="verComprobante(vet)">
                                             <i class="bi bi-receipt me-1"></i> Comprobante
                                         </button>
@@ -155,11 +168,13 @@
             </div>
 
             <!-- MODAL COMPROBANTE DE LIQUIDACION -->
+            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "mostrarModalComprobante && liquidacionSeleccionada" -->
             <div v-if="mostrarModalComprobante && liquidacionSeleccionada" class="modal fade show d-block d-print-none" tabindex="-1" style="background: rgba(0,0,0,0.5);">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content border-0 shadow rounded-4">
                         <div class="modal-header bg-light border-bottom-0 rounded-top-4 p-4">
                             <h5 class="modal-title fw-bold text-dark"><i class="bi bi-receipt me-2 text-primary"></i> Comprobante de Honorarios</h5>
+                            <!-- EVENTO (@click): Dispara la acción "mostrarModalComprobante = false" -->
                             <button type="button" class="btn-close" @click="mostrarModalComprobante = false"></button>
                         </div>
                         <div class="modal-body p-4" id="comprobante-vet-imprimir">
@@ -195,7 +210,9 @@
                             </div>
                         </div>
                         <div class="modal-footer border-top-0 p-4">
+                            <!-- EVENTO (@click): Dispara la acción "mostrarModalComprobante = false" -->
                             <button type="button" class="btn btn-secondary rounded-pill px-4" @click="mostrarModalComprobante = false">Cerrar</button>
+                            <!-- EVENTO (@click): Dispara la acción "imprimirComprobanteVet" -->
                             <button type="button" class="btn btn-primary rounded-pill px-4" @click="imprimirComprobanteVet"><i class="bi bi-printer me-2"></i>Imprimir</button>
                         </div>
                     </div>
@@ -207,18 +224,27 @@
 </template>
 
 <script>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3)
+// ==================================================================================
+
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import axios from 'axios';
 import Paginador from '@/Componentes/Paginador.vue';
 
+// ------------------------------------------------------------------------------
+// EXPORT DEFAULT: Definición principal del componente
+// ------------------------------------------------------------------------------
 export default {
+    // COMPONENTES (COMPONENTS): Registro de componentes importados
     components: {
         AuthenticatedLayout,
         Head,
         Link,
         Paginador
     },
+    // PROPIEDADES (PROPS): Datos inyectados desde el componente padre o estado
     props: {
         liquidaciones_iniciales: {
             type: Object,
@@ -245,6 +271,7 @@ export default {
             required: true
         }
     },
+    // ESTADO REACTIVO (DATA): Variables locales del componente
     data() {
         return {
             liquidacionesData: this.liquidaciones_iniciales,
@@ -265,6 +292,7 @@ export default {
             }
         };
     },
+    // PROPIEDADES COMPUTADAS (COMPUTED): Variables reactivas que dependen de otras
     computed: {
         liquidacionesFiltradas() {
             // Mostramos registros que tengan comisión generada > 0 para evitar filas vacías irrelevantes
@@ -277,9 +305,11 @@ export default {
             return this.meses[this.filtros.mes] || '';
         }
     },
+    // CICLO DE VIDA (MOUNTED): Se ejecuta al cargar el componente en el DOM
     mounted() {
         this.aplicarFiltros();
     },
+    // MÉTODOS (METHODS): Bloque de funciones y eventos
     methods: {
         verComprobante(vet) {
             this.liquidacionSeleccionada = vet;

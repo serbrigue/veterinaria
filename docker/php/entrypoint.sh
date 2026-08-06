@@ -13,6 +13,8 @@ echo "============================================"
 # 1. Esperar a que MySQL esté disponible
 # -----------------------------------------------------------
 echo "⏳ Esperando a MySQL en ${DB_HOST}:${DB_PORT}..."
+
+#Una vez que MySQL esté disponible, se ejecutará el siguiente comando para verificar la conexión
 until php -r "
     try {
         new PDO(
@@ -33,6 +35,7 @@ echo "✅ MySQL disponible."
 # -----------------------------------------------------------
 # 2. Instalar dependencias Composer si no existen
 # -----------------------------------------------------------
+#Si no existe la carpeta vendor, se instalarán las dependencias de Composer
 if [ ! -d "vendor" ]; then
     echo "📦 Instalando dependencias Composer..."
     composer install \
@@ -41,6 +44,7 @@ if [ ! -d "vendor" ]; then
         --prefer-dist \
         --optimize-autoloader
 else
+    #Si ya existe la carpeta vendor, se omitirá el comando composer install
     echo "📦 Vendor ya existe, omitiendo composer install."
 fi
 
@@ -58,7 +62,10 @@ rm -f bootstrap/cache/routes*.php
 # -----------------------------------------------------------
 # 4. Generar APP_KEY si está vacía
 # -----------------------------------------------------------
+
+#Buscar el valor de APP_KEY en el archivo .env
 APP_KEY_VALUE=$(grep "^APP_KEY=" .env | cut -d '=' -f2 | tr -d '[:space:]')
+#Si APP_KEY está vacía, se generará una nueva
 if [ -z "$APP_KEY_VALUE" ]; then
     echo "🔑 APP_KEY vacía — generando..."
     php artisan key:generate --force --no-interaction
@@ -66,6 +73,7 @@ if [ -z "$APP_KEY_VALUE" ]; then
     APP_KEY_VALUE=$(grep "^APP_KEY=" .env | cut -d '=' -f2 | tr -d '[:space:]')
     echo "✅ APP_KEY generada correctamente."
 else
+    #Si APP_KEY ya está configurada, se omitirá el comando key:generate
     echo "🔑 APP_KEY ya configurada."
 fi
 

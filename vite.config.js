@@ -44,5 +44,6 @@ export default defineConfig({
             usePolling: true,   // necesario en Linux con bind mounts
             interval: 300,      // ms entre comprobaciones
         },
+        cors: true,
     },
 });

@@ -1,48 +1,58 @@
 # =============================================================
-# Google Compute Engine (VM e2-micro — 100% Capa Gratuita)
+# Google Compute Engine (Máquina Virtual / Servidor)
 # =============================================================
+# Este archivo levanta el servidor real (la computadora en la nube)
+# donde correrá nuestro código, base de datos y contenedores Docker.
 
-# Dirección IP Pública Estática y Reservada en Santiago de Chile
+# Reservamos una IP Pública Estática
+# Esto asegura que la IP de nuestro servidor nunca cambie, incluso si lo reiniciamos.
 resource "google_compute_address" "vet_static_ip" {
   name   = "vet-static-ip-${random_id.bucket_suffix.hex}"
   region = var.region
 }
 
+# Configuracion y lanzamiento de la Máquina Virtual
 resource "google_compute_instance" "vet_vm" {
   name         = "vet-server-cl"
-  machine_type = var.machine_type # e2-medium (4 GB RAM, 2 vCPU) para máxima velocidad
+  machine_type = var.machine_type
   zone         = var.zone
 
+  # Asignamos la etiqueta 'web-server' para que apliquen las reglas de firewall (puertos 80, 443, 22).
   tags = ["web-server"]
 
+  # Configuración del Disco Duro (Sistema Operativo)
   boot_disk {
     initialize_params {
-      image = "ubuntu-os-cloud/ubuntu-2404-lts-amd64"
-      size  = 30 # 30 GB SSD Balanceado para alto rendimiento en base de datos
+      image = "ubuntu-os-cloud/ubuntu-2404-lts-amd64" # Usamos Ubuntu 24.04 LTS
+      size  = 30                                      # Tamaño de 30 GB SSD Balanceado
       type  = "pd-balanced"
     }
   }
 
+  # Configuración de Red
   network_interface {
     network    = google_compute_network.vpc.id
     subnetwork = google_compute_subnetwork.subnet.id
 
-    # Asigna la IP estática reservada al servidor
+    # Vinculamos la IP Estática que reservamos en el Paso 6.1
     access_config {
       nat_ip = google_compute_address.vet_static_ip.address
     }
   }
 
-  # Permisos para que la VM pueda leer/escribir en Cloud Storage y enviar logs
+  # Permisos que tendrá la propia Máquina Virtual hacia otros servicios de Google
   service_account {
     scopes = [
-      "https://www.googleapis.com/auth/devstorage.read_write",
-      "https://www.googleapis.com/auth/logging.write",
-      "https://www.googleapis.com/auth/monitoring.write"
+      "https://www.googleapis.com/auth/devstorage.read_write", # Escribir en Storage
+      "https://www.googleapis.com/auth/logging.write",         # Enviar logs a la consola de GCP
+      "https://www.googleapis.com/auth/monitoring.write"       # Enviar métricas de CPU/RAM
     ]
   }
 
-  # Script de arranque procesado por Terraform (inyección de variables)
+  # Paso 6.3: Inyección del Script de Arranque (Startup Script)
+  # Este script se ejecutará automáticamente la primera vez que la máquina encienda.
+  # Aquí le inyectamos todas nuestras variables (contraseñas, claves, nombre del bucket, etc.)
+  # para que el servidor se configure a sí mismo sin intervención humana.
   metadata_startup_script = templatefile("${path.module}/startup-script.sh", {
     db_name          = var.db_name
     db_username      = var.db_username
@@ -59,7 +69,8 @@ resource "google_compute_instance" "vet_vm" {
     mail_password    = var.mail_password
   })
 
-  # Asegurar que el firewall y la red estén listos antes de lanzar la VM
+  # Dependencias: Le decimos a Terraform que NO cree el servidor hasta que 
+  # el firewall esté listo, para no dejar la máquina incomunicada.
   depends_on = [
     google_compute_firewall.allow_http,
     google_compute_firewall.allow_ssh

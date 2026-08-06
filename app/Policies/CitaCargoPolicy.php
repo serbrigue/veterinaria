@@ -5,6 +5,14 @@ namespace App\Policies;
 use App\Models\CitaCargo;
 use App\Models\User;
 
+/*
+|--------------------------------------------------------------------------
+| Cita Cargo Policy
+|--------------------------------------------------------------------------
+| Administrador: Acceso total automático a todas las acciones.
+| Veterinario: Puede crear, editar y eliminar cargos de cita solo si cuenta con el permiso 'gestionar-cargos-sucursal'.
+| Otros roles (Cliente, Secretaria): No tienen permisos para gestionar los cargos de citas.
+*/
 class CitaCargoPolicy
 {
     // El filtro before se ejecuta antes de cualquier otro método de la Policy.

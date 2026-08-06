@@ -1,11 +1,17 @@
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: BarraFiltros                                                            -->
+    <!-- ================================================================================== -->
+     
     <div class="bg-light p-3 rounded-4 border border-light mb-4 shadow-sm">
         <div class="row g-3 align-items-end">
             <!-- Espacio para los filtros inyectados -->
             <slot />
             
             <!-- Botón de Limpiar Filtros -->
+            <!-- Se muestra si mostrarLimpiar es true -->
             <div v-if="mostrarLimpiar" :class="claseBotonContenedor">
+                <!-- Dispara la acción "$emit" al dar click para el componente padre -->
                 <button 
                     type="button" 
                     class="btn btn-outline-secondary btn-sm w-100 rounded-pill px-3 py-2 fw-medium shadow-none transition-all" 
@@ -22,8 +28,16 @@
 </template>
 
 <script>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3)
+// ==================================================================================
+
+// ------------------------------------------------------------------------------
+// EXPORT DEFAULT: Definición principal del componente
+// ------------------------------------------------------------------------------
 export default {
     name: 'BarraFiltros',
+    // PROPIEDADES: Datos inyectados desde el componente padre o estado
     props: {
         mostrarLimpiar: {
             type: Boolean,

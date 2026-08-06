@@ -1,4 +1,7 @@
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: Listado -->
+    <!-- ================================================================================== -->
     <Head title="Mascotas" />
     <AuthenticatedLayout>
         <div class="container py-4">
@@ -12,14 +15,18 @@
                         <h1 class="h4 mb-0 fw-bold text-dark">Gestión de Razas</h1>
                     </div>
                     <div class="d-flex gap-2 align-items-center">
+                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "$isAdmin() || $isSecretaria()" -->
                         <template v-if="$isAdmin() || $isSecretaria()">
                             <a href="/api/export/razas" class="btn btn-light text-success fw-bold rounded-pill shadow-sm btn-hover-elevate">
                                 <i class="bi bi-download me-1"></i> Exportar
                             </a>
+                            <!-- EVENTO (@click): Dispara la acción "mostrarModalImportar = true" -->
                             <button type="button" class="btn btn-light text-primary fw-bold rounded-pill shadow-sm btn-hover-elevate" @click="mostrarModalImportar = true">
                                 <i class="bi bi-upload me-1"></i> Importar
                             </button>
                         </template>
+                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "esVeterinario" -->
+                        <!-- EVENTO (@click): Dispara la acción "abrirModalCrear" -->
                         <button v-if="esVeterinario" type="button" class="btn btn-primary fw-bold rounded-pill shadow-sm btn-hover-elevate px-4" @click="abrirModalCrear">
                             <i class="bi bi-plus-lg me-1"></i> Nueva Raza
                         </button>
@@ -36,6 +43,7 @@
                         <!-- Búsqueda de texto -->
                         <div class="col-12 col-md-6 col-lg-4">
                             <label class="form-label small fw-bold text-secondary mb-1">Buscar por nombre</label>
+                            <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "filtroTexto" -->
                             <input 
                                 type="text" 
                                 v-model="filtroTexto" 
@@ -48,12 +56,14 @@
                         <!-- Especie -->
                         <div class="col-12 col-md-4 col-lg-3">
                             <label class="form-label small fw-bold text-secondary mb-1">Especie</label>
+                            <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "filtroEspecie" -->
                             <select 
                                 v-model="filtroEspecie" 
                                 @change="obtenerRazas()" 
                                 class="form-select form-select-sm"
                             >
                                 <option value="">Todas las especies</option>
+                                <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                                 <option
                                     v-for="op in especies"
                                     :key="op.id"
@@ -83,7 +93,10 @@
                         @limpiar="limpiarFiltros()"
                     />
 
+                    <!-- DIRECTIVA (v-if): Renderizado condicional basado en "!cargando && !listaVacia && !sinResultadosFiltro" -->
+
                     <div v-if="!cargando && !listaVacia && !sinResultadosFiltro" class="row g-4">
+                        <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                         <div v-for="raza in razas" :key="raza.id" class="col-12 col-md-6 col-lg-4 col-xl-3">
                             <TarjetaEntidad
                                 :titulo="raza.nombre"
@@ -124,6 +137,7 @@
             >
                 <div class="mb-3">
                     <label for="nombre" class="form-label fw-semibold text-secondary small text-uppercase">Nombre</label>
+                    <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "formulario.nombre" -->
                     <input
                         id="nombre"
                         v-model="formulario.nombre"
@@ -133,12 +147,14 @@
                         :class="{ 'is-invalid': formulario.errors.nombre }"
                         required
                     />
+                    <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.nombre" -->
                     <div v-if="formulario.errors.nombre" class="invalid-feedback">
                         {{ formulario.errors.nombre }}
                     </div>
                 </div>
                 <div class="mb-3">
                     <label for="descripcion" class="form-label fw-semibold text-secondary small text-uppercase">Descripción</label>
+                    <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "formulario.descripcion" -->
                     <textarea
                         id="descripcion"
                         v-model="formulario.descripcion"
@@ -148,12 +164,14 @@
                         :class="{ 'is-invalid': formulario.errors.descripcion }"
                         required
                     ></textarea>
+                    <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.descripcion" -->
                     <div v-if="formulario.errors.descripcion" class="invalid-feedback">
                         {{ formulario.errors.descripcion }}
                     </div>
                 </div>
                 <div class="mb-3">
                     <label for="especie_id" class="form-label fw-semibold text-secondary small text-uppercase">Especie</label>
+                    <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "formulario.especie_id" -->
                     <select
                         id="especie_id"
                         v-model="formulario.especie_id"
@@ -162,6 +180,7 @@
                         required
                     >
                         <option value="" disabled>Seleccione una especie</option>
+                        <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                         <option
                             v-for="especie in especies"
                             :key="especie.id"
@@ -170,6 +189,7 @@
                             {{ especie.nombre }}
                         </option>
                     </select>
+                    <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.especie_id" -->
                     <div v-if="formulario.errors.especie_id" class="invalid-feedback">
                         {{ formulario.errors.especie_id }}
                     </div>
@@ -185,9 +205,11 @@
                         @change="seleccionarFoto"
                         :class="{ 'is-invalid': formulario.errors.foto }"
                     />
+                    <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.foto" -->
                     <div v-if="formulario.errors.foto" class="invalid-feedback">
                         {{ formulario.errors.foto }}
                     </div>
+                    <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.imagen" -->
                     <div v-if="formulario.imagen" class="mt-2 text-center">
                         <img :src="formulario.imagen" class="img-thumbnail" style="max-height: 120px;" alt="Vista previa de la raza" />
                     </div>
@@ -206,6 +228,10 @@
 </template>
 
 <script>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3)
+// ==================================================================================
+
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import IndicadorCarga from '@/Componentes/IndicadorCarga.vue';
@@ -216,7 +242,11 @@ import BarraFiltros from '@/Componentes/BarraFiltros.vue';
 import TarjetaEntidad from '@/Componentes/TarjetaEntidad.vue';
 import ModalImportarSimple from '@/Componentes/ModalImportarSimple.vue';
 
+// ------------------------------------------------------------------------------
+// EXPORT DEFAULT: Definición principal del componente
+// ------------------------------------------------------------------------------
 export default {
+    // COMPONENTES (COMPONENTS): Registro de componentes importados
     components: {
         AuthenticatedLayout,
         Head,
@@ -229,12 +259,14 @@ export default {
         TarjetaEntidad,
         ModalImportarSimple,
     },
+    // PROPIEDADES (PROPS): Datos inyectados desde el componente padre o estado
     props: {
         especies:{
             type:Array,
             default:()=> [],
         },
     },
+    // ESTADO REACTIVO (DATA): Variables locales del componente
     data() {
         return {
             cargando: false,
@@ -259,6 +291,7 @@ export default {
             },
         }
     },
+    // PROPIEDADES COMPUTADAS (COMPUTED): Variables reactivas que dependen de otras
     computed: {
         esVeterinario() {
             const user = this.$page.props.auth.user;
@@ -283,6 +316,7 @@ export default {
             return !this.cargando && this.razas.length === 0 && (this.filtroTexto || this.filtroEspecie);
         },
     },
+    // MÉTODOS (METHODS): Bloque de funciones y eventos
     methods: {
         seleccionarFoto(e) {
             const archivos = e.target.files;
@@ -419,7 +453,8 @@ export default {
             .finally(() => { this.formulario.processing = false });
         },
     },
-    mounted(){
+    // CICLO DE VIDA (MOUNTED): Se ejecuta al cargar el componente en el DOM
+    mounted() {
         this.obtenerRazas();
     },
 }

@@ -1,4 +1,7 @@
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: DashboardCliente -->
+    <!-- ================================================================================== -->
     <div class="row g-4 mb-4">
         <!-- Widget 1: Mascotas -->
         <div class="col-md-6">
@@ -51,6 +54,7 @@
         </div>
 
         <!-- Widget 4: Próxima Cita (Destacado) -->
+        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "proximasCitas && proximasCitas.fecha_hora" -->
         <div class="col-md-6" v-if="proximasCitas && proximasCitas.fecha_hora">
             <div class="card border-0 shadow-sm h-100 rounded-4 border-start border-info border-4">
                 <div class="card-body p-4">
@@ -87,6 +91,7 @@
         </div>
 
         <!-- Widget 5: Última Cita (Historial) -->
+        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "historialClinico && historialClinico.id" -->
         <div class="col-md-6" v-if="historialClinico && historialClinico.id">
             <div class="card border-0 shadow-sm h-100 rounded-4 border-start border-secondary border-4">
                 <div class="card-body p-4">
@@ -125,13 +130,22 @@
 </template>
 
 <script>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3)
+// ==================================================================================
+
 import { Link } from '@inertiajs/vue3';
 
+// ------------------------------------------------------------------------------
+// EXPORT DEFAULT: Definición principal del componente
+// ------------------------------------------------------------------------------
 export default {
     name: 'DashboardCliente',
+    // COMPONENTES (COMPONENTS): Registro de componentes importados
     components: {
         Link,
     },
+    // PROPIEDADES (PROPS): Datos inyectados desde el componente padre o estado
     props: {
         proximasCitas: {
             type: Object,
@@ -146,6 +160,7 @@ export default {
             type: Object,
         },
     },
+    // MÉTODOS (METHODS): Bloque de funciones y eventos
     methods: {
         formatearDia(fechaIso) {
             if (!fechaIso) return '--';

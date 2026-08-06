@@ -4,6 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Modelo Box
+ *
+ * Representa a la tabla `boxes` en la base de datos.
+ * Función: Representa los boxes, salas o consultorios físicos disponibles en cada sucursal para atender citas.
+ */
 class Box extends Model
 {
     // Trait para limpiar el cache

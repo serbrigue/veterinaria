@@ -14,7 +14,10 @@ use Inertia\Inertia;
 
 class BoxController extends Controller
 {
+    // Traits
     use HandlesPhotoUploads;
+
+    //Muestra el listado de todos los boxes
     public function listado(Request $request)
     {
         // Obtenemos todos los boxes con eager loading y lo cargamos en caché por 30 minutos
@@ -38,14 +41,14 @@ class BoxController extends Controller
         // Verificamos si la solicitud es en formato JSON
         if ($request->wantsJson()) {
             $boxesFiltrados = $boxes;
-            
+
             if ($request->input('texto')) {
                 $texto = strtolower($request->input('texto'));
-                $boxesFiltrados = $boxesFiltrados->filter(function($box) use ($texto) {
+                $boxesFiltrados = $boxesFiltrados->filter(function ($box) use ($texto) {
                     return str_contains(strtolower($box->nombre), $texto);
                 })->values();
             }
-            
+
             if ($request->input('categoria_prestacion_id')) {
                 $boxesFiltrados = $boxesFiltrados->where('categoria_prestacion_id', $request->input('categoria_prestacion_id'))->values();
             }

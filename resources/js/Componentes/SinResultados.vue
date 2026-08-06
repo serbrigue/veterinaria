@@ -1,7 +1,14 @@
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: SinResultados -->
+    <!-- ================================================================================== -->
+
+    <!-- Renderizado condicional basado en "visible" -->
     <div v-if="visible" class="text-center py-5 bg-light rounded-4 border border-dashed">
         <i class="bi bi-search text-muted display-4 d-block mb-3 opacity-50"></i>
         <p class="text-muted mb-3 fw-medium">{{ mensaje }}</p>
+
+        <!-- Evento que emite la acción "limpiar" -->
         <button 
             type="button" 
             class="btn btn-outline-secondary rounded-pill px-4" 
@@ -13,8 +20,16 @@
 </template>
 
 <script>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3)
+// ==================================================================================
+
+// ------------------------------------------------------------------------------
+// EXPORT DEFAULT: Definición principal del componente
+// ------------------------------------------------------------------------------
 export default {
     name: 'SinResultados',
+    // PROPIEDADES: Datos inyectados desde el componente padre o estado
     props: {
         visible: {
             type: Boolean,

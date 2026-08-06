@@ -1,4 +1,7 @@
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: Detalle -->
+    <!-- ================================================================================== -->
     <Head :title="`Veterinario - ${veterinario?.usuario?.name || 'Detalle'}`" />
     <AuthenticatedLayout>
         <div class="container py-4">
@@ -22,12 +25,15 @@
             </nav>
 
             <!-- Acciones de Agenda (Horario + Bloqueos) -->
+            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "$isAdmin()" -->
             <BarraAccionesAgenda
                 v-if="$isAdmin()"
                 :veterinario="veterinario"
                 :especialidades="especialidades"
                 :sucursales="sucursales"
             />
+
+            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "veterinario" -->
 
             <div v-if="veterinario" class="row g-4">
                 <!-- Tarjeta Principal de Información -->
@@ -36,6 +42,7 @@
                         <div class="position-relative bg-light text-center py-5" style="min-height: 200px;">
                             <div class="position-absolute bottom-0 start-0 w-100 h-50 bg-gradient-dark pointer-events-none"></div>
                             <div class="d-flex align-items-center justify-content-center flex-column position-relative z-index-1 mt-3">
+                                <!-- DIRECTIVA (v-if): Renderizado condicional basado en "veterinario.foto_perfil_url" -->
                                 <img v-if="veterinario.foto_perfil_url" :src="veterinario.foto_perfil_url" class="rounded-circle shadow-lg mb-3" style="width: 140px; height: 140px; object-fit: cover; border: 4px solid white;" alt="Foto de perfil">
                                 <div v-else class="rounded-circle shadow-lg mb-3 bg-primary text-white d-flex align-items-center justify-content-center" style="width: 140px; height: 140px; border: 4px solid white;">
                                     <i class="bi bi-person-fill display-1"></i>
@@ -107,6 +114,7 @@
                                         <div>
                                             <h6 class="text-muted small text-uppercase mb-1 fw-bold">Sucursal Principal</h6>
                                             <p class="mb-0 fw-medium text-dark">
+                                                <!-- DIRECTIVA (v-if): Renderizado condicional basado en "veterinario.sucursal" -->
                                                 <span v-if="veterinario.sucursal" class="badge bg-light text-dark border">{{ veterinario.sucursal.nombre }}</span>
                                                 <span v-else class="text-muted fst-italic">No asignada</span>
                                             </p>
@@ -118,6 +126,8 @@
                             <hr class="my-4 text-muted opacity-25">
 
                             <!-- Actividad o Info Adicional (Placeholder) -->
+                            
+                            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "$isStaff()" -->
                             
                             <div v-if="$isStaff()" class="row g-3">
                                 <h3 class="h6 mb-3 text-secondary fw-bold text-uppercase">Estadísticas</h3>
@@ -149,6 +159,7 @@
             </div>
 
             <!-- Bloqueos de Emergencia (Solo Admin) -->
+            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "veterinario && $isAdmin()" -->
             <div v-if="veterinario && $isAdmin()" class="card border-0 shadow-sm rounded-4 mt-4">
                 <div class="card-header bg-white border-bottom-0 p-4 pb-0 d-flex justify-content-between align-items-center">
                     <div>
@@ -157,6 +168,7 @@
                     </div>
                 </div>
                 <div class="card-body p-4">
+                    <!-- DIRECTIVA (v-if): Renderizado condicional basado en "bloqueos.length === 0" -->
                     <div v-if="bloqueos.length === 0" class="text-center py-5 bg-light rounded-4">
                         <i class="bi bi-calendar-x text-muted display-4 d-block mb-3 opacity-50"></i>
                         <p class="text-muted mb-0">No hay bloqueos de horario registrados para este veterinario.</p>
@@ -175,10 +187,12 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                                 <tr v-for="bloqueo in bloqueos" :key="bloqueo.id" class="border-bottom border-light">
                                     <td class="px-4 py-3 fw-semibold text-dark">{{ formatearFechaString(bloqueo.fecha_inicio) }}</td>
                                     <td class="px-4 py-3 fw-semibold text-dark">{{ formatearFechaString(bloqueo.fecha_fin) }}</td>
                                     <td class="px-4 py-3">
+                                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "!bloqueo.hora_inicio && !bloqueo.hora_fin" -->
                                         <span v-if="!bloqueo.hora_inicio && !bloqueo.hora_fin" class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3 py-1.5 fw-medium">
                                             Todo el día
                                         </span>
@@ -187,12 +201,14 @@
                                         </span>
                                     </td>
                                     <td class="px-4 py-3">
+                                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "bloqueo.especialidad" -->
                                         <span v-if="bloqueo.especialidad" class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1.5 fw-medium">
                                             {{ bloqueo.especialidad.nombre }}
                                         </span>
                                         <span v-else class="text-muted small">Todas</span>
                                     </td>
                                     <td class="px-4 py-3">
+                                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "bloqueo.sucursal" -->
                                         <span v-if="bloqueo.sucursal" class="badge bg-info bg-opacity-10 text-info rounded-pill px-3 py-1.5 fw-medium">
                                             {{ bloqueo.sucursal.nombre }}
                                         </span>
@@ -200,6 +216,7 @@
                                     </td>
                                     <td class="px-4 py-3 text-muted">{{ bloqueo.motivo }}</td>
                                     <td class="px-4 py-3 text-end">
+                                        <!-- EVENTO (@click): Dispara la acción "confirmarEliminarBloqueo(bloqueo.id)" -->
                                         <button @click="confirmarEliminarBloqueo(bloqueo.id)" class="btn btn-outline-danger btn-sm rounded-circle p-1 d-inline-flex align-items-center justify-content-center hover-scale transition-all" style="width: 32px; height: 32px;" title="Eliminar Bloqueo">
                                             <i class="bi bi-trash"></i>
                                         </button>
@@ -217,17 +234,26 @@
 </template>
 
 <script>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3)
+// ==================================================================================
+
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import BarraAccionesAgenda from '@/Componentes/BarraAccionesAgenda.vue';
 
+// ------------------------------------------------------------------------------
+// EXPORT DEFAULT: Definición principal del componente
+// ------------------------------------------------------------------------------
 export default {
+    // COMPONENTES (COMPONENTS): Registro de componentes importados
     components: {
         AuthenticatedLayout,
         Head,
         Link,
         BarraAccionesAgenda,
     },
+    // PROPIEDADES (PROPS): Datos inyectados desde el componente padre o estado
     props: {
         veterinario: {
             type: Object,
@@ -258,6 +284,8 @@ export default {
             default: () => [],
         },
     },
+
+    // MÉTODOS (METHODS): Bloque de funciones y eventos
 
     methods: {
         formatearFechaString(fechaStr) {

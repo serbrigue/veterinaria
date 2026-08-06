@@ -1,4 +1,7 @@
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: DashboardAdmin -->
+    <!-- ================================================================================== -->
     <div class="row g-4 mb-4">
         <!-- Widget 1: Resumen General -->
         <div class="col-md-6">
@@ -53,10 +56,18 @@
 </template>
 
 <script>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3)
+// ==================================================================================
+
 import { Link } from '@inertiajs/vue3';
 
+// ------------------------------------------------------------------------------
+// EXPORT DEFAULT: Definición principal del componente
+// ------------------------------------------------------------------------------
 export default {
     name: 'DashboardAdmin',
+    // COMPONENTES (COMPONENTS): Registro de componentes importados
     components: {
         Link,
     },

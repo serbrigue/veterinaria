@@ -11,18 +11,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use App\Http\Requests\ActualizarRestablecerContrasenaApiRequest;
+use App\Http\Requests\GuardarRecuperacionContrasenaApiRequest;
+use App\Http\Requests\GuardarRegistroApiRequest;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 
 class AuthApiController extends Controller
 {
-    public function registrarse(Request $solicitud)
+    public function registrarse(GuardarRegistroApiRequest $solicitud)
     {
-        $solicitud->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
 
         $rolCliente = Rol::where('nombre_interno', 'cliente')->first();
 
@@ -63,9 +61,8 @@ class AuthApiController extends Controller
         return response()->json(['redirect' => '/']);
     }
 
-    public function recuperarContrasena(Request $solicitud)
+    public function recuperarContrasena(GuardarRecuperacionContrasenaApiRequest $solicitud)
     {
-        $solicitud->validate(['email' => 'required|email']);
 
         $estado = Password::sendResetLink($solicitud->only('email'));
 
@@ -78,13 +75,8 @@ class AuthApiController extends Controller
         ]);
     }
 
-    public function restablecerContrasena(Request $solicitud)
+    public function restablecerContrasena(ActualizarRestablecerContrasenaApiRequest $solicitud)
     {
-        $solicitud->validate([
-            'token' => 'required',
-            'email' => 'required|email',
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
 
         $estado = Password::reset(
             $solicitud->only('email', 'password', 'password_confirmation', 'token'),

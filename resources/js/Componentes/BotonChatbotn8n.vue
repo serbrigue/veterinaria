@@ -1,6 +1,9 @@
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: BotonChatbotn8n -->
+    <!-- ================================================================================== -->
     <div>
-        <!-- Floating Action Button (FAB) -->
+        <!-- Se dispara la acción "toggleChat" al dar click -->
         <button 
             class="n8n-chat-fab"
             @click="toggleChat"
@@ -10,10 +13,10 @@
             <img src="/images/chatbot_avatar.png" alt="Avatar Chatbot" class="chat-fab-avatar">
         </button>
 
-        <!-- Chat Window Container -->
+        <!-- Ventana del chat -->
         <transition name="slide-fade">
             <div v-show="isOpen" class="n8n-chat-window">
-                <!-- Header -->
+                <!-- Encabezado -->
                 <div class="n8n-chat-header">
                     <div class="header-info">
                         <div class="avatar-container">
@@ -25,6 +28,7 @@
                             <p class="chat-subtitle">En línea • Soporte Inteligente</p>
                         </div>
                     </div>
+                    <!-- Dispara la acción "closeChat" al dar click -->
                     <button class="close-btn" @click="closeChat" aria-label="Cerrar chat">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -33,7 +37,7 @@
                     </button>
                 </div>
 
-                <!-- Chat Frame Container for n8n -->
+                <!-- Contenedor del chat para n8n -->
                 <div id="n8n-chat-container" class="n8n-chat-body"></div>
             </div>
         </transition>
@@ -41,42 +45,69 @@
 </template>
 
 <script>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3)
+// ==================================================================================
+
+// ------------------------------------------------------------------------------
+// EXPORT DEFAULT: Definición principal del componente
+// ------------------------------------------------------------------------------
 export default {
     name: 'BotonChatbotn8n',
+    // PROPIEDADES: Datos inyectados desde el componente padre o estado
     props: {
+        // URL del webhook de n8n
         webhookUrl: {
             type: String,
             default: 'http://localhost:5678/webhook/7e44df6c-3e7f-4fe6-b885-d97be1daea48/chat'
         }
     },
+    // ESTADO REACTIVO: Variables locales del componente
     data() {
         return {
+            // Controla la visibilidad de la ventana del chat
             isOpen: false,
+            // Controla la inicialización del chat
             chatInitialized: false
         };
     },
+    // CICLO DE VIDA (MOUNTED): Se ejecuta al cargar el componente en el DOM
     mounted() {
+        // Carga los activos de n8n
         this.loadN8nAssets();
     },
+    // MÉTODOS (METHODS): Bloque de funciones y eventos
     methods: {
+        //Carga los activos de n8n
         loadN8nAssets() {
+            // Si ya se cargaron los activos, no hacer nada
             if (document.getElementById('n8n-chat-css')) return;
             
+            // Crear el elemento link para el CSS
             const link = document.createElement('link');
             link.id = 'n8n-chat-css';
             link.rel = 'stylesheet';
             link.href = 'https://cdn.jsdelivr.net/npm/@n8n/chat/dist/style.css';
             document.head.appendChild(link);
         },
+        // Inicializa el chat de forma asíncrona para no bloquear el hilo principal
         async initChat() {
+            // Si el chat ya está inicializado, no hacer nada
             if (this.chatInitialized) return;
             
+            // Intenta inicializar el chat
             try {
+                // Importa el módulo de chat de n8n
                 const module = await import('https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js');
+
+                // Extrae la función createChat del módulo para poder crear el chat
                 const { createChat } = module;
                 
+                // Crea el chat de n8n
                 createChat({
+
                     webhookUrl: this.webhookUrl,
+
                     target: '#n8n-chat-container',
                     mode: 'fullscreen',
                     showWelcomeScreen: true,
@@ -93,17 +124,21 @@ export default {
                 
                 this.chatInitialized = true;
             } catch (error) {
-                // Error handling done silently to satisfy clean logs
+                // El manejo de errores se hace silenciosamente para mantener los logs limpios
             }
         },
+        // Alterna la visibilidad del chat
         toggleChat() {
             this.isOpen = !this.isOpen;
+            // Si el chat está abierto, inicializa el chat
             if (this.isOpen) {
+                // Espera a que el DOM se actualice para poder inicializar el chat
                 this.$nextTick(() => {
                     this.initChat();
                 });
             }
         },
+        // Cierra el chat
         closeChat() {
             this.isOpen = false;
         }

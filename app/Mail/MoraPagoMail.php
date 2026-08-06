@@ -13,23 +13,21 @@ use Illuminate\Database\Eloquent\Collection;
 
 class MoraPagoMail extends Mailable implements ShouldQueue
 {
+    //Traits
     use Queueable, SerializesModels;
 
+    //Propiedades
     public Cliente $cliente;
     public Collection $transacciones;
 
-    /**
-     * Create a new message instance.
-     */
+    //Constructor
     public function __construct(Cliente $cliente, Collection $transacciones)
     {
         $this->cliente = $cliente;
         $this->transacciones = $transacciones;
     }
 
-    /**
-     * Get the message envelope.
-     */
+    //Método que permite configurar el sobre del correo
     public function envelope(): Envelope
     {
         return new Envelope(
@@ -37,9 +35,7 @@ class MoraPagoMail extends Mailable implements ShouldQueue
         );
     }
 
-    /**
-     * Get the message content definition.
-     */
+    //Método que permite configurar el contenido del correo
     public function content(): Content
     {
         return new Content(
@@ -47,9 +43,7 @@ class MoraPagoMail extends Mailable implements ShouldQueue
         );
     }
 
-    /**
-     * Get the attachments for the message.
-     */
+    //Método que permite configurar los archivos adjuntos del correo
     public function attachments(): array
     {
         return [];

@@ -4,6 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Modelo CategoriaPrestacion
+ *
+ * Representa a la tabla `categorias_prestaciones` en la base de datos.
+ * Función: Clasifica las diferentes prestaciones (servicios) que ofrece la clínica veterinaria.
+ */
 class CategoriaPrestacion extends Model
 {
     // Trait para limpiar el cache

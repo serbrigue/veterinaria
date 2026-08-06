@@ -1,4 +1,7 @@
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: Listado -->
+    <!-- ================================================================================== -->
     <Head title="Sucursales" />
     <AuthenticatedLayout>
         <div class="container py-4">
@@ -11,15 +14,19 @@
                         <h1 class="h4 mb-0 fw-bold text-dark">Sucursales</h1>
                     </div>
                     <div class="d-flex gap-2 flex-wrap align-items-center">
+                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "$isAdmin() || $isSecretaria()" -->
                         <template v-if="$isAdmin() || $isSecretaria()">
                             <a href="/api/export/sucursales" class="btn btn-light text-success fw-bold rounded-pill shadow-sm btn-hover-elevate">
                                 <i class="bi bi-download me-1"></i> Exportar
                             </a>
+                            <!-- EVENTO (@click): Dispara la acción "mostrarModalImportar = true" -->
                             <button type="button" class="btn btn-light text-primary fw-bold rounded-pill shadow-sm btn-hover-elevate" @click="mostrarModalImportar = true">
                                 <i class="bi bi-upload me-1"></i> Importar
                             </button>
                         </template>
-                        <button v-if="esAdmin" type="button" class="btn btn-primary fw-bold rounded-pill shadow-sm btn-hover-elevate px-4" @click="abrirModalCrear">
+                        <!-- DIRECTIVA (v-if): Renderizado condicional basado en "esAdmin" -->
+                        <!-- EVENTO (@click): Dispara la acción "abrirModalCrear" -->
+                        <button v-if="$isAdmin()" type="button" class="btn btn-primary fw-bold rounded-pill shadow-sm btn-hover-elevate px-4" @click="abrirModalCrear">
                             <i class="bi bi-plus-lg me-1"></i> Nueva Sucursal
                         </button>
                     </div>
@@ -35,6 +42,7 @@
                         <div class="col-12 col-md-8 col-lg-6">
                             <div class="input-group">
                                 <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                                <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "filtroTexto" -->
                                 <input 
                                     type="text" 
                                     v-model="filtroTexto" 
@@ -58,7 +66,7 @@
                     <EstadoVacio
                         :visible="!cargando && listaVacia"
                         mensaje="No tienes sucursales registradas aún."
-                        :texto-boton="esAdmin ? 'Registrar tu primera sucursal' : ''"
+                        :texto-boton="$isAdmin() ? 'Registrar tu primera sucursal' : ''"
                         icono="bi bi-shop"
                         @accion="abrirModalCrear"
                     />
@@ -70,14 +78,16 @@
                     />
 
                     <!-- Grid de Sucursales -->
+                    <!-- DIRECTIVA (v-if): Renderizado condicional basado en "!cargando && !listaVacia && !sinResultadosFiltro" -->
                     <div v-if="!cargando && !listaVacia && !sinResultadosFiltro" class="row g-4">
+                        <!-- DIRECTIVA (v-for): Renderizado iterativo de lista -->
                         <div v-for="sucursal in sucursalesVisibles" :key="sucursal.id" class="col-12 col-md-6 col-lg-4">
                             <TarjetaEntidad
                                 :titulo="sucursal.nombre"
                                 icono="bi-shop"
                                 :imagen-url="sucursal.imagen_url || '/images/default_sucursal.png'"
                                 :url-detalle="route('sucursales.detalle', sucursal.id)"
-                                :mostrar-acciones="esAdmin"
+                                :mostrar-acciones="$isAdmin()"
                                 @editar="abrirModalEditar(sucursal)"
                                 @eliminar="confirmarEliminar(sucursal)"
                             >
@@ -111,17 +121,23 @@
             >
                 <div class="mb-3">
                     <label class="form-label fw-semibold text-secondary small text-uppercase">Nombre de la Sucursal</label>
+                    <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "formulario.nombre" -->
                     <input v-model="formulario.nombre" type="text" class="form-control bg-light border-0 py-2" placeholder="Ej: Sede Central" :class="{ 'is-invalid': formulario.errors.nombre }" required />
+                    <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.nombre" -->
                     <div v-if="formulario.errors.nombre" class="invalid-feedback">{{ formulario.errors.nombre }}</div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-semibold text-secondary small text-uppercase">Dirección</label>
+                    <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "formulario.direccion" -->
                     <input v-model="formulario.direccion" type="text" class="form-control bg-light border-0 py-2" placeholder="Ej: Av. Principal 123" :class="{ 'is-invalid': formulario.errors.direccion }" required />
+                    <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.direccion" -->
                     <div v-if="formulario.errors.direccion" class="invalid-feedback">{{ formulario.errors.direccion }}</div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-semibold text-secondary small text-uppercase">Teléfono</label>
+                    <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "formulario.telefono" -->
                     <input v-model="formulario.telefono" type="text" class="form-control bg-light border-0 py-2" placeholder="Ej: +56 9 1234 5678" :class="{ 'is-invalid': formulario.errors.telefono }" required />
+                    <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.telefono" -->
                     <div v-if="formulario.errors.telefono" class="invalid-feedback">{{ formulario.errors.telefono }}</div>
                 </div>
                 <div class="mb-3">
@@ -134,9 +150,11 @@
                         @change="seleccionarFoto"
                         :class="{ 'is-invalid': formulario.errors.imagen_url }"
                     />
+                    <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.imagen_url" -->
                     <div v-if="formulario.errors.imagen_url" class="invalid-feedback">
                         {{ formulario.errors.imagen_url }}
                     </div>
+                    <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.imagen_url_preview || formulario.imagen_url" -->
                     <div v-if="formulario.imagen_url_preview || formulario.imagen_url" class="mt-2 text-center">
                         <img :src="formulario.imagen_url_preview || formulario.imagen_url" class="img-thumbnail" style="max-height: 120px;" alt="Vista previa" />
                     </div>
@@ -155,6 +173,10 @@
 </template>
 
 <script>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3)
+// ==================================================================================
+
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import axios from 'axios';
@@ -166,7 +188,11 @@ import BarraFiltros from '@/Componentes/BarraFiltros.vue';
 import TarjetaEntidad from '@/Componentes/TarjetaEntidad.vue';
 import ModalImportarSimple from '@/Componentes/ModalImportarSimple.vue';
 
+// ------------------------------------------------------------------------------
+// EXPORT DEFAULT: Definición principal del componente
+// ------------------------------------------------------------------------------
 export default {
+    // COMPONENTES (COMPONENTS): Registro de componentes importados
     components: {
         AuthenticatedLayout,
         Head,
@@ -179,12 +205,14 @@ export default {
         TarjetaEntidad,
         ModalImportarSimple,
     },
+    // PROPIEDADES (PROPS): Datos inyectados desde el componente padre o estado
     props: {
         sucursales: {
             type: Array,
             default: () => [],
         },
     },
+    // ESTADO REACTIVO (DATA): Variables locales del componente
     data() {
         return {
             cargando: false,
@@ -207,16 +235,15 @@ export default {
             sucursalesVisibles: this.sucursales,
         }
     },
+    // OBSERVADORES (WATCH): Reaccionan a cambios en propiedades o variables
     watch: {
         sucursales(nuevas) {
             this.sucursalesVisibles = nuevas;
         }
     },
+    // PROPIEDADES COMPUTADAS (COMPUTED): Variables reactivas que dependen de otras
     computed: {
-        esAdmin() {
-            const user = this.$page.props.auth.user;
-            return user && (user.rol?.nombre_interno === 'admin');
-        },
+
         textoBotonGuardar() {
             return this.modoEdicion ? 'Guardar Cambios' : 'Crear Sucursal';
         },
@@ -233,6 +260,7 @@ export default {
             return this.sucursalesVisibles.length === 0 && this.filtroTexto !== '';
         },
     },
+    // MÉTODOS (METHODS): Bloque de funciones y eventos
     methods: {
         seleccionarFoto(e) {
             const archivos = e.target.files;

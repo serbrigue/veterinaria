@@ -5,6 +5,14 @@ namespace App\Policies;
 use App\Models\Prestacion;
 use App\Models\User;
 
+/*
+|--------------------------------------------------------------------------
+| Prestacion Policy
+|--------------------------------------------------------------------------
+| Administrador: Acceso total automático para crear, editar y eliminar prestaciones.
+| Cualquier usuario (incluyendo Cliente, Veterinario, Secretaria): Puede ver el listado y detalles de todas las prestaciones sin restricciones.
+| Ningún otro rol aparte del Administrador puede crear o modificar las prestaciones.
+*/
 class PrestacionPolicy
 {
     // El filtro before se ejecuta antes de cualquier otro método de la Policy.

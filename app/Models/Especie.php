@@ -6,6 +6,12 @@ use App\Traits\ClearsCache;
 use App\Traits\HasStorageAttributes;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Modelo Especie
+ *
+ * Representa a la tabla `especies` en la base de datos.
+ * Función: Catálogo de las diferentes especies de animales (Perro, Gato, Exótico) que se atienden.
+ */
 class Especie extends Model
 {
     // Usamos el trait para limpiar la caché

@@ -6,6 +6,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
+/*
+|--------------------------------------------------------------------------
+| HandlesPhotoUploads Trait
+|--------------------------------------------------------------------------
+| Provee métodos reutilizables para gestionar la subida y eliminación de fotos
+| o archivos dentro de la aplicación. Soporta almacenamiento local ('public')
+| y en la nube ('s3'), gestionado automáticamente según la configuración del entorno.
+*/
+
 trait HandlesPhotoUploads
 {
     /**
@@ -19,41 +28,43 @@ trait HandlesPhotoUploads
         return config('filesystems.default');
     }
 
-    /**
-     * Procesa y almacena una foto en el disco configurado (public o s3).
-     */
     protected function procesarFoto(Request $request, string $nombreInput, string $subcarpeta, ?string $urlAnterior = null): ?string
     {
+        // Si no hay archivo, devolvemos la URL anterior
         if (! $request->hasFile($nombreInput)) {
             return $urlAnterior;
         }
 
+        // Si hay URL anterior, la eliminamos
         if ($urlAnterior) {
             $this->eliminarFotoFisica($urlAnterior);
         }
 
+        //Obtenemos el disco de almacenamiento
         $disk = $this->getStorageDisk();
+        //Obtenemos el archivo
         $archivo = $request->file($nombreInput);
-        $nombreArchivo = Str::uuid().'.'.$archivo->getClientOriginalExtension();
+        //Generamos un nombre unico para el archivo
+        $nombreArchivo = Str::uuid() . '.' . $archivo->getClientOriginalExtension();
+        //Almacenamos el archivo
         $ruta = $archivo->storeAs($subcarpeta, $nombreArchivo, $disk);
 
         return Storage::disk($disk)->url($ruta);
     }
 
-    /**
-     * Elimina una foto del disco configurado.
-     * Soporta tanto URLs locales (/storage/...) como URLs de S3.
-     */
+
     protected function eliminarFotoFisica(?string $urlFoto): void
     {
+        // Si no hay URL, no hacemos nada
         if (! $urlFoto) {
             return;
         }
 
+        //Obtenemos el disco de almacenamiento
         $disk = $this->getStorageDisk();
 
+        //Si el disco es s3, extraemos la ruta relativa de la URL completa
         if ($disk === 's3') {
-            // Para S3, extraer la ruta relativa de la URL completa
             $parsedUrl = parse_url($urlFoto);
             $rutaRelativa = ltrim($parsedUrl['path'] ?? '', '/');
         } else {

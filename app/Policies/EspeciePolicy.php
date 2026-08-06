@@ -5,6 +5,14 @@ namespace App\Policies;
 use App\Models\Especie;
 use App\Models\User;
 
+/*
+|--------------------------------------------------------------------------
+| Especie Policy
+|--------------------------------------------------------------------------
+| Administrador: Acceso total automático a todas las acciones.
+| Cualquier usuario (incluido Cliente y Secretaria): Puede ver todas las especies y sus detalles sin restricciones.
+| Veterinario: Puede crear, editar y eliminar especies solo si cuenta con los permisos correspondientes ('crear-especies', 'editar-especies', 'eliminar-especies').
+*/
 class EspeciePolicy
 {
     // El filtro before se ejecuta antes de cualquier otro método de la Policy.

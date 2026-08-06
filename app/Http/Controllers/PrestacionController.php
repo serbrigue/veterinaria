@@ -9,6 +9,8 @@ use App\Models\Sucursal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
+use App\Models\Especialidad;
+use App\Models\CategoriaPrestacion;
 
 class PrestacionController extends Controller
 {
@@ -46,8 +48,8 @@ class PrestacionController extends Controller
         return Inertia::render('Prestacion/Listado', [
             'prestaciones' => $prestaciones,
             'sucursales' => Cache::remember('sucursales_simple', now()->addMinutes(30), fn () => Sucursal::all()),
-            'especialidades' => Cache::remember('especialidades_simple', now()->addMinutes(30), fn () => \App\Models\Especialidad::all()),
-            'categoriasPrestaciones' => Cache::remember('categorias_prestaciones_simple', now()->addMinutes(30), fn () => \App\Models\CategoriaPrestacion::all()),
+            'especialidades' => Cache::remember('especialidades_simple', now()->addMinutes(30), fn () => Especialidad::all()),
+            'categoriasPrestaciones' => Cache::remember('categorias_prestaciones_simple', now()->addMinutes(30), fn () => CategoriaPrestacion::all()),
         ]);
     }
 

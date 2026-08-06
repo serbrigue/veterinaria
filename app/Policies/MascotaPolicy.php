@@ -5,6 +5,15 @@ namespace App\Policies;
 use App\Models\Mascota;
 use App\Models\User;
 
+/*
+|--------------------------------------------------------------------------
+| Mascota Policy
+|--------------------------------------------------------------------------
+| Administrador: Acceso total automático a todas las acciones.
+| Cliente: Puede ver, crear, editar y eliminar sus propias mascotas si tiene los permisos ('ver-mis-mascotas', 'crear-mis-mascotas', 'editar-mis-mascotas', 'eliminar-mis-mascotas').
+| Secretaria: Puede ver, registrar, editar y eliminar mascotas de la sucursal si cuenta con los permisos correspondientes ('ver-mascotas-sucursal', 'editar-mascotas-sucursal').
+| Veterinario: Solo puede ver el listado y detalles de las mascotas de la sucursal con el permiso 'ver-mascotas-sucursal'. No puede crear, editar ni eliminar mascotas.
+*/
 class MascotaPolicy
 {
     // El filtro before se ejecuta antes de cualquier otro método de la Policy.

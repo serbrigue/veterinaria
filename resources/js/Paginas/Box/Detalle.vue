@@ -1,4 +1,9 @@
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: Detalle -->
+    <!-- ================================================================================== -->
+
+
     <AuthenticatedLayout>
         <Head :title="`Detalle - ${box.nombre}`" />
 
@@ -53,6 +58,7 @@
                                 <h4 class="h6 fw-bold text-dark d-flex align-items-center gap-2 mb-3">
                                     <i class="bi bi-tag-fill text-primary"></i> Tipo de Atención
                                 </h4>
+                                <!-- DIRECTIVA (v-if): Renderizado condicional basado en "box.categoria_prestacion" -->
                                 <div v-if="box.categoria_prestacion" class="bg-light bg-opacity-50 p-3 rounded-3 border border-light d-inline-block">
                                     <span class="badge rounded-pill px-3 py-2 fs-6" :class="badgeCategoria(box.categoria_prestacion.nombre)">
                                         {{ box.categoria_prestacion.nombre }}
@@ -98,13 +104,24 @@
 </template>
 
 <script>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3)
+// ==================================================================================
+
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
 import { Head, Link } from '@inertiajs/vue3';
 
+// ------------------------------------------------------------------------------
+// EXPORT DEFAULT: Definición principal del componente
+// ------------------------------------------------------------------------------
 export default {
+    // COMPONENTES (COMPONENTS): Registro de componentes importados
     components: { AuthenticatedLayout, Head, Link },
+    // PROPIEDADES: Datos inyectados desde el componente padre o estado
     props: { box: Object },
+    // MÉTODOS: Bloque de funciones y eventos
     methods: {
+        // BadgeCategoria: Metodo para obtener el color de la categoria
         badgeCategoria(nombre) {
             const mapa = { 'Consulta': 'bg-info text-dark', 'Cirugia': 'bg-danger', 'Urgencia': 'bg-warning text-dark', 'Estetica': 'bg-success' };
             return mapa[nombre] || 'bg-secondary';

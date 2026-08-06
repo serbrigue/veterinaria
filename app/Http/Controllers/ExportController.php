@@ -21,6 +21,7 @@ class ExportController extends Controller
 {
     private function resolverExportador(string $entidad): ?array
     {
+        // Se crea un arreglo con las clases de los exportadores
         $exportadores = [
             'especies'              => ['clase' => EspeciesExport::class, 'archivo' => 'especies'],
             'razas'                 => ['clase' => RazasExport::class, 'archivo' => 'razas'],
@@ -37,19 +38,24 @@ class ExportController extends Controller
             'insumos'               => ['clase' => InsumosExport::class, 'archivo' => 'insumos'],
         ];
 
+        // Retorna el exportador correspondiente a la entidad
         return $exportadores[$entidad] ?? null;
     }
 
     public function exportar(string $entidad)
     {
+        // Resuelve el exportador correspondiente a la entidad
         $config = $this->resolverExportador($entidad);
 
+        // Si no se encuentra el exportador, retorna un error 404
         if (!$config) {
             abort(404, 'Entidad no encontrada para exportación.');
         }
 
+        // Genera el nombre del archivo con la fecha actual
         $nombreArchivo = $config['archivo'] . '_' . date('Y-m-d') . '.xlsx';
 
+        // Descarga el archivo
         return Excel::download(new $config['clase'](), $nombreArchivo);
     }
 }

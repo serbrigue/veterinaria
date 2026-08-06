@@ -4,6 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Modelo Insumo
+ *
+ * Representa a la tabla `insumos` en la base de datos.
+ * Función: Representa el inventario de productos, medicamentos y materiales utilizados en la clínica.
+ */
 class Insumo extends Model
 {
     // Usamos el trait para limpiar la caché

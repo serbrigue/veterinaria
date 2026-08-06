@@ -5,6 +5,14 @@ namespace App\Policies;
 use App\Models\Raza;
 use App\Models\User;
 
+/*
+|--------------------------------------------------------------------------
+| Raza Policy
+|--------------------------------------------------------------------------
+| Administrador: Acceso total automático a todas las acciones.
+| Cualquier usuario (incluido Cliente y Secretaria): Puede ver todas las razas y sus detalles sin restricciones.
+| Veterinario: Puede crear, editar y eliminar razas solo si cuenta con los permisos correspondientes ('crear-razas', 'editar-razas', 'eliminar-razas').
+*/
 class RazaPolicy
 {
     // El filtro before se ejecuta antes de cualquier otro método de la Policy.

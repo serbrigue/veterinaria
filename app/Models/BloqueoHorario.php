@@ -4,6 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Modelo BloqueoHorario
+ *
+ * Representa a la tabla `bloqueos_horario` en la base de datos.
+ * Función: Define los rangos de horarios en los que un veterinario o sucursal no está disponible para citas.
+ */
+
 class BloqueoHorario extends Model
 {
     protected $table = 'bloqueos_horario';

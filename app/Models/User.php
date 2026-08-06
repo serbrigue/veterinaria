@@ -8,6 +8,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
+/**
+ * Modelo User
+ *
+ * Representa a la tabla `users` en la base de datos.
+ * Función: Modelo central de autenticación y usuarios generales del sistema (credenciales y acceso).
+ */
 class User extends Authenticatable
 {
     // Traits para usar HasApiTokens, HasFactory y Notifiable

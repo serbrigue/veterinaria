@@ -1,4 +1,7 @@
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: ActualizarContrasena -->
+    <!-- ================================================================================== -->
     <section>
         <header class="mb-4">
             <h2 class="h5 mb-2">Actualizar contraseña</h2>
@@ -10,6 +13,7 @@
          <div>
             <div class="mb-3">
                 <label for="current_password" class="form-label">Contraseña actual</label>
+                <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "formulario.current_password" -->
                 <input
                     id="current_password"
                     ref="entradaContrasenaActual"
@@ -19,10 +23,12 @@
                     :class="{ 'is-invalid': formulario.errors.current_password }"
                     autocomplete="current-password"
                 />
+                <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.current_password" -->
                 <div v-if="formulario.errors.current_password" class="invalid-feedback">{{ formulario.errors.current_password }}</div>
             </div>
             <div class="mb-3">
                 <label for="password" class="form-label">Nueva contraseña</label>
+                <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "formulario.password" -->
                 <input
                     id="password"
                     ref="entradaContrasena"
@@ -32,10 +38,12 @@
                     :class="{ 'is-invalid': formulario.errors.password }"
                     autocomplete="new-password"
                 />
+                <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.password" -->
                 <div v-if="formulario.errors.password" class="invalid-feedback">{{ formulario.errors.password }}</div>
             </div>
             <div class="mb-3">
                 <label for="password_confirmation" class="form-label">Confirmar contraseña</label>
+                <!-- DIRECTIVA (v-model): Enlace de datos bidireccional con "formulario.password_confirmation" -->
                 <input
                     id="password_confirmation"
                     v-model="formulario.password_confirmation"
@@ -44,14 +52,18 @@
                     :class="{ 'is-invalid': formulario.errors.password_confirmation }"
                     autocomplete="new-password"
                 />
+                <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.errors.password_confirmation" -->
                 <div v-if="formulario.errors.password_confirmation" class="invalid-feedback">{{ formulario.errors.password_confirmation }}</div>
             </div>
 
             <div class="d-flex align-items-center gap-3 mt-4">
+                <!-- EVENTO (@click): Dispara la acción "guardar" -->
                 <button type="button" class="btn btn-primary" :disabled="formulario.processing" @click="guardar">
+                    <!-- DIRECTIVA (v-if): Renderizado condicional basado en "formulario.processing" -->
                     <span v-if="formulario.processing" class="spinner-border spinner-border-sm me-2" />
                     Guardar
                 </button>
+                <!-- DIRECTIVA (v-if): Renderizado condicional basado en "guardado" -->
                 <span v-if="guardado" class="small text-muted">Guardado.</span>
             </div>
         </div>
@@ -59,7 +71,15 @@
 </template>
 
 <script>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3)
+// ==================================================================================
+
+// ------------------------------------------------------------------------------
+// EXPORT DEFAULT: Definición principal del componente
+// ------------------------------------------------------------------------------
 export default {
+    // ESTADO REACTIVO (DATA): Variables locales del componente
     data() {
         return {
             guardado: false,
@@ -72,6 +92,7 @@ export default {
             },
         }
     },
+    // MÉTODOS (METHODS): Bloque de funciones y eventos
     methods: {
         guardar() {
             this.formulario.processing = true

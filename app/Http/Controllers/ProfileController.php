@@ -12,9 +12,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redirect;
+use App\Http\Requests\ActualizarContrasenaRequest;
+use App\Http\Requests\EliminarPerfilApiRequest;
+use App\Http\Requests\EliminarPerfilRequest;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Models\PagoVeterinario;
+use Carbon\Carbon;
 
 class ProfileController extends Controller
 {
@@ -53,12 +58,18 @@ class ProfileController extends Controller
             ->orderBy('fecha_hora', 'asc')
             ->first();
 
+        //Inicializamos las cotizaciones
         $cotizaciones = [];
+
+        //Si el veterinario existe, obtenemos las cotizaciones
         if ($veterinario) {
-            $pagosRegistrados = \App\Models\PagoVeterinario::where('veterinario_id', $veterinario->id)->get()->keyBy(function($item) {
+            //Obtenemos los pagos registrados
+            $pagosRegistrados = PagoVeterinario::where('veterinario_id', $veterinario->id)->get()->keyBy(function ($item) {
+                //Obtenemos el anio y el mes para la llave
                 return $item->anio . '-' . $item->mes;
             });
 
+            //Obtenemos las citas completadas
             $citasCompletadas = $veterinario->citas()
                 ->where('estado', 'completada')
                 ->whereHas('transaccion', function ($t) {
@@ -67,10 +78,14 @@ class ProfileController extends Controller
                 ->with(['prestacion', 'transaccion'])
                 ->get();
 
+            //Recorremos las citas completadas
             foreach ($citasCompletadas as $cita) {
-                $fecha = \Carbon\Carbon::parse($cita->transaccion->fecha_pago);
+                //Obtenemos la fecha y el mes
+                $fecha = Carbon::parse($cita->transaccion->fecha_pago);
                 $key = $fecha->format('Y-n');
+                //Si no existe la cotizacion, la inicializamos
                 if (!isset($cotizaciones[$key])) {
+                    //Inicializamos la cotizacion
                     $cotizaciones[$key] = [
                         'mes' => $fecha->month,
                         'anio' => $fecha->year,
@@ -82,14 +97,18 @@ class ProfileController extends Controller
                         'pago_id' => isset($pagosRegistrados[$key]) ? $pagosRegistrados[$key]->id : null
                     ];
                 }
+                //Incrementamos el contador de citas
                 $cotizaciones[$key]['citas_count']++;
+                //Obtenemos el precio base y el porcentaje de comision
                 $precioBase = $cita->prestacion ? $cita->prestacion->precio_base : 0;
                 $porcentaje = $cita->prestacion ? $cita->prestacion->comision_vet : 0;
+                //Sumamos el precio base y la comision
                 $cotizaciones[$key]['monto_generado'] += $precioBase;
                 $cotizaciones[$key]['comision_calculada'] += ($precioBase * $porcentaje) / 100;
             }
 
-            usort($cotizaciones, function($a, $b) {
+            //Ordenamos las cotizaciones de mas reciente a mas antiguo
+            usort($cotizaciones, function ($a, $b) {
                 return ($b['anio'] <=> $a['anio']) ?: ($b['mes'] <=> $a['mes']);
             });
         }
@@ -122,13 +141,10 @@ class ProfileController extends Controller
         return Redirect::route('perfil.editar');
     }
 
-    public function eliminar(Request $request): RedirectResponse
+    public function eliminar(EliminarPerfilRequest $request): RedirectResponse
     {
 
-        // Validamos la contraseña
-        $request->validate([
-            'password' => ['required', 'current_password'],
-        ]);
+        // Validamos la contraseña (en EliminarPerfilRequest)
         // Obtenemos el usuario
         $user = $request->user();
 
@@ -157,13 +173,9 @@ class ProfileController extends Controller
         return response()->json(['mensaje' => 'Perfil actualizado']);
     }
 
-    public function actualizarContrasenaApi(Request $solicitud)
+    public function actualizarContrasenaApi(ActualizarContrasenaRequest $solicitud)
     {
-        // Validamos la contraseña
-        $solicitud->validate([
-            'current_password' => ['required', 'current_password'],
-            'password' => ['required', 'confirmed', Password::defaults()],
-        ]);
+        // Validamos la contraseña (en ActualizarContrasenaRequest)
 
         // Actualizamos la contraseña
 
@@ -174,12 +186,9 @@ class ProfileController extends Controller
         return response()->json(['mensaje' => 'Contraseña actualizada']);
     }
 
-    public function eliminarApi(Request $solicitud)
+    public function eliminarApi(EliminarPerfilApiRequest $solicitud)
     {
-        // Validamos la contraseña
-        $solicitud->validate([
-            'password' => ['required', 'current_password'],
-        ]);
+        // Validamos la contraseña (en EliminarPerfilApiRequest)
         // Obtenemos el usuario
         $usuario = $solicitud->user();
 

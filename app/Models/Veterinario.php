@@ -6,6 +6,12 @@ use App\Traits\ClearsCache;
 use App\Traits\HasStorageAttributes;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Modelo Veterinario
+ *
+ * Representa a la tabla `veterinarios` en la base de datos.
+ * Función: Representa a los profesionales médicos (veterinarios) que atienden citas y realizan procedimientos.
+ */
 class Veterinario extends Model
 {
     // Traits para usar ClearsCache

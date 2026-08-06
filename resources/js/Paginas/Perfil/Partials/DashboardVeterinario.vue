@@ -1,4 +1,7 @@
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: DashboardVeterinario -->
+    <!-- ================================================================================== -->
     <div>
         <div class="row g-4 mb-4">
             <!-- Widget 1: Agenda Clínica -->
@@ -55,6 +58,7 @@
 
         <!-- Próxima Cita para Veterinario -->
         <div class="row g-4 mb-4">
+            <!-- DIRECTIVA (v-if): Renderizado condicional basado en "proximaCitaVet && proximaCitaVet.fecha_hora" -->
             <div class="col-md-12" v-if="proximaCitaVet && proximaCitaVet.fecha_hora">
                 <div class="card border-0 shadow-sm rounded-4 border-start border-info border-4">
                     <div class="card-body p-4 d-flex flex-column flex-sm-row align-items-center justify-content-between text-center text-sm-start gap-3">
@@ -92,14 +96,23 @@
 </template>
 
 <script>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3)
+// ==================================================================================
+
 import { Link } from '@inertiajs/vue3';
 import axios from 'axios';
 
+// ------------------------------------------------------------------------------
+// EXPORT DEFAULT: Definición principal del componente
+// ------------------------------------------------------------------------------
 export default {
     name: 'DashboardVeterinario',
+    // COMPONENTES (COMPONENTS): Registro de componentes importados
     components: {
         Link,
     },
+    // PROPIEDADES (PROPS): Datos inyectados desde el componente padre o estado
     props: {
         proximaCitaVet: {
             type: Object,
@@ -108,6 +121,7 @@ export default {
             type: Object,
         },
     },
+    // ESTADO REACTIVO (DATA): Variables locales del componente
     data() {
         return {
             mostrarModalHorario: false,
@@ -115,11 +129,13 @@ export default {
            
         }
     },
+    // PROPIEDADES COMPUTADAS (COMPUTED): Variables reactivas que dependen de otras
     computed: {
         usuario() {
             return this.$page.props.auth.user;
         }
     },
+    // MÉTODOS (METHODS): Bloque de funciones y eventos
     methods: {
         formatearDia(fechaIso) {
             if (!fechaIso) return '--';

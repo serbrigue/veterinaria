@@ -8,6 +8,7 @@
             <div class="position-absolute rounded-circle" style="width: 600px; height: 600px; background: rgba(255,255,255,0.03); top: -100px; right: -100px;"></div>
             <div class="position-absolute rounded-circle" style="width: 400px; height: 400px; background: rgba(255,255,255,0.02); bottom: -50px; left: -50px;"></div>
 
+            <!-- Información de la veterinaria -->
             <div class="z-1 text-center px-5" style="max-width: 500px;">
                 <div class="mb-4">
                     <svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" fill="currentColor" class="bi bi-heart-pulse-fill text-primary" viewBox="0 0 16 16" style="filter: drop-shadow(0 0 10px rgba(13, 110, 253, 0.5));">

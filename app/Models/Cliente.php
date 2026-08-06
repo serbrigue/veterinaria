@@ -4,6 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Modelo Cliente
+ *
+ * Representa a la tabla `clientes` en la base de datos.
+ * Función: Representa a los clientes (dueños de mascotas) que utilizan los servicios de la veterinaria.
+ */
 class Cliente extends Model
 {
     // Definimos los campos que se pueden llenar

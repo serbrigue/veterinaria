@@ -4,6 +4,15 @@ namespace App\Policies;
 
 use App\Models\User;
 
+/*
+|--------------------------------------------------------------------------
+| Panel Policy
+|--------------------------------------------------------------------------
+| Administrador: Acceso total automático para ver el panel.
+| Otros roles: Tienen denegado el acceso al panel por defecto.
+*/
+
+
 class PanelPolicy
 {
     // El filtro before se ejecuta antes de cualquier otro método de la Policy.

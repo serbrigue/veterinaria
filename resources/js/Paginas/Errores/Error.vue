@@ -1,6 +1,8 @@
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: Error -->
+    <!-- ================================================================================== -->
     <Head :title="tituloPagina" />
-    
     <!-- Si está autenticado, lo envolvemos en el layout para mantener la navegación -->
     <component :is="componenteLayout" :class="estaAutenticado ? '' : 'min-vh-100 d-flex align-items-center justify-content-center bg-light bg-opacity-50'">
         <div class="container py-5">
@@ -19,11 +21,16 @@
                             <p class="text-muted fs-5 mb-0 px-md-4">{{ mensaje }}</p>
                         </div>
                         <div class="d-flex justify-content-center gap-3">
+                            <!-- Si la ruta existe, volver atrás -->
                             <button @click="irAtras" class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-semibold">
                                 <i class="bi bi-arrow-left me-2"></i>Volver Atrás
                             </button>
-                            <Link :href="estaAutenticado ? (esAdmin ? '/panel' : '/perfil') : '/'" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold shadow-sm">
+                            <!-- Si está autenticado, ir al inicio -->
+                            <Link v-if="estaAutenticado" :href="$isAdmin() ? '/panel' : '/perfil'" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold shadow-sm">
                                 <i class="bi bi-house-door-fill me-2"></i>Ir al Inicio
+                            </Link>
+                            <Link v-else href="/iniciar-sesion" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold shadow-sm">
+                                <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión
                             </Link>
                         </div>
                     </div>
@@ -34,16 +41,25 @@
 </template>
 
 <script>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3)
+// ==================================================================================
+
 import AuthenticatedLayout from '@/Disenos/LayoutAutenticado.vue';
 import { Head, Link } from '@inertiajs/vue3';
 
+// ------------------------------------------------------------------------------
+// EXPORT DEFAULT: Definición principal del componente
+// ------------------------------------------------------------------------------
 export default {
     name: 'Error',
+    // COMPONENTES (COMPONENTS): Registro de componentes importados
     components: {
         AuthenticatedLayout,
         Head,
         Link,
     },
+    // PROPIEDADES (PROPS): Datos inyectados desde el componente padre o estado
     props: {
         status: {
             type: Number,
@@ -54,14 +70,12 @@ export default {
             required: true,
         },
     },
+    // PROPIEDADES COMPUTADAS (COMPUTED): Variables reactivas que dependen de otras
     computed: {
         estaAutenticado() {
             return !!this.$page.props.auth?.user;
         },
-        esAdmin() {
-            const user = this.$page.props.auth?.user;
-            return !!(user && user.rol?.nombre_interno === 'admin');
-        },
+
         componenteLayout() {
             return this.estaAutenticado ? AuthenticatedLayout : 'div';
         },
@@ -72,6 +86,7 @@ export default {
             return this.status === 403 ? 'Acceso Denegado' : 'Página no encontrada';
         }
     },
+    // MÉTODOS (METHODS): Bloque de funciones y eventos
     methods: {
         irAtras() {
             window.history.back();

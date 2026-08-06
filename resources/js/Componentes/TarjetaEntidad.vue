@@ -1,11 +1,19 @@
 <template>
+    <!-- ================================================================================== -->
+    <!-- COMPONENTE: TarjetaEntidad -->
+    <!-- ================================================================================== -->
+
+
     <div class="card h-100 border-0 shadow-sm hover-elevate transition-all overflow-hidden group-card cursor-pointer rounded-4">
         <!-- Cabecera con Link si se define urlDetalle -->
+        <!-- Si existe urlDetalle, se renderiza la cabecera con Link -->
+
         <Link 
             v-if="urlDetalle" 
             :href="urlDetalle" 
             class="position-relative bg-light bg-opacity-10 d-block text-decoration-none header-area" 
         >
+            <!-- Si existe imagenUrl, se renderiza la imagen -->
             <div class="w-100 h-100 d-flex align-items-center justify-content-center text-primary bg-primary bg-opacity-10 hover-zoom">
                 <img v-if="imagenUrl" :src="imagenUrl" class="w-100 h-100 object-fit-cover transition-all" alt="Imagen de entidad" />
                 <i v-else-if="icono" :class="`bi ${icono} fs-1`"></i>
@@ -19,16 +27,19 @@
         </Link>
 
         <!-- Cabecera sin Link -->
+        <!-- Si no existe urlDetalle, se renderiza la cabecera sin Link -->
         <div 
             v-else 
             class="position-relative bg-light bg-opacity-10 header-area" 
         >
             <div class="w-100 h-100 d-flex align-items-center justify-content-center text-primary bg-primary bg-opacity-10 hover-zoom">
+                <!-- Si existe imagenUrl, se renderiza la imagen -->
                 <img v-if="imagenUrl" :src="imagenUrl" class="w-100 h-100 object-fit-cover transition-all" alt="Imagen de entidad" />
                 <i v-else-if="icono" :class="`bi ${icono} fs-1`"></i>
             </div>
-            
+            <!-- Gradiente oscuro para mejorar la legibilidad del texto -->
             <div class="position-absolute bottom-0 start-0 w-100 h-50 bg-gradient-dark pointer-events-none"></div>
+            <!-- Título y Badge -->
             <div class="position-absolute bottom-0 start-0 w-100 p-3 pb-2 text-white pointer-events-none d-flex flex-column justify-content-end h-100">
                 <h3 class="h5 mb-0 fw-bold text-shadow text-truncate">{{ titulo }}</h3>
                 <slot name="header-badge" />
@@ -37,11 +48,12 @@
         
         <!-- Cuerpo de la Tarjeta -->
         <div class="card-body p-4 d-flex flex-column bg-white">
+            <!-- Slot para el contenido del cuerpo -->
             <div class="flex-grow-1">
                 <slot name="body" />
             </div>
             
-            <!-- Acciones de Edición/Eliminación -->
+            <!-- Slot para las acciones de edición/eliminación -->
             <div v-if="mostrarAcciones" class="d-flex gap-2 pt-3 border-top mt-auto justify-content-between">
                 <slot name="acciones">
                     <button 
@@ -65,14 +77,25 @@
 </template>
 
 <script>
+// ==================================================================================
+// LÓGICA DEL COMPONENTE (VUE 3)
+// ==================================================================================
+
 import { Link } from '@inertiajs/vue3';
 
+// ------------------------------------------------------------------------------
+// EXPORT DEFAULT: Definición principal del componente
+// ------------------------------------------------------------------------------
 export default {
     name: 'TarjetaEntidad',
+    // COMPONENTES: Registro de componentes importados
     components: {
         Link,
     },
+    // PROPIEDADES: Datos inyectados desde el componente padre o estado
     props: {
+
+        //Datos para el llenado de las tarjetas
         titulo: {
             type: String,
             required: true,
@@ -94,6 +117,8 @@ export default {
             default: false,
         },
     },
+
+    //EVENTOS: Eventos que el componente puede emitir
     emits: ['editar', 'eliminar'],
 }
 </script>

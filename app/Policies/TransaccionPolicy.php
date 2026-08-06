@@ -5,6 +5,14 @@ namespace App\Policies;
 use App\Models\Transaccion;
 use App\Models\User;
 
+/*
+|--------------------------------------------------------------------------
+| Transaccion Policy
+|--------------------------------------------------------------------------
+| Administrador: Acceso total automático a todas las acciones.
+| Cliente: Solo puede realizar el pago de sus propias transacciones, siempre y cuando cuente con el permiso 'pagar-transacciones'.
+| Otros roles (Veterinario, Secretaria): Tienen denegadas por defecto todas las acciones (ver, crear, editar, eliminar y pagar transacciones).
+*/
 class TransaccionPolicy
 {
     // El filtro before se ejecuta antes de cualquier otro método de la Policy.

@@ -4,6 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Modelo Transaccion
+ *
+ * Representa a la tabla `transacciones` en la base de datos.
+ * Función: Gestiona los registros financieros de pagos, ingresos o cobros realizados en el sistema.
+ */
 class Transaccion extends Model
 {
     // Tabla

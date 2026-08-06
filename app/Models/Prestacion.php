@@ -4,6 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Modelo Prestacion
+ *
+ * Representa a la tabla `prestaciones` en la base de datos.
+ * Función: Define los servicios médicos o procedimientos específicos que se pueden cobrar y realizar.
+ */
 class Prestacion extends Model
 {
     // Trait para limpiar la caché
